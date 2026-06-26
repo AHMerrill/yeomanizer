@@ -225,8 +225,11 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
             <input type="checkbox" checked={state.nato.armsGranted} onChange={(e) => patchNato({ armsGranted: e.target.checked })} />
             Para 3: authorized to possess and carry arms
           </label>
-          <Field label="Para 4: sealed dispatches (blank = none)">
-            <input value={state.nato.dispatches} placeholder="blank, or e.g. numbered 5" onChange={(e) => patchNato({ dispatches: e.target.value })} />
+          <Field label="Para 4: authorized to carry">
+            <input value={state.nato.dispatchQty} placeholder="no/none" onChange={(e) => patchNato({ dispatchQty: e.target.value })} />
+          </Field>
+          <Field label="Para 4: sealed dispatches numbered">
+            <input value={state.nato.dispatchNumbers} placeholder="N/A" onChange={(e) => patchNato({ dispatchNumbers: e.target.value })} />
           </Field>
           <label className="check">
             <input type="checkbox" checked={state.nato.includeSofa} onChange={(e) => patchNato({ includeSofa: e.target.checked })} />

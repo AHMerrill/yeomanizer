@@ -50,7 +50,7 @@ export default function App() {
           <span className="brand-sub">naval correspondence, formatted</span>
         </div>
         <div className="grow" />
-        <button onClick={() => void onDocx()}>Export .docx</button>
+        {state.type !== 'nato' && <button onClick={() => void onDocx()}>Export .docx</button>}
         <button className="primary" onClick={onPrint}>
           Print / Save PDF
         </button>

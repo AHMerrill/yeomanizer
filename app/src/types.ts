@@ -20,7 +20,8 @@ export interface NatoOrder {
   departureDate: string;
   returnDate: string;
   armsGranted: boolean; // para 3: "is" vs "is not" granted to carry arms
-  dispatches: string; // para 4: '' = no/none; else description (e.g. "numbered 5")
+  dispatchQty: string; // para 4: "no/none" or a count
+  dispatchNumbers: string; // para 4: "N/A" or the dispatch numbers
   includeSofa: boolean; // para 5: NATO SOFA certification (deletable)
   authorizingOfficer: string;
   dateOfIssue: string;
