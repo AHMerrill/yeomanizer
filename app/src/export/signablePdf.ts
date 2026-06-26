@@ -1,19 +1,37 @@
-// "Signable PDF" export — generates the letter with pdf-lib (NOT the browser print path, which
-// produces a flat PDF) so we can embed a real AcroForm digital-signature field (/FT /Sig). The
-// recipient opens it in Adobe and clicks the field to CAC/certificate-sign — no "Prepare a Form"
-// step needed. Layout here is clean/functional, not pixel-identical to Print/Save PDF; use that
-// for the exact-format record copy. pdf-lib is dynamic-imported so it stays out of the initial bundle.
+// "CAC-signable PDF" — generates the letter with pdf-lib (the browser print path makes a flat
+// PDF with no form field) so we can embed a real AcroForm digital-signature field (/FT /Sig).
+// Open in Adobe, click the field, CAC/certificate-sign — no "Prepare a Form" step. The field has
+// no visible border, so it's invisible when printed on paper.
+//
+// Layout is driven off the SAME numbers as the on-screen CSS (preview.css / paragraphs.ts) so it
+// matches by construction. Vertical typography (baseline within each line box) is an approximation
+// that may need fine-tuning against the live preview. Deferred (rendered as TODO, tracked):
+// CUI banners/designation, endorsements, in-document enclosures, continuation-page Subj repeat.
 import type { LetterState, Paragraph } from '../types';
 import { buildIdent } from '../format/identification';
-import { paragraphMarker, markerText } from '../format/paragraphs';
+import { paragraphMarker, markerText, depthIndentIn } from '../format/paragraphs';
+import { loadSealBytes } from './docx';
 
-const PT = 72; // points per inch
+const PT = 72;
 const PAGE_W = 8.5 * PT;
 const PAGE_H = 11 * PT;
-const MARGIN = 1 * PT;
-const SIZE = 12; // body font size (pt)
-const LEAD = SIZE * 1.15; // line leading
+const M_TOP = 0.5 * PT; // .page padding-top
+const M_SIDE = 1 * PT;
+const M_BOT = 1 * PT;
+const LEFT = M_SIDE;
+const RIGHT = PAGE_W - M_SIDE;
+const SIZE = 12; // body pt
+const BODY_LH = 1.14; // .page line-height
+const PARA_GAP = 11.5; // --para-gap
+const LABEL_COL = 0.52 * PT; // --label-col
+const MARKER_COL = 0.34 * PT; // --marker-col
+const PGAP = 0.09 * PT; // .pgap (gap after a body marker)
+const NAVY: [number, number, number] = [0, 0x2c / 0xff, 0x77 / 0xff];
 
+// Times metrics: ~0.891 ascent, ~1.107 total height. Baseline distance from the top of a line box.
+const baselineDrop = (size: number, lh: number) => (size * lh - size * 1.107) / 2 + size * 0.891;
+
+type PdfFont = Awaited<ReturnType<Awaited<ReturnType<typeof import('pdf-lib').PDFDocument.create>>['embedFont']>>;
 type Ctx = Awaited<ReturnType<typeof import('pdf-lib').PDFDocument.create>>;
 
 export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> {
@@ -21,68 +39,74 @@ export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> 
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.TimesRoman);
   const bold = await doc.embedFont(StandardFonts.TimesRomanBold);
+  const black = rgb(0, 0, 0);
+  const navy = rgb(...NAVY);
 
   let page = doc.addPage([PAGE_W, PAGE_H]);
-  let y = PAGE_H - MARGIN; // cursor from the top
-  const left = MARGIN;
-  const right = PAGE_W - MARGIN;
-
+  let top = M_TOP; // distance from the page's top edge to the next content
   const newPage = () => {
     page = doc.addPage([PAGE_W, PAGE_H]);
-    y = PAGE_H - MARGIN;
+    top = M_TOP;
   };
-  const ensure = (need: number) => {
-    if (y - need < MARGIN) newPage();
+  const room = (need: number) => {
+    if (PAGE_H - top - need < M_BOT) newPage();
   };
-  const wrap = (text: string, f: typeof font, size: number, maxW: number): string[] => {
-    const words = text.split(/\s+/);
-    const lines: string[] = [];
+  const wrap = (text: string, f: PdfFont, size: number, maxW: number): string[] => {
+    const out: string[] = [];
     let line = '';
-    for (const w of words) {
+    for (const w of text.split(/\s+/)) {
       const trial = line ? line + ' ' + w : w;
-      if (f.widthOfTextAtSize(trial, size) > maxW && line) {
-        lines.push(line);
+      if (line && f.widthOfTextAtSize(trial, size) > maxW) {
+        out.push(line);
         line = w;
       } else line = trial;
     }
-    if (line) lines.push(line);
-    return lines.length ? lines : [''];
+    if (line) out.push(line);
+    return out.length ? out : [''];
   };
-  const draw = (
-    text: string,
-    x: number,
-    f: typeof font = font,
-    size = SIZE,
-    color = rgb(0, 0, 0),
-  ) => {
-    ensure(LEAD);
-    y -= size;
-    page.drawText(text, { x, y, font: f, size, color });
-    y -= LEAD - size;
+  // draw one line of text at x; advance the cursor by the line's height
+  const put = (text: string, x: number, f = font, size = SIZE, lh = BODY_LH, color = black) => {
+    room(size * lh);
+    page.drawText(text, { x, y: PAGE_H - top - baselineDrop(size, lh), font: f, size, color });
+    top += size * lh;
   };
-  const gap = (h = LEAD) => {
-    y -= h;
+  const putCenter = (text: string, f: PdfFont, size: number, lh: number, color = black) => {
+    const x = (PAGE_W - f.widthOfTextAtSize(text, size)) / 2;
+    put(text, x, f, size, lh, color);
+  };
+  const gap = (h: number) => {
+    top += h;
   };
 
-  // ---- Letterhead (centered) ----
-  const navy = rgb(0, 0.17, 0.47);
   const lh = state.letterhead;
-  if (lh.mode === 'on') {
-    const center = (text: string, f: typeof font, size: number) => {
-      ensure(size + 2);
-      y -= size;
-      const w = f.widthOfTextAtSize(text, size);
-      page.drawText(text, { x: (PAGE_W - w) / 2, y, font: f, size, color: navy });
-      y -= 2;
-    };
-    center(lh.line1 || 'DEPARTMENT OF THE NAVY', bold, 11);
-    [lh.activityName, lh.addressLine, lh.cityStateZip].filter(Boolean).forEach((l) =>
-      center(l.toUpperCase(), bold, 8),
-    );
-    gap(LEAD);
+
+  // ---- Seal (1in, at left 0.62in / top 0.5in), aspect-fit like object-fit: contain ----
+  if (lh.mode === 'on' && lh.seal !== 'none') {
+    const bytes = await loadSealBytes(state);
+    if (bytes) {
+      const img = await doc.embedPng(bytes);
+      const s = PT / Math.max(img.width, img.height);
+      const w = img.width * s;
+      const h = img.height * s;
+      page.drawImage(img, {
+        x: 0.62 * PT + (PT - w) / 2,
+        y: PAGE_H - 0.5 * PT - PT + (PT - h) / 2,
+        width: w,
+        height: h,
+      });
+    }
   }
 
-  // ---- Identification block (right-aligned: SSIC / code / date) ----
+  // ---- Letterhead (centered, navy) ----
+  if (lh.mode === 'on') {
+    putCenter(lh.line1 || 'DEPARTMENT OF THE NAVY', bold, 11, 1.04, navy);
+    [lh.activityName, lh.addressLine, lh.cityStateZip]
+      .filter(Boolean)
+      .forEach((l) => putCenter(l.toUpperCase(), bold, 7.5, 1.04, navy));
+    gap(0.16 * PT); // .ident margin-top
+  }
+
+  // ---- Identification block: lines left-aligned within a right-positioned block ----
   const ident = buildIdent(state);
   const idLines = [
     state.includeSsic ? state.ssic : '',
@@ -90,82 +114,87 @@ export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> 
     ident.date,
   ].filter(Boolean);
   if (idLines.length) {
-    idLines.forEach((l) => {
-      ensure(LEAD);
-      y -= SIZE;
-      const w = font.widthOfTextAtSize(l, SIZE);
-      page.drawText(l, { x: right - w, y, font, size: SIZE });
-      y -= LEAD - SIZE;
-    });
-    gap(LEAD);
+    const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
+    const idX = RIGHT - blockW;
+    idLines.forEach((l) => put(l, idX));
   }
 
   // ---- Heading block (From/To/Via/Subj/Ref/Encl) ----
-  const labelX = left;
-  const valX = left + 0.6 * PT * 1.0 + 36; // a tab stop for values
-  const headRow = (label: string, value: string) => {
-    ensure(LEAD);
-    y -= SIZE;
-    page.drawText(label, { x: labelX, y, font, size: SIZE });
-    const lines = wrap(value, font, SIZE, right - valX);
-    page.drawText(lines[0] ?? '', { x: valX, y, font, size: SIZE });
-    y -= LEAD - SIZE;
-    lines.slice(1).forEach((ln) => draw(ln, valX));
+  gap(0.3 * PT - PARA_GAP < 0 ? 0.14 * PT : 0.3 * PT); // .headings margin-top (~0.3in from ident)
+  const headRow = (label: string, value: string, valIndent = 0) => {
+    const vx = LEFT + LABEL_COL + valIndent;
+    const lines = wrap(value, font, SIZE, RIGHT - vx);
+    room(SIZE * BODY_LH);
+    const yTop = top;
+    if (label) page.drawText(label, { x: LEFT, y: PAGE_H - yTop - baselineDrop(SIZE, BODY_LH), font, size: SIZE });
+    put(lines[0] ?? '', vx);
+    lines.slice(1).forEach((ln) => put(ln, LEFT)); // continuation returns to the left margin
   };
   if (state.from) headRow('From:', state.from);
   if (state.to) headRow('To:', state.to);
-  state.via.filter((v) => v.text.trim()).forEach((v, i, arr) =>
-    headRow(i === 0 ? 'Via:' : '', arr.length > 1 ? `(${i + 1}) ${v.text}` : v.text),
+  const vias = state.via.filter((v) => v.text.trim());
+  vias.forEach((v, i) =>
+    headRow(i === 0 ? 'Via:' : '', vias.length > 1 ? `(${i + 1}) ${v.text}` : v.text),
   );
-  gap(LEAD);
-  if (state.subj) headRow('Subj:', state.subj.toUpperCase());
-  state.refs.filter((r) => r.text.trim()).forEach((r, i) =>
-    headRow(i === 0 ? 'Ref:' : '', `(${String.fromCharCode(97 + i)}) ${r.text}`),
-  );
-  state.encls.filter((e) => e.text.trim()).forEach((e, i) =>
-    headRow(i === 0 ? 'Encl:' : '', `(${i + 1}) ${e.text}`),
-  );
-  gap(LEAD);
+  if (state.subj) {
+    gap(PARA_GAP);
+    headRow('Subj:', state.subj.toUpperCase());
+  }
+  const refs = state.refs.filter((r) => r.text.trim());
+  refs.forEach((r, i) => {
+    if (i === 0) gap(PARA_GAP);
+    headRow(i === 0 ? 'Ref:' : '', `(${String.fromCharCode(97 + i)})  ${r.text}`, MARKER_COL - 0.34 * PT);
+  });
+  const encls = state.encls.filter((e) => e.text.trim());
+  encls.forEach((e, i) => {
+    if (i === 0) gap(PARA_GAP);
+    headRow(i === 0 ? 'Encl:' : '', `(${i + 1})  ${e.text}`);
+  });
 
-  // ---- Body (numbered paragraphs) ----
+  // ---- Body (numbered paragraphs; first line indented, continuation at the left margin) ----
+  gap(PARA_GAP);
   const drawBody = (list: Paragraph[], depth: number) => {
     list.forEach((p, i) => {
       const marker = markerText(paragraphMarker(depth, i));
-      const indent = depth * 0.25 * PT * 1.0;
-      const x = left + indent;
-      const prefix = marker + '  ';
-      const prefixW = font.widthOfTextAtSize(prefix, SIZE);
-      const lines = wrap(p.text, font, SIZE, right - x - prefixW);
+      const indent = depthIndentIn(depth) * PT;
+      const markerX = LEFT + indent;
+      const textX = markerX + font.widthOfTextAtSize(marker, SIZE) + PGAP;
+      const lines = wrap(p.text, font, SIZE, RIGHT - textX);
       lines.forEach((ln, li) => {
-        ensure(LEAD);
-        y -= SIZE;
-        if (li === 0) page.drawText(prefix, { x, y, font, size: SIZE });
-        page.drawText(ln, { x: x + prefixW, y, font, size: SIZE });
-        y -= LEAD - SIZE;
+        room(SIZE * BODY_LH);
+        const yTop = top;
+        if (li === 0)
+          page.drawText(marker, { x: markerX, y: PAGE_H - yTop - baselineDrop(SIZE, BODY_LH), font, size: SIZE });
+        // continuation lines return to the left margin (7-2.13)
+        put(ln, li === 0 ? textX : LEFT);
       });
-      gap(LEAD * 0.6);
+      gap(PARA_GAP);
       if (p.children.length) drawBody(p.children, depth + 1);
     });
   };
   drawBody(state.body, 0);
 
-  // ---- Signature block + the digital signature field ----
-  gap(LEAD * 2);
-  const sigX = left + 3.25 * PT;
-  ensure(LEAD * 3);
-  // place the clickable signature field just ABOVE the typed name
-  const fieldH = 28;
-  const fieldW = 216;
-  const fieldBottom = y - 4;
-  const fieldTop = fieldBottom + fieldH;
-  // typed name under the field
-  y = fieldBottom - 4;
-  if (state.signature.name) draw(state.signature.name, sigX, font);
-  if (state.signature.title) draw(state.signature.title, sigX, font);
-  if (state.signature.authority === 'by-direction') draw('By direction', sigX, font);
-  if (state.signature.authority === 'acting') draw('Acting', sigX, font);
+  // ---- Signature block at the page center (left edge 3.25in past the left margin) ----
+  gap(PARA_GAP * 2.6 - PARA_GAP);
+  const sigX = LEFT + 3.25 * PT;
+  room(SIZE * BODY_LH * 4);
+  // the clickable signature field sits just above the typed name
+  const fieldTopY = PAGE_H - top - 2;
+  const fieldH = 30;
+  top += fieldH;
+  if (state.signature.name) put(state.signature.name, sigX);
+  if (state.signature.title) put(state.signature.title, sigX);
+  if (state.signature.authority === 'by-direction') put('By direction', sigX);
+  if (state.signature.authority === 'acting') put('Acting', sigX);
+  addSignatureField(doc, page, [sigX, fieldTopY - fieldH, sigX + 3 * PT, fieldTopY], PDFName, PDFString);
 
-  addSignatureField(doc, page, [sigX, fieldBottom, sigX + fieldW, fieldTop], PDFName, PDFString);
+  // ---- Copy to ----
+  const copyTo = state.copyTo.filter((c) => c.trim());
+  if (copyTo.length) {
+    gap(PARA_GAP);
+    put('Copy to:', LEFT);
+    copyTo.forEach((c) => put(c, LEFT));
+  }
 
   return await doc.save();
 }
@@ -174,8 +203,8 @@ export async function exportSignablePdf(state: LetterState): Promise<void> {
   download(await buildSignablePdf(state), 'naval-letter-signable.pdf');
 }
 
-// Construct an AcroForm digital-signature field (/FT /Sig) + its widget annotation, so Adobe
-// shows a clickable "click to sign" box that hands off to the CAC/certificate signing flow.
+// Construct an AcroForm digital-signature field (/FT /Sig) + a borderless widget annotation, so
+// Adobe shows a clickable "click to sign" box that hands off to the CAC/certificate signing flow.
 function addSignatureField(
   doc: Ctx,
   page: ReturnType<Ctx['addPage']>,
@@ -194,16 +223,12 @@ function addSignatureField(
   });
   const widgetRef = doc.context.register(widget);
   page.node.set(PDFName.of('Annots'), doc.context.obj([widgetRef]));
-  const acroForm = doc.context.obj({
-    Fields: [widgetRef],
-    SigFlags: 3, // SignaturesExist (1) + AppendOnly (2)
-  });
+  const acroForm = doc.context.obj({ Fields: [widgetRef], SigFlags: 3 });
   doc.catalog.set(PDFName.of('AcroForm'), doc.context.register(acroForm));
 }
 
 function download(bytes: Uint8Array, name: string): void {
-  const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }));
   const a = document.createElement('a');
   a.href = url;
   a.download = name;
