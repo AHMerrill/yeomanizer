@@ -109,6 +109,7 @@ export function syncViaEndorsements(s: LetterState): LetterState {
           body: [{ id: uid(), text: '', children: [] }],
           sigName: '',
           sigTitle: '',
+          authority: 'none' as const,
         };
   });
   return { ...s, endorsements: [...viaEndos, ...manual] };

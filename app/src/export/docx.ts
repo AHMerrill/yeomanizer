@@ -186,7 +186,10 @@ export function buildDocxDocument(state: LetterState, today: Date = new Date()):
       children.push(heading('Subj:', state.subj.toUpperCase(), true));
       children.push(spacer());
       flattenBody(e.body, 0, children, cui.enabled && cui.portionMarkings);
-      [e.sigName, e.sigTitle].filter(Boolean).forEach((line, j) =>
+      const eSigLines = [e.sigName, e.sigTitle].filter(Boolean);
+      if (e.authority === 'by-direction') eSigLines.push('By direction');
+      if (e.authority === 'acting') eSigLines.push('Acting');
+      eSigLines.forEach((line, j) =>
         children.push(
           new Paragraph({
             children: [R(line)],

@@ -154,7 +154,7 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
       ...s,
       endorsements: [
         ...s.endorsements,
-        { id: uid(), endorser: '', serial: '', body: [{ id: uid(), text: '', children: [] }], sigName: '', sigTitle: '' },
+        { id: uid(), endorser: '', serial: '', body: [{ id: uid(), text: '', children: [] }], sigName: '', sigTitle: '', authority: 'none' },
       ],
     }));
   const updateEndorsement = (id: string, p: Partial<EndorsementEntry>) =>
@@ -584,6 +584,18 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
                   value={e.sigTitle}
                   onChange={(ev) => updateEndorsement(e.id, { sigTitle: ev.target.value })}
                 />
+              </Field>
+              <Field label="Authority">
+                <select
+                  value={e.authority ?? 'none'}
+                  onChange={(ev) =>
+                    updateEndorsement(e.id, { authority: ev.target.value as SignatureAuthority })
+                  }
+                >
+                  <option value="none">None</option>
+                  <option value="by-direction">By direction</option>
+                  <option value="acting">Acting</option>
+                </select>
               </Field>
             </div>
           ))}

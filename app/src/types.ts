@@ -81,6 +81,7 @@ export interface EndorsementEntry {
   body: Paragraph[];
   sigName: string;
   sigTitle: string;
+  authority?: SignatureAuthority; // endorsements are often signed "By direction" / "Acting"
 }
 
 export interface LetterState {

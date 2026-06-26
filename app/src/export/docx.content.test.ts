@@ -54,4 +54,23 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('forwarded recommending approval'); // endorsement body
     expect(xml).toContain('A. B. SEADOG'); // endorsement signature
   });
+
+  it('renders an endorsement signed "By direction"', async () => {
+    const xml = await docxText({
+      from: 'CO, USS Test',
+      endorsements: [
+        {
+          id: 'e1',
+          endorser: 'Commander, CSG ONE',
+          serial: '',
+          body: [],
+          sigName: 'A. B. SEADOG',
+          sigTitle: '',
+          authority: 'by-direction',
+        },
+      ],
+    });
+    expect(xml).toContain('A. B. SEADOG');
+    expect(xml).toContain('By direction');
+  });
 });

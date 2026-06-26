@@ -249,7 +249,7 @@ function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): L
     refs: [],
     encls: [],
     body: e.body,
-    signature: { name: e.sigName, title: e.sigTitle, authority: 'none' },
+    signature: { name: e.sigName, title: e.sigTitle, authority: e.authority ?? 'none' },
     copyTo: [],
     endorsements: [],
   };
