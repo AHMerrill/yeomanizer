@@ -126,4 +126,13 @@ describe('Editor ↔ preview integration', () => {
     expect(p).toContain('SECOND ENDORSEMENT');
     expect(p).toContain('This letter was produced by the yeomanizer'); // basic letter intact
   });
+
+  it('CUI portion markings add a (CUI) prefix to body paragraphs (off by default)', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /contains CUI/i }));
+    // banner is "CUI"; no parenthetical portion marks until explicitly enabled (DON default)
+    expect(previewText()).not.toContain('(CUI)');
+    fireEvent.click(screen.getByRole('checkbox', { name: /portion markings/i }));
+    expect(previewText()).toContain('(CUI)');
+  });
 });
