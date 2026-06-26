@@ -169,14 +169,15 @@ export function buildDocxDocument(state: LetterState, today: Date = new Date()):
 
   // Appended endorsements (Ch 9): each starts a new page and mirrors the preview — endorsement
   // line, From/To/Subj, body, signature — so the Word export includes them just like the PDF.
-  if (!isEndorsement) {
+  if (!isEndorsement && state.endorsements.length) {
     const endoSigIndent = Math.round(3.25 * IN);
+    const onBasic = `ENDORSEMENT on ${basicLetterId(state, today)}`; // same for every endorsement
     state.endorsements.forEach((e, i) => {
       const ord = ENDORSE_ORD[i] ?? String(i + 1);
       children.push(
         new Paragraph({
           pageBreakBefore: true,
-          children: [R(`${ord} ENDORSEMENT on ${basicLetterId(state, today)}`)],
+          children: [R(`${ord} ${onBasic}`)],
           spacing: { after: BLANK },
         }),
       );
