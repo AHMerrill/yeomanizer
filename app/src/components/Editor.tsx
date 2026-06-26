@@ -67,6 +67,7 @@ function EntryList({
           <input
             value={it.text}
             placeholder={placeholder}
+            aria-label={`${placeholder} ${i + 1}`}
             onChange={(e) =>
               onChange(items.map((x) => (x.id === it.id ? { ...x, text: e.target.value } : x)))
             }
@@ -121,6 +122,7 @@ function ParaEditor({
             value={p.text}
             rows={2}
             placeholder="Paragraph text…"
+            aria-label={`Paragraph ${markerText(paragraphMarker(depth, i))} text`}
             onChange={(e) => mut((r) => tree.updateText(r, p.id, e.target.value))}
           />
           {p.children.length > 0 && (
@@ -171,6 +173,7 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
       <Card title="Correspondence Type">
         <select
           value={state.type}
+          aria-label="Correspondence type"
           onChange={(e) => patch({ type: e.target.value as CorrespondenceType })}
         >
           <option value="standard-letter">Standard Naval Letter</option>
@@ -444,6 +447,7 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
           value={state.subj}
           rows={2}
           placeholder="Subject in all caps, no punctuation"
+          aria-label="Subject"
           onChange={(e) => patch({ subj: e.target.value })}
         />
       </Card>
@@ -504,6 +508,7 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
           value={state.copyTo.join('\n')}
           rows={3}
           placeholder="COMNAVSURFPAC (N1)"
+          aria-label="Copy to addressees, one per line"
           onChange={(e) => patch({ copyTo: e.target.value.split('\n') })}
         />
       </Card>
