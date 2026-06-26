@@ -296,6 +296,12 @@ function LetterDoc({ state }: { state: LetterState }) {
   const measurerRef = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<number[][]>([]);
 
+  // Re-measure on EVERY render (intentionally no dep list): page breaks depend on rendered block
+  // heights, which change with any edit, font load, or CUI toggle. This cannot loop — the setPages
+  // below returns the *previous* array reference when the computed pagination is unchanged, so
+  // React bails out of the redundant update. (An empty dep list, as the linter suggests, would
+  // instead freeze pagination at first render and never re-flow on edits.)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const m = measurerRef.current;
     if (!m) return;
