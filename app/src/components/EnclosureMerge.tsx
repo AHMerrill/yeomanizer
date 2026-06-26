@@ -8,8 +8,13 @@ export function EnclosureMerge() {
   const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
-  const add = (list: FileList | null) => list && setFiles((f) => [...f, ...Array.from(list)]);
+  const add = (list: FileList | null) => {
+    if (!list) return;
+    const pdfs = Array.from(list).filter((f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
+    if (pdfs.length) setFiles((f) => [...f, ...pdfs]);
+  };
   const removeAt = (i: number) => setFiles((f) => f.filter((_, j) => j !== i));
   const move = (i: number, dir: -1 | 1) =>
     setFiles((f) => {
@@ -53,23 +58,38 @@ export function EnclosureMerge() {
     <div className="encl-merge">
       <div className="sub-label">Combine into one PDF</div>
       <p className="hint">
-        Save the letter as a PDF first (Print / Save PDF), then add it and your enclosure files
-        below, in order, to download a single packet. Files stay in this browser — nothing is
+        Save the letter as a PDF first (Print / Save PDF), then drag it and your enclosure files
+        in (in order) to download one combined packet. Files stay in this browser — nothing is
         uploaded.
       </p>
-      <label className="file-btn">
-        + Add PDF files
-        <input
-          type="file"
-          accept="application/pdf"
-          multiple
-          aria-label="Add PDF files to combine"
-          onChange={(e) => {
-            add(e.target.files);
-            e.target.value = '';
-          }}
-        />
-      </label>
+      <div
+        className={dragging ? 'file-drop dragging' : 'file-drop'}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          add(e.dataTransfer.files);
+        }}
+      >
+        <label className="file-btn">
+          + Add PDF files
+          <input
+            type="file"
+            accept="application/pdf"
+            multiple
+            aria-label="Add PDF files to combine"
+            onChange={(e) => {
+              add(e.target.files);
+              e.target.value = '';
+            }}
+          />
+        </label>
+        <span className="file-drop-hint">or drag &amp; drop PDFs here</span>
+      </div>
       {files.length > 0 && (
         <div className="entry-list">
           {files.map((f, i) => (
