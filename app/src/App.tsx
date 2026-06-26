@@ -54,11 +54,22 @@ export default function App() {
           the&nbsp;yeomanizer
           <span className="brand-sub">naval correspondence, formatted</span>
         </div>
-        <nav className="tabs">
-          <button className={view === 'editor' ? 'tab on' : 'tab'} onClick={() => setView('editor')}>
+        <nav className={`seg-toggle ${view === 'about' ? 'pos-1' : 'pos-0'}`} role="tablist" aria-label="Page">
+          <span className="seg-thumb" aria-hidden="true" />
+          <button
+            className={view === 'editor' ? 'seg on' : 'seg'}
+            role="tab"
+            aria-selected={view === 'editor'}
+            onClick={() => setView('editor')}
+          >
             Editor
           </button>
-          <button className={view === 'about' ? 'tab on' : 'tab'} onClick={() => setView('about')}>
+          <button
+            className={view === 'about' ? 'seg on' : 'seg'}
+            role="tab"
+            aria-selected={view === 'about'}
+            onClick={() => setView('about')}
+          >
             Features
           </button>
         </nav>
