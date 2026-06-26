@@ -49,9 +49,11 @@ function ParaFlow({ fp, portion }: { fp: FlatPara; portion: boolean }) {
 
 function Letterhead({ state }: { state: LetterState }) {
   const lh = state.letterhead;
-  // Authentic official DoD seal (public-domain U.S. Gov work), unmodified vector — not redrawn.
+  // Authentic DoD seal artwork (public-domain U.S. Gov work, 609-path Wikimedia vector),
+  // rasterized hi-res and inked in the same PMS-288 navy the manual (Fig 7-1) prints it in —
+  // colored to match real letterhead, not redrawn.
   const sealSrc =
-    lh.seal === 'dod' ? '/dod-seal.svg' : lh.seal === 'don' ? '/don-seal.svg' : null;
+    lh.seal === 'dod' ? '/dod-seal-navy.png' : lh.seal === 'don' ? '/don-seal.svg' : null;
   return (
     <>
       {sealSrc && <img className="seal" src={sealSrc} alt="" />}
