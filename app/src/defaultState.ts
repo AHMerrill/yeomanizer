@@ -59,6 +59,7 @@ export const defaultState: LetterState = {
   copyTo: [],
   endorsementNumber: 'FIRST',
   endorsementOf: '',
+  endorsements: [],
   cui: {
     enabled: false,
     banner: 'CUI',

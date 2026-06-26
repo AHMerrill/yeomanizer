@@ -1,5 +1,5 @@
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import type { LetterState, Paragraph } from '../types';
+import type { LetterState, Paragraph, EndorsementEntry } from '../types';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 import { buildIdent, refLetter } from '../format/identification';
 import { NatoForm } from './NatoForm';
@@ -229,9 +229,51 @@ interface FlowItem {
   node: ReactNode;
 }
 
+const ENDORSE_ORD = [
+  'FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'NINTH', 'TENTH',
+];
+
+// Build a virtual letter-state for an appended endorsement, rendered by the same LetterDoc.
+// From: = the endorser; To:/Subj: carry from the basic letter; the "FIRST ENDORSEMENT on …"
+// line is derived from the basic letter's originator/SSIC/serial/date.
+function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): LetterState {
+  const date = buildIdent(basic).date;
+  const basicId = `${basic.from} ltr ${basic.ssic}${
+    basic.serial ? ` Ser ${basic.originatorCode}/${basic.serial}` : ''
+  }${date ? ` of ${date}` : ''}`
+    .replace(/\s+/g, ' ')
+    .trim();
+  return {
+    ...basic,
+    type: 'endorsement',
+    letterhead: { ...basic.letterhead, mode: 'off' },
+    endorsementNumber: ENDORSE_ORD[i] ?? `${i + 1}`,
+    endorsementOf: basicId,
+    from: e.endorser,
+    serial: e.serial,
+    includeSsic: true,
+    includeCode: !!e.serial.trim(),
+    via: [],
+    refs: [],
+    encls: [],
+    body: e.body,
+    signature: { name: e.sigName, title: e.sigTitle, authority: 'none', electronic: false },
+    copyTo: [],
+    endorsements: [],
+  };
+}
+
 export function LetterPreview({ state }: { state: LetterState }) {
   if (state.type === 'nato') return <NatoForm state={state} />;
-  return <LetterDoc state={state} />;
+  return (
+    <>
+      <LetterDoc state={state} />
+      {state.type !== 'endorsement' &&
+        state.endorsements.map((e, i) => (
+          <LetterDoc key={e.id} state={endorsementState(state, e, i)} />
+        ))}
+    </>
+  );
 }
 
 function LetterDoc({ state }: { state: LetterState }) {

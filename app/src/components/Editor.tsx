@@ -6,6 +6,7 @@ import type {
   Letterhead,
   CorrespondenceType,
   SignatureAuthority,
+  EndorsementEntry,
 } from '../types';
 import { uid } from '../defaultState';
 import * as tree from '../format/tree';
@@ -13,7 +14,6 @@ import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { COMMON_SSIC } from '../data/ssic';
 import { CUI_CATEGORIES } from '../data/cui';
 import { NAVY_RANKS } from '../data/ranks';
-import { buildIdent } from '../format/identification';
 
 type SetState = Dispatch<SetStateAction<LetterState>>;
 
@@ -84,16 +84,17 @@ function EntryList({
 }
 
 function ParaEditor({
+  root,
   list,
   depth,
-  setState,
+  onChange,
 }: {
+  root: Paragraph[];
   list: Paragraph[];
   depth: number;
-  setState: SetState;
+  onChange: (root: Paragraph[]) => void;
 }) {
-  const mutate = (fn: (body: Paragraph[]) => Paragraph[]) =>
-    setState((s) => ({ ...s, body: fn(s.body) }));
+  const mut = (fn: (r: Paragraph[]) => Paragraph[]) => onChange(fn(root));
   return (
     <div className="para-tree" style={{ marginLeft: depth ? 14 : 0 }}>
       {list.map((p, i) => (
@@ -104,25 +105,27 @@ function ParaEditor({
               <button
                 title="Add subparagraph"
                 disabled={depth + 1 >= MAX_DEPTH}
-                onClick={() => mutate((b) => tree.addChild(b, p.id))}
+                onClick={() => mut((r) => tree.addChild(r, p.id))}
               >
                 ↳¶
               </button>
-              <button title="Add paragraph after" onClick={() => mutate((b) => tree.addSiblingAfter(b, p.id))}>
+              <button title="Add paragraph after" onClick={() => mut((r) => tree.addSiblingAfter(r, p.id))}>
                 ¶+
               </button>
-              <button title="Move up" onClick={() => mutate((b) => tree.move(b, p.id, -1))}>↑</button>
-              <button title="Move down" onClick={() => mutate((b) => tree.move(b, p.id, 1))}>↓</button>
-              <button title="Delete" onClick={() => mutate((b) => tree.remove(b, p.id))}>✕</button>
+              <button title="Move up" onClick={() => mut((r) => tree.move(r, p.id, -1))}>↑</button>
+              <button title="Move down" onClick={() => mut((r) => tree.move(r, p.id, 1))}>↓</button>
+              <button title="Delete" onClick={() => mut((r) => tree.remove(r, p.id))}>✕</button>
             </div>
           </div>
           <textarea
             value={p.text}
             rows={2}
             placeholder="Paragraph text…"
-            onChange={(e) => mutate((b) => tree.updateText(b, p.id, e.target.value))}
+            onChange={(e) => mut((r) => tree.updateText(r, p.id, e.target.value))}
           />
-          {p.children.length > 0 && <ParaEditor list={p.children} depth={depth + 1} setState={setState} />}
+          {p.children.length > 0 && (
+            <ParaEditor root={root} list={p.children} depth={depth + 1} onChange={onChange} />
+          )}
         </div>
       ))}
     </div>
@@ -140,28 +143,28 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
   const patchNato = (p: Partial<LetterState['nato']>) =>
     setState((s) => ({ ...s, nato: { ...s.nato, ...p } }));
 
-  // Turn the current letter into a FIRST endorsement: the first Via addressee becomes the
-  // endorser (From), the rest stay as Via, To/Subj/refs/encls carry forward, and the
-  // "FIRST ENDORSEMENT on <basic letter>" line is derived from this letter (Ch 9).
-  const createEndorsement = () => {
-    const vias = state.via.filter((v) => v.text.trim());
-    if (!vias.length) return;
-    const date = buildIdent(state).date;
-    const basicId = `${state.from} ltr ${state.ssic}${
-      state.serial ? ` Ser ${state.originatorCode}/${state.serial}` : ''
-    }${date ? ` of ${date}` : ''}`
-      .replace(/\s+/g, ' ')
-      .trim();
+  // Endorsements are APPENDED to the letter/memo as extra pages — never a type switch. Adding
+  // one pre-fills the endorser from the next Via addressee; To/Subj and the "FIRST ENDORSEMENT
+  // on <basic letter>" line derive from the basic letter in the preview.
+  const addEndorsement = () => {
+    const used = new Set(state.endorsements.map((e) => e.endorser));
+    const nextVia =
+      state.via.map((v) => v.text.trim()).filter(Boolean).find((t) => !used.has(t)) ?? '';
     setState((s) => ({
       ...s,
-      type: 'endorsement',
-      endorsementNumber: 'FIRST',
-      endorsementOf: basicId,
-      from: vias[0].text,
-      via: vias.slice(1).map((v) => ({ ...v })),
-      body: [{ id: uid(), text: '', children: [] }],
+      endorsements: [
+        ...s.endorsements,
+        { id: uid(), endorser: nextVia, serial: '', body: [{ id: uid(), text: '', children: [] }], sigName: '', sigTitle: '' },
+      ],
     }));
   };
+  const updateEndorsement = (id: string, p: Partial<EndorsementEntry>) =>
+    setState((s) => ({
+      ...s,
+      endorsements: s.endorsements.map((e) => (e.id === id ? { ...e, ...p } : e)),
+    }));
+  const removeEndorsement = (id: string) =>
+    setState((s) => ({ ...s, endorsements: s.endorsements.filter((e) => e.id !== id) }));
 
   return (
     <div className="editor">
@@ -431,10 +434,8 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
         </Field>
         <div className="sub-label">Via (numbered automatically when 2+)</div>
         <EntryList items={state.via} placeholder="Via addressee" onChange={(via) => patch({ via })} />
-        {state.type === 'standard-letter' && state.via.some((v) => v.text.trim()) && (
-          <button className="add-btn" onClick={createEndorsement}>
-            ↪ Create endorsement (you're the first Via addressee)
-          </button>
+        {state.via.some((v) => v.text.trim()) && (
+          <p className="hint">Via addressees endorse the letter — add their endorsements below; each becomes an appended page.</p>
         )}
       </Card>
 
@@ -460,12 +461,10 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
       </Card>
 
       <Card title="Body" hint="Add paragraphs and subparagraphs; numbering is automatic.">
-        <ParaEditor list={state.body} depth={0} setState={setState} />
+        <ParaEditor root={state.body} list={state.body} depth={0} onChange={(body) => patch({ body })} />
         <button
           className="add-btn"
-          onClick={() =>
-            setState((s) => ({ ...s, body: [...s.body, { id: uid(), text: '', children: [] }] }))
-          }
+          onClick={() => patch({ body: [...state.body, { id: uid(), text: '', children: [] }] })}
         >
           + Add paragraph
         </button>
@@ -511,6 +510,76 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
           onChange={(e) => patch({ copyTo: e.target.value.split('\n') })}
         />
       </Card>
+
+      {(state.type === 'standard-letter' || state.type === 'memo-from-to') && (
+        <Card
+          title="Endorsements"
+          hint="Each endorsement is appended as extra page(s) after the document (Ch 9). Add a Via addressee above and it pre-fills the endorser."
+        >
+          {state.endorsements.length === 0 && (
+            <p className="hint">None yet — the basic document prints on its own.</p>
+          )}
+          {state.endorsements.map((e, i) => (
+            <div className="endo-block" key={e.id}>
+              <div className="endo-head">
+                <span>
+                  {['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'NINTH', 'TENTH'][i] ??
+                    `${i + 1}`}{' '}
+                  ENDORSEMENT
+                </span>
+                <button onClick={() => removeEndorsement(e.id)} title="Remove endorsement">
+                  ✕
+                </button>
+              </div>
+              <Field label="From (endorser)">
+                <input
+                  value={e.endorser}
+                  placeholder="Commander, Carrier Strike Group ONE"
+                  onChange={(ev) => updateEndorsement(e.id, { endorser: ev.target.value })}
+                />
+              </Field>
+              <Field label="Serial (optional)">
+                <input
+                  value={e.serial}
+                  placeholder="e.g. N1/123"
+                  onChange={(ev) => updateEndorsement(e.id, { serial: ev.target.value })}
+                />
+              </Field>
+              <div className="sub-label">Endorsement text</div>
+              <ParaEditor
+                root={e.body}
+                list={e.body}
+                depth={0}
+                onChange={(body) => updateEndorsement(e.id, { body })}
+              />
+              <button
+                className="add-btn"
+                onClick={() =>
+                  updateEndorsement(e.id, { body: [...e.body, { id: uid(), text: '', children: [] }] })
+                }
+              >
+                + Add paragraph
+              </button>
+              <Field label="Signature name">
+                <input
+                  value={e.sigName}
+                  placeholder="I. M. LASTNAME"
+                  onChange={(ev) => updateEndorsement(e.id, { sigName: ev.target.value })}
+                />
+              </Field>
+              <Field label="Signature title (optional)">
+                <input
+                  value={e.sigTitle}
+                  onChange={(ev) => updateEndorsement(e.id, { sigTitle: ev.target.value })}
+                />
+              </Field>
+            </div>
+          ))}
+          <button className="add-btn" onClick={addEndorsement}>
+            + Add endorsement
+          </button>
+        </Card>
+      )}
         </>
       )}
 

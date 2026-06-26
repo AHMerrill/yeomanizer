@@ -73,6 +73,16 @@ export interface CuiMarking {
   portionMarkings: boolean; // optional (U)/(CUI) portion marks — DON discourages for PII
 }
 
+// An endorsement appended to a basic letter/memo (Ch 9). Rendered as extra page(s) after it.
+export interface EndorsementEntry {
+  id: string;
+  endorser: string; // the "From:" of the endorsement (the endorsing command)
+  serial: string; // the endorser's serial (optional)
+  body: Paragraph[];
+  sigName: string;
+  sigTitle: string;
+}
+
 export interface LetterState {
   type: CorrespondenceType;
   letterhead: Letterhead;
@@ -101,9 +111,11 @@ export interface LetterState {
   signature: SignatureBlock;
   copyTo: string[];
 
-  // Endorsement (Ch 9): "FIRST ENDORSEMENT on <basic letter identification>"
+  // Standalone endorsement type fields ("FIRST ENDORSEMENT on <basic letter>")
   endorsementNumber: string;
   endorsementOf: string;
+  // Endorsements APPENDED to a letter/memo (each becomes extra page(s) after the basic doc)
+  endorsements: EndorsementEntry[];
 
   // Controlled Unclassified Information markings
   cui: CuiMarking;
