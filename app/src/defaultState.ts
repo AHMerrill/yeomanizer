@@ -88,3 +88,28 @@ export const defaultState: LetterState = {
     dateOfIssue: '',
   },
 };
+
+// Keep one auto-endorsement per non-empty Via addressee (From = the via), preserving any
+// body/signature already entered, plus any manually-added (non-via) endorsements. This is why
+// adding a Via makes its endorsement page appear automatically. Only letters/memos get them.
+export function syncViaEndorsements(s: LetterState): LetterState {
+  if (s.type !== 'standard-letter' && s.type !== 'memo-from-to') return s;
+  const vias = s.via.filter((v) => v.text.trim());
+  const byVia = new Map(s.endorsements.filter((e) => e.viaId).map((e) => [e.viaId, e]));
+  const manual = s.endorsements.filter((e) => !e.viaId);
+  const viaEndos = vias.map((v) => {
+    const e = byVia.get(v.id);
+    return e
+      ? { ...e, endorser: v.text }
+      : {
+          id: uid(),
+          viaId: v.id,
+          endorser: v.text,
+          serial: '',
+          body: [{ id: uid(), text: '', children: [] }],
+          sigName: '',
+          sigTitle: '',
+        };
+  });
+  return { ...s, endorsements: [...viaEndos, ...manual] };
+}

@@ -8,7 +8,7 @@ import type {
   SignatureAuthority,
   EndorsementEntry,
 } from '../types';
-import { uid } from '../defaultState';
+import { uid, syncViaEndorsements } from '../defaultState';
 import * as tree from '../format/tree';
 import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { COMMON_SSIC } from '../data/ssic';
@@ -146,21 +146,16 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
   const patchNato = (p: Partial<LetterState['nato']>) =>
     setState((s) => ({ ...s, nato: { ...s.nato, ...p } }));
 
-  // Endorsements are APPENDED to the letter/memo as extra pages — never a type switch. Adding
-  // one pre-fills the endorser from the next Via addressee; To/Subj and the "FIRST ENDORSEMENT
-  // on <basic letter>" line derive from the basic letter in the preview.
-  const addEndorsement = () => {
-    const used = new Set(state.endorsements.map((e) => e.endorser));
-    const nextVia =
-      state.via.map((v) => v.text.trim()).filter(Boolean).find((t) => !used.has(t)) ?? '';
+  // Each Via addressee auto-creates its endorsement (see syncViaEndorsements). This button adds
+  // an EXTRA endorsement not tied to a Via (e.g. an additional endorser). Both append as pages.
+  const addEndorsement = () =>
     setState((s) => ({
       ...s,
       endorsements: [
         ...s.endorsements,
-        { id: uid(), endorser: nextVia, serial: '', body: [{ id: uid(), text: '', children: [] }], sigName: '', sigTitle: '' },
+        { id: uid(), endorser: '', serial: '', body: [{ id: uid(), text: '', children: [] }], sigName: '', sigTitle: '' },
       ],
     }));
-  };
   const updateEndorsement = (id: string, p: Partial<EndorsementEntry>) =>
     setState((s) => ({
       ...s,
@@ -437,9 +432,16 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
           />
         </Field>
         <div className="sub-label">Via (numbered automatically when 2+)</div>
-        <EntryList items={state.via} placeholder="Via addressee" onChange={(via) => patch({ via })} />
+        <EntryList
+          items={state.via}
+          placeholder="Via addressee"
+          onChange={(via) => setState((s) => syncViaEndorsements({ ...s, via }))}
+        />
         {state.via.some((v) => v.text.trim()) && (
-          <p className="hint">Via addressees endorse the letter — add their endorsements below; each becomes an appended page.</p>
+          <p className="hint">
+            Each Via addressee automatically gets an endorsement page (appended below) — fill in
+            its text in the Endorsements section.
+          </p>
         )}
       </Card>
 
@@ -518,10 +520,10 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
       {(state.type === 'standard-letter' || state.type === 'memo-from-to') && (
         <Card
           title="Endorsements"
-          hint="Each endorsement is appended as extra page(s) after the document (Ch 9). Add a Via addressee above and it pre-fills the endorser."
+          hint="Each Via addressee automatically gets an endorsement here, appended as extra page(s) after the document (Ch 9). You can also add a standalone one."
         >
           {state.endorsements.length === 0 && (
-            <p className="hint">None yet — the basic document prints on its own.</p>
+            <p className="hint">None yet — add a Via addressee above, or “+ Add endorsement” below.</p>
           )}
           {state.endorsements.map((e, i) => (
             <div className="endo-block" key={e.id}>
@@ -531,15 +533,20 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
                     `${i + 1}`}{' '}
                   ENDORSEMENT
                 </span>
-                <button onClick={() => removeEndorsement(e.id)} title="Remove endorsement">
-                  ✕
-                </button>
+                {!e.viaId && (
+                  <button onClick={() => removeEndorsement(e.id)} title="Remove endorsement">
+                    ✕
+                  </button>
+                )}
               </div>
-              <Field label="From (endorser)">
+              <Field label={e.viaId ? 'From (endorser — set by the Via addressee)' : 'From (endorser)'}>
                 <input
                   value={e.endorser}
                   placeholder="Commander, Carrier Strike Group ONE"
-                  onChange={(ev) => updateEndorsement(e.id, { endorser: ev.target.value })}
+                  readOnly={!!e.viaId}
+                  aria-label="Endorser"
+                  title={e.viaId ? 'From the Via addressee above — edit it there' : undefined}
+                  onChange={(ev) => !e.viaId && updateEndorsement(e.id, { endorser: ev.target.value })}
                 />
               </Field>
               <Field label="Serial (optional)">
@@ -580,7 +587,7 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
             </div>
           ))}
           <button className="add-btn" onClick={addEndorsement}>
-            + Add endorsement
+            + Add a standalone endorsement
           </button>
         </Card>
       )}

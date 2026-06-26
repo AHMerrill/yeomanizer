@@ -75,6 +75,7 @@ export interface CuiMarking {
 // An endorsement appended to a basic letter/memo (Ch 9). Rendered as extra page(s) after it.
 export interface EndorsementEntry {
   id: string;
+  viaId?: string; // if set, this endorsement is auto-created for a Via addressee (From = the via)
   endorser: string; // the "From:" of the endorsement (the endorsing command)
   serial: string; // the endorser's serial (optional)
   body: Paragraph[];

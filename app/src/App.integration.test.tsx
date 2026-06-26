@@ -58,29 +58,24 @@ describe('Editor ↔ preview integration', () => {
 
   // Regression guard for the endorsement redesign: a Via endorsement must APPEND page(s)
   // after the letter, never replace it (the original "it covers the original doc" bug).
-  it('adding a Via endorsement appends it — the basic letter is NOT replaced', () => {
+  it('adding a Via AUTO-creates its endorsement page — basic letter NOT replaced', () => {
     render(<App />);
     fireEvent.change(screen.getByPlaceholderText('Commanding Officer, [your command]'), {
       target: { value: 'Commanding Officer, USS Example' },
     });
 
-    // add a Via addressee (the "+ Add" inside the Routing card)
+    // add a Via addressee — its endorsement page must appear automatically (no extra step)
     const routingCard = screen.getByRole('heading', { name: 'Routing' }).closest('.card')!;
     fireEvent.click(within(routingCard as HTMLElement).getByText('+ Add'));
     fireEvent.change(screen.getByLabelText('Via addressee 1'), {
       target: { value: 'Commander, Carrier Strike Group ONE' },
     });
 
-    // add the endorsement (pre-fills the endorser from the Via)
-    fireEvent.click(screen.getByText('+ Add endorsement'));
-
     const p = previewText();
-    // the basic letter is still fully present...
-    expect(p).toContain('Commanding Officer, USS Example');
+    expect(p).toContain('Commanding Officer, USS Example'); // basic letter intact
     expect(p).toContain('This letter was produced by the yeomanizer');
-    // ...AND the endorsement is appended, From <- the Via addressee
-    expect(p).toContain('FIRST ENDORSEMENT on');
-    expect(p).toContain('Commander, Carrier Strike Group ONE');
+    expect(p).toContain('FIRST ENDORSEMENT on'); // auto-appended, no button click
+    expect(p).toContain('Commander, Carrier Strike Group ONE'); // From <- the Via addressee
   });
 
   it('enabling CUI renders the banners + designation block with the ISOO label', () => {
@@ -117,14 +112,25 @@ describe('Editor ↔ preview integration', () => {
     expect(previewText()).not.toContain('MEMORANDUM');
   });
 
-  it('multiple endorsements number FIRST then SECOND, both appended', () => {
+  it('two Via addressees auto-create FIRST and SECOND endorsements', () => {
     render(<App />);
-    fireEvent.click(screen.getByText('+ Add endorsement'));
-    fireEvent.click(screen.getByText('+ Add endorsement'));
+    const routingCard = screen.getByRole('heading', { name: 'Routing' }).closest('.card')!;
+    fireEvent.click(within(routingCard as HTMLElement).getByText('+ Add'));
+    fireEvent.change(screen.getByLabelText('Via addressee 1'), { target: { value: 'Commander, CSG ONE' } });
+    fireEvent.click(within(routingCard as HTMLElement).getByText('+ Add'));
+    fireEvent.change(screen.getByLabelText('Via addressee 2'), {
+      target: { value: 'Commander, Pacific Fleet' },
+    });
     const p = previewText();
     expect(p).toContain('FIRST ENDORSEMENT');
     expect(p).toContain('SECOND ENDORSEMENT');
     expect(p).toContain('This letter was produced by the yeomanizer'); // basic letter intact
+  });
+
+  it('“+ Add a standalone endorsement” adds one not tied to a Via', () => {
+    render(<App />);
+    fireEvent.click(screen.getByText('+ Add a standalone endorsement'));
+    expect(previewText()).toContain('FIRST ENDORSEMENT');
   });
 
   it('CUI portion markings add a (CUI) prefix to body paragraphs (off by default)', () => {
