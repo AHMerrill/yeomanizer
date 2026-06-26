@@ -5,7 +5,6 @@ import { Editor } from './components/Editor';
 import { LetterPreview } from './components/LetterPreview';
 import { About } from './components/About';
 import { printLetter } from './export/print';
-import { exportDocx } from './export/docx';
 import { getDownloadCount, recordDownload } from './api/counter';
 import './App.css';
 
@@ -24,6 +23,9 @@ export default function App() {
     });
 
   const onDocx = async () => {
+    // Lazy-load the .docx exporter (and the heavy `docx` library it pulls in) only when the
+    // user actually exports — keeps ~all of it out of the initial page bundle.
+    const { exportDocx } = await import('./export/docx');
     await exportDocx(state);
     void bump();
   };
