@@ -1,5 +1,6 @@
 import type { LetterState } from '../types';
 import { abbreviatedDate } from './date';
+import { alphaIndex } from './alpha';
 
 export interface IdentLines {
   ssic: string;
@@ -24,13 +25,7 @@ export function buildIdent(s: LetterState, today: Date = new Date()): IdentLines
   return { ssic: s.ssic.trim(), codeLine, date };
 }
 
-// Reference letters: a, b, ... z, aa, ab, ...
+// Reference letters: a, b, … z, aa, ab, … (same sequence as paragraph sub-lists).
 export function refLetter(i: number): string {
-  let s = '';
-  let n = i;
-  do {
-    s = String.fromCharCode(97 + (n % 26)) + s;
-    n = Math.floor(n / 26) - 1;
-  } while (n >= 0);
-  return s;
+  return alphaIndex(i);
 }

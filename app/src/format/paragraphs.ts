@@ -1,6 +1,8 @@
 // Paragraph numbering ladder — SECNAV M-5216.5 fig 7-8 (8 levels max).
 // Depth 0-based. Markers reset per parent; levels 5-8 underline the digit/letter.
 
+import { alphaIndex } from './alpha';
+
 export const MAX_DEPTH = 8;
 
 // First-line indents per depth, in inches, calibrated to Times New Roman 12 pt.
@@ -11,17 +13,6 @@ export const PARA_INDENTS_IN = [0, 0.25, 0.5, 0.78, 1.06, 1.31, 1.56, 1.84];
 
 export function depthIndentIn(depth: number): number {
   return PARA_INDENTS_IN[Math.min(depth, PARA_INDENTS_IN.length - 1)];
-}
-
-function toAlpha(i: number): string {
-  // 0 -> a, 25 -> z, 26 -> aa, ...
-  let s = '';
-  let n = i;
-  do {
-    s = String.fromCharCode(97 + (n % 26)) + s;
-    n = Math.floor(n / 26) - 1;
-  } while (n >= 0);
-  return s;
 }
 
 export interface Marker {
@@ -36,7 +27,7 @@ export function paragraphMarker(depth: number, index: number): Marker {
   const fmt = depth % 4;
   const underline = depth >= 4;
   const num = String(index + 1);
-  const alpha = toAlpha(index);
+  const alpha = alphaIndex(index);
   switch (fmt) {
     case 0:
       return { prefix: '', core: num, suffix: '.', underline };
