@@ -141,7 +141,10 @@ it. From ← the Via addressee (the endorser tracks the Via text), To/Subj carry
 standalone endorsement" button adds endorsers not in the Via list, and the standalone
 `endorsement` type still exists for endorsing an external letter. Endorsements appear in both
 the PDF (print) and the `.docx` export, and each can be signed normally or "By direction" /
-"Acting" (same authority options as the basic signature).
+"Acting" (same authority options as the basic signature). Per **9-2.2**, each endorsement's
+"Via:" line carries the Via addressees that remain after that endorser (unnumbered if one,
+numbered if more); the "To:" stays the action addressee — `remainingVias` in
+format/identification.ts, used by both the preview and the .docx export.
 
 ## NATO travel order — done
 The bilingual two-page form (order + reverse instructions), with U.S.-grade → NATO (OF/OR)
