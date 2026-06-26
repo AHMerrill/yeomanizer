@@ -143,18 +143,9 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
   children.push(spacer());
   flattenBody(state.body, 0, children, cui.enabled && cui.portionMarkings);
 
-  // Signature — left edge at page center
+  // Signature — left edge at page center. The export leaves the signature space blank so the
+  // signer can wet-sign or CAC-sign the PDF in Adobe (no script-font placeholder).
   const sigIndent = Math.round(3.25 * IN);
-  const eSign = state.signature.electronic && !!state.signature.name;
-  if (eSign) {
-    children.push(
-      new Paragraph({
-        children: [new TextRun({ text: state.signature.name, font: 'Segoe Script', size: 30, color: '00227A' })],
-        indent: { left: sigIndent },
-        spacing: { before: 3 * BLANK, after: 0 },
-      }),
-    );
-  }
   const sigLines = [state.signature.name];
   if (state.signature.title) sigLines.push(state.signature.title);
   if (state.signature.authority === 'by-direction') sigLines.push('By direction');
@@ -164,7 +155,7 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
       new Paragraph({
         children: [R(line)],
         indent: { left: sigIndent },
-        spacing: { before: i === 0 && !eSign ? 3 * BLANK : 0, after: 0 },
+        spacing: { before: i === 0 ? 3 * BLANK : 0, after: 0 },
       }),
     ),
   );

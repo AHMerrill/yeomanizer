@@ -303,15 +303,6 @@
   margin-left: 3.25in;
 }
 
-/* Electronic signature — system cursive (CSP-safe; no external font) */
-.esign {
-  font-family: 'Segoe Script', 'Snell Roundhand', 'Brush Script MT', cursive;
-  font-size: 20pt;
-  line-height: 1;
-  color: #00227a;
-  margin-bottom: 1pt;
-}
-
 /* Copy to */
 .copyto {
   margin-top: var(--para-gap);

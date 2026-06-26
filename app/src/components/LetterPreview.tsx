@@ -191,7 +191,6 @@ function Signature({ state }: { state: LetterState }) {
   const sig = state.signature;
   return (
     <div className="signature">
-      {sig.electronic && sig.name && <div className="esign">{sig.name}</div>}
       <div className={sig.name ? '' : 'ph'}>{sig.name || 'I. M. LASTNAME'}</div>
       {sig.title && <div>{sig.title}</div>}
       {sig.authority === 'by-direction' && <div>By direction</div>}
@@ -260,7 +259,7 @@ function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): L
     refs: [],
     encls: [],
     body: e.body,
-    signature: { name: e.sigName, title: e.sigTitle, authority: 'none', electronic: false },
+    signature: { name: e.sigName, title: e.sigTitle, authority: 'none' },
     copyTo: [],
     endorsements: [],
   };

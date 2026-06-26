@@ -55,7 +55,7 @@ export const defaultState: LetterState = {
       children: [],
     },
   ],
-  signature: { name: '', title: '', authority: 'none', electronic: false },
+  signature: { name: '', title: '', authority: 'none' },
   copyTo: [],
   endorsementNumber: 'FIRST',
   endorsementOf: '',

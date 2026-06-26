@@ -56,7 +56,6 @@ export interface SignatureBlock {
   name: string; // "J. K. JANICKI" — last name in caps
   title: string; // optional second line, e.g. "Deputy"
   authority: SignatureAuthority;
-  electronic: boolean; // render the name in script as an e-signature on export
 }
 
 // CUI marking — sourced from DoDI 5200.48, the ISOO CUI Marking Handbook, and the
