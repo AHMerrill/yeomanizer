@@ -47,19 +47,19 @@ function ParaFlow({ fp, portion }: { fp: FlatPara; portion: boolean }) {
   );
 }
 
+// Seal sources — all authentic, downloaded assets (never recolored/redrawn):
+//   dod       = the letterhead seal as printed in SECNAV M-5216.5 Fig 7-1 (DoD seal, blue)
+//   dod-color = the official full-color DoD seal vector (razor-sharp, full color)
+const SEAL_SRC: Record<LetterState['letterhead']['seal'], string | null> = {
+  dod: '/dod-seal.png',
+  'dod-color': '/dod-seal.svg',
+  don: '/don-seal.svg',
+  none: null,
+};
+
 function Letterhead({ state }: { state: LetterState }) {
   const lh = state.letterhead;
-  // Seal options (all authentic, downloaded — never recolored/redrawn):
-  //   dod       = the letterhead seal as printed in SECNAV M-5216.5 Fig 7-1 (DoD seal, blue)
-  //   dod-color = the official full-color DoD seal vector (razor-sharp, full color)
-  const sealSrc =
-    lh.seal === 'dod'
-      ? '/dod-seal.png'
-      : lh.seal === 'dod-color'
-        ? '/dod-seal.svg'
-        : lh.seal === 'don'
-          ? '/don-seal.svg'
-          : null;
+  const sealSrc = SEAL_SRC[lh.seal];
   return (
     <>
       {sealSrc && <img className="seal" src={sealSrc} alt="" />}
