@@ -133,8 +133,22 @@ on the ~6th line — no SSIC (10-2). "MEMORANDUM" at the left margin, then
 From/To/Via/Subj/Ref/Encl and numbered paragraphs exactly as a letter; signature centered.
 MFR, decision memo, and MOA/MOU remain as future sub-variants.
 
+## Endorsement (Ch 9) — done (appended or standalone)
+Adding a Via addressee surfaces an Endorsements card; each endorsement renders as appended
+page(s) after the basic letter/memo (never replacing it) — From ← the Via addressee, To/Subj
+carried forward, and the "FIRST ENDORSEMENT on <basic letter>" line derived from the basic
+document. A standalone `endorsement` type still exists for endorsing an external letter.
+
+## NATO travel order — done
+The bilingual two-page form (order + reverse instructions), with U.S.-grade → NATO (OF/OR)
+rank-code translation and the arms / dispatch / SOFA options.
+
 ## Known gaps / TODO
+- Pre-placed CAC digital-signature field in the exported PDF — needs a pdf-lib export path
+  (the browser print pipeline makes a flat PDF that can't hold form fields). The current
+  export is already CAC-signable in Adobe via Certificates → Digitally Sign, or wet-signed.
+- Enclosure attach: merge attached files into the export with "Enclosure (n)" marking (pdf-lib).
 - Seal not yet embedded in `.docx` (letterhead text only).
 - Mid-paragraph page splitting (currently breaks only at paragraph boundaries).
-- Other types: endorsement (Ch 9), business letter (Ch 11), multiple-address (Ch 8).
+- Other types: business letter (Ch 11), multiple-address (Ch 8).
 - The advisor / style-suggestion layer.

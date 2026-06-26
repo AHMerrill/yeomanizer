@@ -1,8 +1,8 @@
 # the yeomanizer
 
-A fast, **unofficial** web tool for drafting U.S. Navy correspondence (the standard naval
-letter and memorandum) to the format prescribed by **SECNAV M-5216.5**, with a live preview
-and PDF / Word (`.docx`) export.
+A fast, **unofficial** web tool for drafting U.S. Navy correspondence — standard naval letters,
+memoranda, endorsements, and NATO travel orders — to the format prescribed by **SECNAV
+M-5216.5**, with a live preview and PDF / Word (`.docx`) export.
 
 > **Not affiliated with or endorsed by the U.S. Navy or the Department of Defense.** This is a
 > drafting aid, not an official system of record.
