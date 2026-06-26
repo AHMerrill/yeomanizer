@@ -202,6 +202,38 @@ export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> 
     copyTo.forEach((c) => put(c, LEFT));
   }
 
+  // ---- CUI banners (every page, top + bottom) + designation block (page 1, lower-right) ----
+  const cui = state.cui;
+  const pages = doc.getPages();
+  if (cui.enabled) {
+    const banner = (cui.banner || 'CUI').toUpperCase();
+    const bw = bold.widthOfTextAtSize(banner, 12);
+    pages.forEach((pg) => {
+      pg.drawText(banner, { x: (PAGE_W - bw) / 2, y: PAGE_H - 0.22 * PT - 10.7, size: 12, font: bold });
+      pg.drawText(banner, { x: (PAGE_W - bw) / 2, y: 0.22 * PT + 2.6, size: 12, font: bold });
+    });
+    const desig = [
+      `Controlled by: ${cui.controlledBy1}`,
+      cui.controlledBy2 ? `Controlled by: ${cui.controlledBy2}` : '',
+      `CUI Category: ${cui.category}`,
+      `Limited Dissemination Control: ${cui.dissemination}`,
+      cui.poc ? `POC: ${cui.poc}` : '',
+    ].filter(Boolean);
+    const dW = Math.max(...desig.map((l) => font.widthOfTextAtSize(l, 8)));
+    desig.forEach((l, i) =>
+      pages[0].drawText(l, { x: RIGHT - dW, y: 0.46 * PT + (desig.length - 1 - i) * 10, size: 8, font }),
+    );
+  }
+
+  // ---- Page numbers — centered, 0.5in from the bottom, page 2 onward (7-2.17) ----
+  if (pages.length > 1) {
+    pages.forEach((pg, i) => {
+      if (i === 0) return;
+      const num = String(i + 1);
+      pg.drawText(num, { x: (PAGE_W - font.widthOfTextAtSize(num, SIZE)) / 2, y: 0.5 * PT, size: SIZE, font });
+    });
+  }
+
   return await doc.save();
 }
 
