@@ -4,6 +4,7 @@ import type { LetterState } from './types';
 import { Editor } from './components/Editor';
 import { LetterPreview } from './components/LetterPreview';
 import { About } from './components/About';
+import { PreviewErrorBoundary } from './components/PreviewErrorBoundary';
 import { printLetter } from './export/print';
 import { getDownloadCount, recordDownload } from './api/counter';
 import './App.css';
@@ -85,7 +86,9 @@ export default function App() {
             <Editor state={state} setState={setState} />
           </form>
           <div className="paper-backdrop">
-            <LetterPreview state={state} />
+            <PreviewErrorBoundary>
+              <LetterPreview state={state} />
+            </PreviewErrorBoundary>
           </div>
         </main>
       ) : (

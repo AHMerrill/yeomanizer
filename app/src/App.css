@@ -381,6 +381,36 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Preview render-error fallback (keeps the editor + the user's text alive) */
+.preview-error {
+  margin: 40px auto;
+  max-width: 28rem;
+  background: #fff;
+  color: #1a1a1a;
+  border-radius: 10px;
+  padding: 18px 22px;
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 3px 16px rgba(0, 0, 0, 0.45);
+}
+.preview-error p {
+  margin: 0 0 8px;
+}
+.preview-error button {
+  margin-top: 6px;
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1px solid #2f6df0;
+  background: #2f6df0;
+  color: #fff;
+  cursor: pointer;
+}
+.preview-error button:hover {
+  background: #2a61d6;
+}
 .editor input,
 .editor textarea,
 .editor select {
