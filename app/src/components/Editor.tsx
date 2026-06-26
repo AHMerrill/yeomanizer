@@ -136,7 +136,15 @@ function ParaEditor({
   );
 }
 
-export function Editor({ state, setState }: { state: LetterState; setState: SetState }) {
+export function Editor({
+  state,
+  setState,
+  setType,
+}: {
+  state: LetterState;
+  setState: SetState;
+  setType: (t: CorrespondenceType) => void;
+}) {
   const patch = (p: Partial<LetterState>) => setState((s) => ({ ...s, ...p }));
   const patchLH = (p: Partial<Letterhead>) =>
     setState((s) => ({ ...s, letterhead: { ...s.letterhead, ...p } }));
@@ -171,7 +179,7 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
         <select
           value={state.type}
           aria-label="Correspondence type"
-          onChange={(e) => patch({ type: e.target.value as CorrespondenceType })}
+          onChange={(e) => setType(e.target.value as CorrespondenceType)}
         >
           <option value="standard-letter">Standard Naval Letter</option>
           <option value="memo-from-to">Memorandum (plain-paper / letterhead)</option>

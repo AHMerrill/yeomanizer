@@ -164,6 +164,21 @@ describe('Editor ↔ preview integration', () => {
     expect(sealSrc()).toBeNull(); // no seal
   });
 
+  it('each correspondence type keeps its own draft (no carry-over between types)', () => {
+    render(<App />);
+    const typeSel = screen.getByLabelText('Correspondence type');
+    const subj = () =>
+      screen.getByPlaceholderText('Subject in all caps, no punctuation') as HTMLTextAreaElement;
+    fireEvent.change(subj(), { target: { value: 'LETTER SUBJECT' } });
+    fireEvent.change(typeSel, { target: { value: 'memo-from-to' } });
+    expect(subj().value).toBe(''); // memo has its own (empty) draft — nothing carried over
+    fireEvent.change(subj(), { target: { value: 'MEMO SUBJECT' } });
+    fireEvent.change(typeSel, { target: { value: 'standard-letter' } });
+    expect(subj().value).toBe('LETTER SUBJECT'); // the letter's draft is restored
+    fireEvent.change(typeSel, { target: { value: 'memo-from-to' } });
+    expect(subj().value).toBe('MEMO SUBJECT'); // the memo's draft is restored
+  });
+
   it('a Via endorsement forwards the REMAINING Vias in its own Via line (§9-2.2)', () => {
     render(<App />);
     const routingCard = screen.getByRole('heading', { name: 'Routing' }).closest('.card')!;

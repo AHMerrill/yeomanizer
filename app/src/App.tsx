@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { defaultState } from './defaultState';
-import type { LetterState } from './types';
+import type { LetterState, CorrespondenceType } from './types';
 import { Editor } from './components/Editor';
 import { LetterPreview } from './components/LetterPreview';
 import { About } from './components/About';
@@ -9,10 +9,37 @@ import { printLetter } from './export/print';
 import { getDownloadCount, recordDownload } from './api/counter';
 import './App.css';
 
+const ALL_TYPES: CorrespondenceType[] = [
+  'standard-letter',
+  'memo-from-to',
+  'business-letter',
+  'endorsement',
+  'nato',
+];
+const makeStates = (): Record<CorrespondenceType, LetterState> =>
+  Object.fromEntries(ALL_TYPES.map((t) => [t, { ...defaultState, type: t }])) as Record<
+    CorrespondenceType,
+    LetterState
+  >;
+
 export default function App() {
-  const [state, setState] = useState<LetterState>(defaultState);
+  // Each correspondence type keeps its own draft for the session — switch types freely and pick
+  // up where you left off. All in memory; nothing persists once the tab closes.
+  const [statesByType, setStatesByType] =
+    useState<Record<CorrespondenceType, LetterState>>(makeStates);
+  const [activeType, setActiveType] = useState<CorrespondenceType>('standard-letter');
   const [downloads, setDownloads] = useState<number | null>(null);
   const [view, setView] = useState<'editor' | 'about'>('editor');
+
+  const state = statesByType[activeType];
+  const setState: Dispatch<SetStateAction<LetterState>> = (update) =>
+    setStatesByType((prev) => ({
+      ...prev,
+      [activeType]:
+        typeof update === 'function'
+          ? (update as (s: LetterState) => LetterState)(prev[activeType])
+          : update,
+    }));
 
   useEffect(() => {
     getDownloadCount().then(setDownloads);
@@ -94,7 +121,7 @@ export default function App() {
             spellCheck={false}
             onSubmit={(e) => e.preventDefault()}
           >
-            <Editor state={state} setState={setState} />
+            <Editor state={state} setState={setState} setType={setActiveType} />
           </form>
           <div className="paper-backdrop">
             <PreviewErrorBoundary>
