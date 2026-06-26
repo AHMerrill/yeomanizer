@@ -82,4 +82,23 @@ describe('Editor ↔ preview integration', () => {
     expect(p).toContain('FIRST ENDORSEMENT on');
     expect(p).toContain('Commander, Carrier Strike Group ONE');
   });
+
+  it('enabling CUI renders the banners + designation block with the ISOO label', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /contains CUI/i }));
+    const backdrop = document.querySelector('.paper-backdrop')!;
+    expect(backdrop.querySelector('.cui-top')?.textContent).toContain('CUI');
+    expect(backdrop.querySelector('.cui-bottom')?.textContent).toContain('CUI');
+    const desig = backdrop.querySelector('.cui-designation')?.textContent ?? '';
+    expect(desig).toContain('Limited Dissemination Control'); // corrected ISOO term
+    expect(desig).not.toContain('Distribution/Dissemination'); // old wrong label stays gone
+  });
+
+  it('selecting the NATO travel order renders the form with the translated rank code', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText('Correspondence type'), { target: { value: 'nato' } });
+    const p = previewText();
+    expect(p).toContain('NATO TRAVEL ORDER');
+    expect(p).toContain('OF-2'); // default grade O-3 -> OF-2 (STANAG 2116)
+  });
 });
