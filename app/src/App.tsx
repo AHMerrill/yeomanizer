@@ -39,8 +39,9 @@ export default function App() {
     <div className="app">
       <div className="disclaimer">
         <strong>Unofficial tool</strong> — not affiliated with or endorsed by the U.S. Navy or
-        DoD. Nothing you type is saved or transmitted; it lives only in this browser tab and is
-        erased when you close it.
+        DoD, and not an official system of record. You are responsible for following CUI and all
+        other information-handling rules. Nothing you type is saved or transmitted — it lives only
+        in this browser tab and is erased when you close it.
       </div>
 
       <header className="toolbar">
