@@ -1,3 +1,4 @@
+import { useState, useLayoutEffect } from 'react';
 import type { Dispatch, SetStateAction, ReactNode } from 'react';
 import type {
   LetterState,
@@ -19,13 +20,52 @@ import { EnclosureMerge } from './EnclosureMerge';
 
 type SetState = Dispatch<SetStateAction<LetterState>>;
 
+const sectionId = (title: string): string =>
+  'sec-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
 function Card({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
-    <section className="card">
+    <section className="card" id={sectionId(title)}>
       <h2>{title}</h2>
       {hint && <p className="hint">{hint}</p>}
       {children}
     </section>
+  );
+}
+
+// Hover "Jump to…" menu — reads the currently visible cards (re-read whenever `dep` changes,
+// e.g. the correspondence type) so the list always matches what's on screen.
+function JumpNav({ dep }: { dep: unknown }) {
+  const [sections, setSections] = useState<{ id: string; title: string }[]>([]);
+  useLayoutEffect(() => {
+    setSections(
+      [...document.querySelectorAll<HTMLElement>('.editor .card')].map((c) => ({
+        id: c.id,
+        title: c.querySelector('h2')?.textContent ?? '',
+      })),
+    );
+  }, [dep]);
+  return (
+    <div className="jump">
+      <button type="button" className="jump-btn" aria-haspopup="menu">
+        Jump to a section ▾
+      </button>
+      <div className="jump-menu" role="menu">
+        {sections.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            role="menuitem"
+            className="jump-item"
+            onClick={() =>
+              document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+          >
+            {s.title}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -175,6 +215,7 @@ export function Editor({
 
   return (
     <div className="editor">
+      <JumpNav dep={state.type} />
       <Card title="Correspondence Type">
         <select
           value={state.type}
