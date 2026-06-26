@@ -97,13 +97,19 @@ export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> 
     }
   }
 
-  // ---- Letterhead (centered, navy) ----
+  // ---- Letterhead (centered, navy). Reserve the .letterhead min-height (0.86in) so the ident +
+  // headings start at the right spot regardless of how many letterhead/ident lines there are. ----
   if (lh.mode === 'on') {
     putCenter(lh.line1 || 'DEPARTMENT OF THE NAVY', bold, 11, 1.04, navy);
     [lh.activityName, lh.addressLine, lh.cityStateZip]
       .filter(Boolean)
       .forEach((l) => putCenter(l.toUpperCase(), bold, 7.5, 1.04, navy));
+    top = Math.max(top, M_TOP + 0.86 * PT); // .letterhead min-height
     gap(0.16 * PT); // .ident margin-top
+  } else if (lh.mode === 'preprinted') {
+    top = M_TOP + 0.9 * PT; // reserve the physical letterhead's space (.lh-spacer)
+  } else {
+    top = M_TOP + 0.5 * PT; // plain paper: .ident.no-letterhead margin-top
   }
 
   // ---- Identification block: lines left-aligned within a right-positioned block ----
