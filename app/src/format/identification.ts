@@ -29,3 +29,21 @@ export function buildIdent(s: LetterState, today: Date = new Date()): IdentLines
 export function refLetter(i: number): string {
   return alphaIndex(i);
 }
+
+// Ordinals for appended endorsements (Ch 9). Shared by the preview, the editor, and the .docx
+// export so they can't drift.
+export const ENDORSE_ORD = [
+  'FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH',
+  'SIXTH', 'SEVENTH', 'EIGHTH', 'NINTH', 'TENTH',
+];
+
+// "<From> ltr <SSIC> [Ser <code>/<serial>] of <date>" — names the basic letter that an
+// appended endorsement sits on ("FIRST ENDORSEMENT on <this>"). Used by preview + .docx.
+export function basicLetterId(basic: LetterState, today?: Date): string {
+  const date = buildIdent(basic, today).date;
+  return `${basic.from} ltr ${basic.ssic}${
+    basic.serial ? ` Ser ${basic.originatorCode}/${basic.serial}` : ''
+  }${date ? ` of ${date}` : ''}`
+    .replace(/\s+/g, ' ')
+    .trim();
+}

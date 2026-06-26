@@ -1,7 +1,7 @@
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { LetterState, Paragraph, EndorsementEntry } from '../types';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
-import { buildIdent, refLetter } from '../format/identification';
+import { buildIdent, refLetter, ENDORSE_ORD, basicLetterId } from '../format/identification';
 import { NatoForm } from './NatoForm';
 import './preview.css';
 
@@ -230,20 +230,11 @@ interface FlowItem {
   node: ReactNode;
 }
 
-const ENDORSE_ORD = [
-  'FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'NINTH', 'TENTH',
-];
-
 // Build a virtual letter-state for an appended endorsement, rendered by the same LetterDoc.
 // From: = the endorser; To:/Subj: carry from the basic letter; the "FIRST ENDORSEMENT on …"
 // line is derived from the basic letter's originator/SSIC/serial/date.
 function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): LetterState {
-  const date = buildIdent(basic).date;
-  const basicId = `${basic.from} ltr ${basic.ssic}${
-    basic.serial ? ` Ser ${basic.originatorCode}/${basic.serial}` : ''
-  }${date ? ` of ${date}` : ''}`
-    .replace(/\s+/g, ' ')
-    .trim();
+  const basicId = basicLetterId(basic);
   return {
     ...basic,
     type: 'endorsement',

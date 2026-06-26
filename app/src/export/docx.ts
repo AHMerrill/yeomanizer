@@ -10,7 +10,7 @@ import {
   Footer,
 } from 'docx';
 import type { LetterState, Paragraph as P } from '../types';
-import { buildIdent, refLetter } from '../format/identification';
+import { buildIdent, refLetter, ENDORSE_ORD, basicLetterId } from '../format/identification';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 
 const IN = 1440; // twips per inch
@@ -165,6 +165,36 @@ export function buildDocxDocument(state: LetterState, today: Date = new Date()):
   if (copyTo.length) {
     children.push(new Paragraph({ children: [R('Copy to:')], spacing: { before: BLANK, after: 0 } }));
     copyTo.forEach((c) => children.push(new Paragraph({ children: [R(c)], spacing: { after: 0 } })));
+  }
+
+  // Appended endorsements (Ch 9): each starts a new page and mirrors the preview — endorsement
+  // line, From/To/Subj, body, signature — so the Word export includes them just like the PDF.
+  if (!isEndorsement) {
+    const endoSigIndent = Math.round(3.25 * IN);
+    state.endorsements.forEach((e, i) => {
+      const ord = ENDORSE_ORD[i] ?? String(i + 1);
+      children.push(
+        new Paragraph({
+          pageBreakBefore: true,
+          children: [R(`${ord} ENDORSEMENT on ${basicLetterId(state, today)}`)],
+          spacing: { after: BLANK },
+        }),
+      );
+      children.push(heading('From:', e.endorser));
+      children.push(heading('To:', state.to));
+      children.push(heading('Subj:', state.subj.toUpperCase(), true));
+      children.push(spacer());
+      flattenBody(e.body, 0, children, cui.enabled && cui.portionMarkings);
+      [e.sigName, e.sigTitle].filter(Boolean).forEach((line, j) =>
+        children.push(
+          new Paragraph({
+            children: [R(line)],
+            indent: { left: endoSigIndent },
+            spacing: { before: j === 0 ? 3 * BLANK : 0, after: 0 },
+          }),
+        ),
+      );
+    });
   }
 
   // CUI banner (header + footer, repeats on every page via Word's native headers/footers)

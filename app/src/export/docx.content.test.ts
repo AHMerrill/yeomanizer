@@ -34,4 +34,24 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('MEMORANDUM');
     expect(xml).not.toContain('9999'); // a memo's only ID symbol is the date
   });
+
+  it('appends endorsements to the Word export, matching the PDF', async () => {
+    const xml = await docxText({
+      from: 'Commanding Officer, USS Test',
+      endorsements: [
+        {
+          id: 'e1',
+          endorser: 'Commander, CSG ONE',
+          serial: '',
+          body: [{ id: 'eb1', text: 'forwarded recommending approval', children: [] }],
+          sigName: 'A. B. SEADOG',
+          sigTitle: '',
+        },
+      ],
+    });
+    expect(xml).toContain('FIRST ENDORSEMENT on'); // the endorsement is appended
+    expect(xml).toContain('Commander, CSG ONE'); // From = the endorser
+    expect(xml).toContain('forwarded recommending approval'); // endorsement body
+    expect(xml).toContain('A. B. SEADOG'); // endorsement signature
+  });
 });

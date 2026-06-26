@@ -11,6 +11,7 @@ import type {
 import { uid, syncViaEndorsements } from '../defaultState';
 import * as tree from '../format/tree';
 import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
+import { ENDORSE_ORD } from '../format/identification';
 import { COMMON_SSIC } from '../data/ssic';
 import { CUI_CATEGORIES } from '../data/cui';
 import { NAVY_RANKS } from '../data/ranks';
@@ -190,7 +191,7 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
               value={state.endorsementNumber}
               onChange={(e) => patch({ endorsementNumber: e.target.value })}
             >
-              {['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'NINTH', 'TENTH'].map(
+              {ENDORSE_ORD.map(
                 (n) => (
                   <option key={n} value={n}>
                     {n}
@@ -529,7 +530,7 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
             <div className="endo-block" key={e.id}>
               <div className="endo-head">
                 <span>
-                  {['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'NINTH', 'TENTH'][i] ??
+                  {ENDORSE_ORD[i] ??
                     `${i + 1}`}{' '}
                   ENDORSEMENT
                 </span>
