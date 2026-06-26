@@ -1,0 +1,9 @@
+name = "yeomanizer"
+compatibility_date = "2025-06-01"
+pages_build_output_dir = "dist"
+
+# Anonymous download counter (functions/api/count.js reads env.COUNTER).
+# Stores only an integer — never any document content.
+[[kv_namespaces]]
+binding = "COUNTER"
+id = "acfb251678ed40cea2cfe7246b1eadb5"
