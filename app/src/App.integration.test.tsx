@@ -135,4 +135,15 @@ describe('Editor ↔ preview integration', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /portion markings/i }));
     expect(previewText()).toContain('(CUI)');
   });
+
+  it('letterhead modes: printed shows the letterhead; plain & pre-printed hide it', () => {
+    render(<App />);
+    expect(previewText()).toContain('DEPARTMENT OF THE NAVY'); // default: printed
+    fireEvent.click(screen.getByRole('button', { name: 'Plain paper' }));
+    expect(previewText()).not.toContain('DEPARTMENT OF THE NAVY');
+    fireEvent.click(screen.getByRole('button', { name: 'Pre-printed paper' }));
+    expect(previewText()).not.toContain('DEPARTMENT OF THE NAVY'); // space reserved, no ink
+    fireEvent.click(screen.getByRole('button', { name: 'Print letterhead' }));
+    expect(previewText()).toContain('DEPARTMENT OF THE NAVY'); // back on
+  });
 });
