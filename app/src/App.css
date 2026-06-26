@@ -347,6 +347,40 @@
   color: #cfd3dc;
   cursor: pointer;
 }
+
+/* Enclosure "combine into one PDF" tool */
+.encl-merge {
+  margin-top: 10px;
+  border-top: 1px solid #2f323b;
+  padding-top: 10px;
+}
+.file-btn {
+  align-self: flex-start;
+  display: inline-block;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 11px;
+  border-radius: 6px;
+  border: 1px dashed #454956;
+  background: transparent;
+  color: #9aa0ad;
+  cursor: pointer;
+}
+.file-btn:hover {
+  background: #25272f;
+  color: #d6dae2;
+}
+.file-btn input {
+  display: none;
+}
+.file-name {
+  flex: 1;
+  font-size: 12px;
+  color: #cfd3dc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .editor input,
 .editor textarea,
 .editor select {

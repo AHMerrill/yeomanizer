@@ -9,6 +9,7 @@ const AVAILABLE: [string, string][] = [
   ['Live preview', 'Overleaf-style: the formatted page updates with every keystroke.'],
   ['PDF export', 'Print or Save as PDF — then print and wet-sign, or CAC-sign in Adobe.'],
   ['Word (.docx) export', 'An editable Word version of the same document.'],
+  ['Combine into one PDF', 'Merge your saved letter PDF with enclosure files into a single packet — entirely in your browser.'],
   ['Letterhead control', 'Printed, plain paper, or pre-printed stock; the authentic DoD seal.'],
   ['Identification block', "SSIC, originator's code, serial, and date — each optional."],
   ['References, enclosures, copy-to', 'Auto-lettered (a), (b)… and numbered (1), (2)…'],
@@ -20,7 +21,6 @@ const AVAILABLE: [string, string][] = [
 
 const PLANNED: [string, string][] = [
   ['Click-to-sign CAC field', 'A digital-signature field placed in the exported PDF so you can CAC-sign in one click.'],
-  ['Attach enclosures', 'Drop in a file and have it merged into the exported document.'],
   ['More letter types', 'Business letter, multiple-address, and multiple-reply letters.'],
   ['Save drafts locally', 'Optional, on your device only — never on a server.'],
   ['Expanded SSIC lookup', 'Search the full Standard Subject Identification Code list.'],

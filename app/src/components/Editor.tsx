@@ -14,6 +14,7 @@ import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { COMMON_SSIC } from '../data/ssic';
 import { CUI_CATEGORIES } from '../data/cui';
 import { NAVY_RANKS } from '../data/ranks';
+import { EnclosureMerge } from './EnclosureMerge';
 
 type SetState = Dispatch<SetStateAction<LetterState>>;
 
@@ -462,6 +463,7 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
 
       <Card title="Enclosures" hint="Numbered (1), (2)…">
         <EntryList items={state.encls} placeholder="Enclosure title" onChange={(encls) => patch({ encls })} />
+        <EnclosureMerge />
       </Card>
 
       <Card title="Body" hint="Add paragraphs and subparagraphs; numbering is automatic.">

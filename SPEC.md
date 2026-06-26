@@ -147,7 +147,9 @@ rank-code translation and the arms / dispatch / SOFA options.
 - Pre-placed CAC digital-signature field in the exported PDF — needs a pdf-lib export path
   (the browser print pipeline makes a flat PDF that can't hold form fields). The current
   export is already CAC-signable in Adobe via Certificates → Digitally Sign, or wet-signed.
-- Enclosure attach: merge attached files into the export with "Enclosure (n)" marking (pdf-lib).
+- Enclosure packets: shipped a client-side "combine into one PDF" tool (pdf-lib merge of the
+  saved letter PDF + enclosure files). Still TODO: tying attachments to specific enclosure
+  entries and auto-marking "Enclosure (n)" on the merged pages.
 - Seal not yet embedded in `.docx` (letterhead text only).
 - Mid-paragraph page splitting (currently breaks only at paragraph boundaries).
 - Other types: business letter (Ch 11), multiple-address (Ch 8).
