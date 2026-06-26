@@ -49,8 +49,9 @@ function ParaFlow({ fp, portion }: { fp: FlatPara; portion: boolean }) {
 
 function Letterhead({ state }: { state: LetterState }) {
   const lh = state.letterhead;
+  // Authentic official DoD seal (public-domain U.S. Gov work), unmodified vector — not redrawn.
   const sealSrc =
-    lh.seal === 'dod' ? '/dod-seal-blue.png' : lh.seal === 'don' ? '/don-seal.svg' : null;
+    lh.seal === 'dod' ? '/dod-seal.svg' : lh.seal === 'don' ? '/don-seal.svg' : null;
   return (
     <>
       {sealSrc && <img className="seal" src={sealSrc} alt="" />}
