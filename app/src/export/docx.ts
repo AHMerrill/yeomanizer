@@ -69,6 +69,7 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
   const lh = state.letterhead;
   const cui = state.cui;
   const isMemo = state.type === 'memo-from-to';
+  const isEndorsement = state.type === 'endorsement';
   const children: Paragraph[] = [];
 
   // Letterhead: on = print it (text only in v1); preprinted = reserve blank lines; off = none.
@@ -112,6 +113,14 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
       spacing: { before: gapBefore ? BLANK : 0, after: 0 },
     });
 
+  if (isEndorsement) {
+    children.push(
+      new Paragraph({
+        children: [R(`${state.endorsementNumber} ENDORSEMENT on ${state.endorsementOf}`)],
+        spacing: { after: BLANK },
+      }),
+    );
+  }
   children.push(heading('From:', state.from));
   children.push(heading('To:', state.to));
   const via = state.via.filter((v) => v.text.trim());
@@ -136,6 +145,16 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
 
   // Signature — left edge at page center
   const sigIndent = Math.round(3.25 * IN);
+  const eSign = state.signature.electronic && !!state.signature.name;
+  if (eSign) {
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: state.signature.name, font: 'Segoe Script', size: 30, color: '00227A' })],
+        indent: { left: sigIndent },
+        spacing: { before: 3 * BLANK, after: 0 },
+      }),
+    );
+  }
   const sigLines = [state.signature.name];
   if (state.signature.title) sigLines.push(state.signature.title);
   if (state.signature.authority === 'by-direction') sigLines.push('By direction');
@@ -145,7 +164,7 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
       new Paragraph({
         children: [R(line)],
         indent: { left: sigIndent },
-        spacing: { before: i === 0 ? 3 * BLANK : 0, after: 0 },
+        spacing: { before: i === 0 && !eSign ? 3 * BLANK : 0, after: 0 },
       }),
     ),
   );

@@ -5,7 +5,26 @@ export type CorrespondenceType =
   | 'standard-letter'
   | 'memo-from-to'
   | 'business-letter'
-  | 'endorsement';
+  | 'endorsement'
+  | 'nato';
+
+// NATO travel order (a bilingual form, not a naval letter). DoD/FCG template.
+export interface NatoOrder {
+  orderNumber: string;
+  rankGrade: string; // US grade, e.g. 'O-4'; NATO code derived from NAVY_RANKS
+  name: string;
+  dodId: string;
+  from: string;
+  to: string;
+  via: string;
+  departureDate: string;
+  returnDate: string;
+  armsGranted: boolean; // para 3: "is" vs "is not" granted to carry arms
+  dispatches: string; // para 4: '' = no/none; else description (e.g. "numbered 5")
+  includeSofa: boolean; // para 5: NATO SOFA certification (deletable)
+  authorizingOfficer: string;
+  dateOfIssue: string;
+}
 
 export interface Letterhead {
   line1: string; // "DEPARTMENT OF THE NAVY" (fixed by default)
@@ -36,6 +55,7 @@ export interface SignatureBlock {
   name: string; // "J. K. JANICKI" — last name in caps
   title: string; // optional second line, e.g. "Deputy"
   authority: SignatureAuthority;
+  electronic: boolean; // render the name in script as an e-signature on export
 }
 
 // CUI marking — sourced from DoDI 5200.48, the ISOO CUI Marking Handbook, and the
@@ -80,6 +100,13 @@ export interface LetterState {
   signature: SignatureBlock;
   copyTo: string[];
 
+  // Endorsement (Ch 9): "FIRST ENDORSEMENT on <basic letter identification>"
+  endorsementNumber: string;
+  endorsementOf: string;
+
   // Controlled Unclassified Information markings
   cui: CuiMarking;
+
+  // NATO travel order (used when type === 'nato')
+  nato: NatoOrder;
 }

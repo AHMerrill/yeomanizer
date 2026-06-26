@@ -129,8 +129,73 @@
 .memo-title {
   margin: var(--para-gap) 0;
 }
-.headings.memo {
+.headings.memo,
+.headings.endo {
   margin-top: 0;
+}
+
+/* Endorsement line: "FIRST ENDORSEMENT on <basic letter>" at the left margin (9-2). */
+.endorsement-line {
+  margin: var(--para-gap) 0;
+}
+
+/* ---- NATO travel order (bilingual form) ---- */
+.page.nato {
+  font-size: 11pt;
+  line-height: 1.22;
+}
+.nato-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 12.5pt;
+  margin: 0.18in 0 0.14in;
+}
+.nato-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4in;
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+  padding: 4pt 0;
+  margin-bottom: 0.14in;
+}
+.nato-p {
+  display: grid;
+  grid-template-columns: 0.3in 1fr;
+  margin-bottom: 9pt;
+}
+.fr {
+  color: #3a3a3a;
+  font-size: 9.5pt;
+  line-height: 1.2;
+}
+.fr.small {
+  font-size: 8.5pt;
+}
+.nato-entry {
+  margin: 3pt 0;
+}
+.nato-foot {
+  margin-top: 0.3in;
+}
+.nato-foot-issue {
+  text-align: right;
+  margin-bottom: 3pt;
+}
+.nato-foot-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5in;
+}
+.nato-foot-sig {
+  border-bottom: 1px solid #000;
+  min-height: 16pt;
+  min-width: 2.6in;
+}
+.nato-cap {
+  font-size: 9.5pt;
+  font-weight: 700;
+  margin-top: 2pt;
 }
 .hrow {
   display: grid;
@@ -170,6 +235,15 @@
 .signature {
   margin-top: calc(var(--para-gap) * 2.6);
   margin-left: 3.25in;
+}
+
+/* Electronic signature — system cursive (CSP-safe; no external font) */
+.esign {
+  font-family: 'Segoe Script', 'Snell Roundhand', 'Brush Script MT', cursive;
+  font-size: 20pt;
+  line-height: 1;
+  color: #00227a;
+  margin-bottom: 1pt;
 }
 
 /* Copy to */

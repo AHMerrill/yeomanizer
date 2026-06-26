@@ -2,6 +2,7 @@ import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'rea
 import type { LetterState, Paragraph } from '../types';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 import { buildIdent, refLetter } from '../format/identification';
+import { NatoForm } from './NatoForm';
 import './preview.css';
 
 // Page geometry (96 dpi). Body flows between the top matter and the 1-inch bottom margin.
@@ -74,6 +75,7 @@ function Head({ state }: { state: LetterState }) {
   const ident = buildIdent(state);
   const lh = state.letterhead;
   const isMemo = state.type === 'memo-from-to';
+  const isEndorsement = state.type === 'endorsement';
   const via = state.via.filter((v) => v.text.trim());
   const refs = state.refs.filter((r) => r.text.trim());
   const encls = state.encls.filter((e) => e.text.trim());
@@ -93,7 +95,15 @@ function Head({ state }: { state: LetterState }) {
         {ident.date ? <div>{ident.date}</div> : <div className="ph">Date</div>}
       </div>
       {isMemo && <div className="memo-title">MEMORANDUM</div>}
-      <div className={isMemo ? 'headings memo' : 'headings'}>
+      {isEndorsement && (
+        <div className="endorsement-line">
+          {state.endorsementNumber} ENDORSEMENT on{' '}
+          {state.endorsementOf || (
+            <span className="ph">[basic letter — e.g., USS SCRANTON ltr 3000 Ser SSN 756/001 of 5 May 15]</span>
+          )}
+        </div>
+      )}
+      <div className={isMemo ? 'headings memo' : isEndorsement ? 'headings endo' : 'headings'}>
         <div className="hrow">
           <span className="label">From:</span>
           <span className={state.from ? 'content' : 'content ph'}>
@@ -175,14 +185,14 @@ function ContinuationHead({ subj }: { subj: string }) {
 }
 
 function Signature({ state }: { state: LetterState }) {
+  const sig = state.signature;
   return (
     <div className="signature">
-      <div className={state.signature.name ? '' : 'ph'}>
-        {state.signature.name || 'I. M. LASTNAME'}
-      </div>
-      {state.signature.title && <div>{state.signature.title}</div>}
-      {state.signature.authority === 'by-direction' && <div>By direction</div>}
-      {state.signature.authority === 'acting' && <div>Acting</div>}
+      {sig.electronic && sig.name && <div className="esign">{sig.name}</div>}
+      <div className={sig.name ? '' : 'ph'}>{sig.name || 'I. M. LASTNAME'}</div>
+      {sig.title && <div>{sig.title}</div>}
+      {sig.authority === 'by-direction' && <div>By direction</div>}
+      {sig.authority === 'acting' && <div>Acting</div>}
     </div>
   );
 }
@@ -220,6 +230,11 @@ interface FlowItem {
 }
 
 export function LetterPreview({ state }: { state: LetterState }) {
+  if (state.type === 'nato') return <NatoForm state={state} />;
+  return <LetterDoc state={state} />;
+}
+
+function LetterDoc({ state }: { state: LetterState }) {
   const cui = state.cui;
   const portion = cui.enabled && cui.portionMarkings;
   const bannerText = cui.banner || 'CUI';

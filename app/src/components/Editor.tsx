@@ -12,6 +12,7 @@ import * as tree from '../format/tree';
 import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { COMMON_SSIC } from '../data/ssic';
 import { CUI_CATEGORIES } from '../data/cui';
+import { NAVY_RANKS } from '../data/ranks';
 
 type SetState = Dispatch<SetStateAction<LetterState>>;
 
@@ -135,6 +136,8 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
     setState((s) => ({ ...s, signature: { ...s.signature, ...p } }));
   const patchCui = (p: Partial<LetterState['cui']>) =>
     setState((s) => ({ ...s, cui: { ...s.cui, ...p } }));
+  const patchNato = (p: Partial<LetterState['nato']>) =>
+    setState((s) => ({ ...s, nato: { ...s.nato, ...p } }));
 
   return (
     <div className="editor">
@@ -145,10 +148,98 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
         >
           <option value="standard-letter">Standard Naval Letter</option>
           <option value="memo-from-to">Memorandum (plain-paper / letterhead)</option>
+          <option value="endorsement">Endorsement</option>
+          <option value="nato">NATO Travel Order</option>
           <option value="business-letter" disabled>Business Letter — soon</option>
-          <option value="endorsement" disabled>Endorsement — soon</option>
         </select>
       </Card>
+
+      {state.type === 'endorsement' && (
+        <Card
+          title="Endorsement"
+          hint="A Via addressee forwards the basic letter (Ch 9). From: is your command; To:/Via: are the remaining chain; add only NEW refs/encls (continue the letters/numbers)."
+        >
+          <Field label="Endorsement number">
+            <select
+              value={state.endorsementNumber}
+              onChange={(e) => patch({ endorsementNumber: e.target.value })}
+            >
+              {['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH', 'SIXTH', 'SEVENTH', 'EIGHTH', 'NINTH', 'TENTH'].map(
+                (n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ),
+              )}
+            </select>
+          </Field>
+          <Field label="Endorsing (the basic letter)">
+            <input
+              value={state.endorsementOf}
+              placeholder="USS SCRANTON ltr 3000 Ser SSN 756/001 of 5 May 15"
+              onChange={(e) => patch({ endorsementOf: e.target.value })}
+            />
+          </Field>
+        </Card>
+      )}
+
+      {state.type === 'nato' && (
+        <Card
+          title="NATO Travel Order"
+          hint="Bilingual NATO travel order. Pick your US rank and the NATO OF/OR code fills in automatically. Set the command in the Letterhead card."
+        >
+          <Field label="Order number">
+            <input value={state.nato.orderNumber} onChange={(e) => patchNato({ orderNumber: e.target.value })} />
+          </Field>
+          <Field label="Rank (US → NATO code auto-fills)">
+            <select value={state.nato.rankGrade} onChange={(e) => patchNato({ rankGrade: e.target.value })}>
+              {NAVY_RANKS.map((r) => (
+                <option key={r.grade} value={r.grade}>
+                  {r.abbr} ({r.grade}) → {r.nato}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Full name">
+            <input value={state.nato.name} placeholder="Alexander H. Merrill" onChange={(e) => patchNato({ name: e.target.value })} />
+          </Field>
+          <Field label="DoD ID number">
+            <input value={state.nato.dodId} onChange={(e) => patchNato({ dodId: e.target.value })} />
+          </Field>
+          <Field label="Travel from">
+            <input value={state.nato.from} placeholder="San Diego, California, USA" onChange={(e) => patchNato({ from: e.target.value })} />
+          </Field>
+          <Field label="Travel to">
+            <input value={state.nato.to} placeholder="Ramstein, DE" onChange={(e) => patchNato({ to: e.target.value })} />
+          </Field>
+          <Field label="Via (countries traveled to / through)">
+            <textarea value={state.nato.via} rows={2} placeholder="Belgium, Germany, Italy, …" onChange={(e) => patchNato({ via: e.target.value })} />
+          </Field>
+          <Field label="Date of departure">
+            <input value={state.nato.departureDate} placeholder="24 May 2025" onChange={(e) => patchNato({ departureDate: e.target.value })} />
+          </Field>
+          <Field label="Expected return date">
+            <input value={state.nato.returnDate} placeholder="3 June 2025" onChange={(e) => patchNato({ returnDate: e.target.value })} />
+          </Field>
+          <label className="check">
+            <input type="checkbox" checked={state.nato.armsGranted} onChange={(e) => patchNato({ armsGranted: e.target.checked })} />
+            Para 3: authorized to possess and carry arms
+          </label>
+          <Field label="Para 4: sealed dispatches (blank = none)">
+            <input value={state.nato.dispatches} placeholder="blank, or e.g. numbered 5" onChange={(e) => patchNato({ dispatches: e.target.value })} />
+          </Field>
+          <label className="check">
+            <input type="checkbox" checked={state.nato.includeSofa} onChange={(e) => patchNato({ includeSofa: e.target.checked })} />
+            Para 5: include NATO SOFA certification
+          </label>
+          <Field label="Officer authorizing movement">
+            <input value={state.nato.authorizingOfficer} onChange={(e) => patchNato({ authorizingOfficer: e.target.value })} />
+          </Field>
+          <Field label="Date of issue">
+            <input value={state.nato.dateOfIssue} placeholder="12 May 2025" onChange={(e) => patchNato({ dateOfIssue: e.target.value })} />
+          </Field>
+        </Card>
+      )}
 
       <Card title="Letterhead" hint="No abbreviations or punctuation in the address (2-12).">
         <div className="pills">
@@ -208,6 +299,8 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
         )}
       </Card>
 
+      {state.type !== 'nato' && (
+        <>
       <Card
         title="Identification"
         hint="Usually added by a yeoman. Not sure? Leave blank — most people only set the date — or pick a common SSIC / insert placeholders."
@@ -360,6 +453,15 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
             <option value="acting">Acting</option>
           </select>
         </Field>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={state.signature.electronic}
+            onChange={(e) => patchSig({ electronic: e.target.checked })}
+          />
+          Electronic signature (renders your name in script on export; you can still print &amp;
+          wet-sign)
+        </label>
       </Card>
 
       <Card title="Copy to" hint="One addressee per line.">
@@ -370,6 +472,8 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
           onChange={(e) => patch({ copyTo: e.target.value.split('\n') })}
         />
       </Card>
+        </>
+      )}
 
       <Card
         title="CUI Marking"
