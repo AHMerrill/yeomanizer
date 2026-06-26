@@ -116,4 +116,14 @@ describe('Editor ↔ preview integration', () => {
     expect(previewText()).toContain('SSIC'); // back to a letter: SSIC returns
     expect(previewText()).not.toContain('MEMORANDUM');
   });
+
+  it('multiple endorsements number FIRST then SECOND, both appended', () => {
+    render(<App />);
+    fireEvent.click(screen.getByText('+ Add endorsement'));
+    fireEvent.click(screen.getByText('+ Add endorsement'));
+    const p = previewText();
+    expect(p).toContain('FIRST ENDORSEMENT');
+    expect(p).toContain('SECOND ENDORSEMENT');
+    expect(p).toContain('This letter was produced by the yeomanizer'); // basic letter intact
+  });
 });
