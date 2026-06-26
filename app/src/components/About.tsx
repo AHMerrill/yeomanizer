@@ -20,7 +20,7 @@ const AVAILABLE: [string, string][] = [
 ];
 
 const PLANNED: [string, string][] = [
-  ['Click-to-sign CAC field', 'A digital-signature field placed in the exported PDF so you can CAC-sign in one click.'],
+  ['Pre-placed signature field', 'A signature field positioned in the PDF for one-click signing — under evaluation (you can already CAC-sign the export in Adobe: Certificates → Digitally Sign).'],
   ['More letter types', 'Business letter, multiple-address, and multiple-reply letters.'],
   ['Save drafts locally', 'Optional, on your device only — never on a server.'],
   ['Expanded SSIC lookup', 'Search the full Standard Subject Identification Code list.'],

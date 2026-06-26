@@ -144,9 +144,11 @@ The bilingual two-page form (order + reverse instructions), with U.S.-grade → 
 rank-code translation and the arms / dispatch / SOFA options.
 
 ## Known gaps / TODO
-- Pre-placed CAC digital-signature field in the exported PDF — needs a pdf-lib export path
-  (the browser print pipeline makes a flat PDF that can't hold form fields). The current
-  export is already CAC-signable in Adobe via Certificates → Digitally Sign, or wet-signed.
+- Pre-placed CAC signature field — EVALUATED (spike) and deferred: adding an empty AcroForm
+  /Sig widget needs fiddly low-level pdf-lib dict work, and there's no way to verify Adobe
+  recognizes it as clickable without Adobe itself. Payoff is marginal — Adobe already signs
+  any PDF (Certificates → Digitally Sign). The current export is CAC-signable in Adobe today,
+  or wet-signed on paper.
 - Enclosure packets: shipped a client-side "combine into one PDF" tool (pdf-lib merge of the
   saved letter PDF + enclosure files). Still TODO: tying attachments to specific enclosure
   entries and auto-marking "Enclosure (n)" on the merged pages.
