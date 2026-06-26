@@ -133,11 +133,14 @@ on the ~6th line — no SSIC (10-2). "MEMORANDUM" at the left margin, then
 From/To/Via/Subj/Ref/Encl and numbered paragraphs exactly as a letter; signature centered.
 MFR, decision memo, and MOA/MOU remain as future sub-variants.
 
-## Endorsement (Ch 9) — done (appended or standalone)
-Adding a Via addressee surfaces an Endorsements card; each endorsement renders as appended
-page(s) after the basic letter/memo (never replacing it) — From ← the Via addressee, To/Subj
-carried forward, and the "FIRST ENDORSEMENT on <basic letter>" line derived from the basic
-document. A standalone `endorsement` type still exists for endorsing an external letter.
+## Endorsement (Ch 9) — done (auto-on-Via or standalone)
+Adding a Via addressee **automatically creates its endorsement** (one per non-empty Via, via
+`syncViaEndorsements`), appended as extra page(s) after the basic letter/memo — never replacing
+it. From ← the Via addressee (the endorser tracks the Via text), To/Subj carry forward, and the
+"FIRST ENDORSEMENT on <basic letter>" line is derived from the basic document. A "+ Add a
+standalone endorsement" button adds endorsers not in the Via list, and the standalone
+`endorsement` type still exists for endorsing an external letter. Endorsements appear in both
+the PDF (print) and the `.docx` export.
 
 ## NATO travel order — done
 The bilingual two-page form (order + reverse instructions), with U.S.-grade → NATO (OF/OR)
