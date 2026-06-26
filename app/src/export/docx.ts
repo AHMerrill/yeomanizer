@@ -17,6 +17,7 @@ import {
   basicLetterId,
   remainingVias,
 } from '../format/identification';
+import { anyCui } from '../format/tree';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 
 const IN = 1440; // twips per inch
@@ -51,22 +52,23 @@ const center = (text: string, size: number) =>
 
 const spacer = (after = 120) => new Paragraph({ children: [R('')], spacing: { after } });
 
-function flattenBody(list: P[], depth: number, out: Paragraph[], portion: boolean): void {
+function flattenBody(list: P[], depth: number, out: Paragraph[], portionActive: boolean): void {
   list.forEach((p, i) => {
     const m = paragraphMarker(depth, i);
+    const mark = portionActive ? (p.cui ? '(CUI) ' : '(U) ') : '';
     out.push(
       new Paragraph({
         children: [
           R(m.prefix),
           R(m.core, { underline: m.underline }),
           R(m.suffix),
-          R('  ' + (portion ? '(CUI) ' : '') + p.text),
+          R('  ' + mark + p.text),
         ],
         indent: { firstLine: Math.round(depthIndentIn(depth) * IN) },
         spacing: { after: BLANK },
       }),
     );
-    if (p.children.length) flattenBody(p.children, depth + 1, out, portion);
+    if (p.children.length) flattenBody(p.children, depth + 1, out, portionActive);
   });
 }
 
@@ -148,7 +150,7 @@ export function buildDocxDocument(state: LetterState, today: Date = new Date()):
   );
 
   children.push(spacer());
-  flattenBody(state.body, 0, children, cui.enabled && cui.portionMarkings);
+  flattenBody(state.body, 0, children, cui.enabled && anyCui(state.body));
 
   // Signature — left edge at page center. The export leaves the signature space blank so the
   // signer can wet-sign or CAC-sign the PDF in Adobe (no script-font placeholder).
@@ -197,7 +199,7 @@ export function buildDocxDocument(state: LetterState, today: Date = new Date()):
         );
       children.push(heading('Subj:', state.subj.toUpperCase(), true));
       children.push(spacer());
-      flattenBody(e.body, 0, children, cui.enabled && cui.portionMarkings);
+      flattenBody(e.body, 0, children, cui.enabled && anyCui(e.body));
       const eSigLines = [e.sigName, e.sigTitle].filter(Boolean);
       if (e.authority === 'by-direction') eSigLines.push('By direction');
       if (e.authority === 'acting') eSigLines.push('Acting');

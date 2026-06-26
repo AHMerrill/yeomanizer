@@ -48,6 +48,7 @@ export interface Paragraph {
   id: string;
   text: string;
   children: Paragraph[];
+  cui?: boolean; // per-paragraph CUI portion marking — (CUI) when true, (U) when marking is active
 }
 
 export type SignatureAuthority = 'none' | 'by-direction' | 'acting';

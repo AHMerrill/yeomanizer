@@ -131,11 +131,13 @@ function ParaEditor({
   list,
   depth,
   onChange,
+  onCuiToggle,
 }: {
   root: Paragraph[];
   list: Paragraph[];
   depth: number;
   onChange: (root: Paragraph[]) => void;
+  onCuiToggle?: (id: string, on: boolean) => void;
 }) {
   const mut = (fn: (r: Paragraph[]) => Paragraph[]) => onChange(fn(root));
   return (
@@ -158,6 +160,15 @@ function ParaEditor({
               <button title="Move up" onClick={() => mut((r) => tree.move(r, p.id, -1))}>↑</button>
               <button title="Move down" onClick={() => mut((r) => tree.move(r, p.id, 1))}>↓</button>
               <button title="Delete" onClick={() => mut((r) => tree.remove(r, p.id))}>✕</button>
+              {onCuiToggle && (
+                <button
+                  className={p.cui ? 'cui-tog on' : 'cui-tog'}
+                  title="Toggle (CUI) portion marking for this paragraph"
+                  onClick={() => onCuiToggle(p.id, !p.cui)}
+                >
+                  (CUI)
+                </button>
+              )}
             </div>
           </div>
           <textarea
@@ -168,7 +179,13 @@ function ParaEditor({
             onChange={(e) => mut((r) => tree.updateText(r, p.id, e.target.value))}
           />
           {p.children.length > 0 && (
-            <ParaEditor root={root} list={p.children} depth={depth + 1} onChange={onChange} />
+            <ParaEditor
+              root={root}
+              list={p.children}
+              depth={depth + 1}
+              onChange={onChange}
+              onCuiToggle={onCuiToggle}
+            />
           )}
         </div>
       ))}
@@ -291,14 +308,11 @@ export function Editor({
                 onChange={(e) => patchCui({ poc: e.target.value })}
               />
             </Field>
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={state.cui.portionMarkings}
-                onChange={(e) => patchCui({ portionMarkings: e.target.checked })}
-              />
-              Add (CUI) portion markings (optional; DON recommends against for PII)
-            </label>
+            <p className="hint">
+              Portion markings are <strong>per paragraph</strong> — use the (CUI) toggle on any
+              paragraph in the Body section. Marking one turns this on; once any portion is marked,
+              every paragraph shows (CUI) or (U). DON recommends against portion marking for PII.
+            </p>
           </>
         )}
       </Card>
@@ -593,7 +607,20 @@ export function Editor({
       </Card>
 
       <Card title="Body" hint="Add paragraphs and subparagraphs; numbering is automatic.">
-        <ParaEditor root={state.body} list={state.body} depth={0} onChange={(body) => patch({ body })} />
+        <ParaEditor
+          root={state.body}
+          list={state.body}
+          depth={0}
+          onChange={(body) => patch({ body })}
+          onCuiToggle={(id, on) =>
+            setState((s) => ({
+              ...s,
+              body: tree.setCui(s.body, id, on),
+              // Marking any paragraph turns on the overall CUI marking (banner + designation).
+              cui: on ? { ...s.cui, enabled: true } : s.cui,
+            }))
+          }
+        />
         <button
           className="add-btn"
           onClick={() => patch({ body: [...state.body, { id: uid(), text: '', children: [] }] })}

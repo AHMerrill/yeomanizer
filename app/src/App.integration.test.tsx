@@ -133,13 +133,26 @@ describe('Editor ↔ preview integration', () => {
     expect(previewText()).toContain('FIRST ENDORSEMENT');
   });
 
-  it('CUI portion markings add a (CUI) prefix to body paragraphs (off by default)', () => {
+  it('CUI portion markings are per-paragraph and enable overall CUI', () => {
     render(<App />);
+    // enabling CUI alone does NOT mark any paragraph (no (CUI)/(U) prefixes yet)
     fireEvent.click(screen.getByRole('checkbox', { name: /contains CUI/i }));
-    // banner is "CUI"; no parenthetical portion marks until explicitly enabled (DON default)
     expect(previewText()).not.toContain('(CUI)');
-    fireEvent.click(screen.getByRole('checkbox', { name: /portion markings/i }));
-    expect(previewText()).toContain('(CUI)');
+    expect(previewText()).not.toMatch(/\(U\)/);
+    // toggle the first paragraph's (CUI): it gets (CUI), the others get (U)
+    const togs = screen.getAllByTitle(/Toggle \(CUI\) portion marking/i);
+    fireEvent.click(togs[0]);
+    const p = previewText();
+    expect(p).toContain('(CUI)');
+    expect(p).toMatch(/\(U\)/);
+  });
+
+  it('marking a paragraph (CUI) turns on the overall CUI banner', () => {
+    render(<App />);
+    const backdrop = () => document.querySelector('.paper-backdrop')!;
+    expect(backdrop().querySelector('.cui-top')).toBeNull(); // no banner yet
+    fireEvent.click(screen.getAllByTitle(/Toggle \(CUI\) portion marking/i)[0]);
+    expect(backdrop().querySelector('.cui-top')).not.toBeNull(); // banner appears
   });
 
   it('letterhead modes: printed shows the letterhead; plain & pre-printed hide it', () => {

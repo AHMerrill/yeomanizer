@@ -1,6 +1,7 @@
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { LetterState, Paragraph, EndorsementEntry } from '../types';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
+import { anyCui } from '../format/tree';
 import {
   buildIdent,
   refLetter,
@@ -34,20 +35,21 @@ interface FlatPara {
   depth: number;
   index: number;
   text: string;
+  cui?: boolean;
 }
 function flattenForFlow(list: Paragraph[], depth: number, out: FlatPara[]): void {
   list.forEach((p, i) => {
-    out.push({ key: p.id, depth, index: i, text: p.text });
+    out.push({ key: p.id, depth, index: i, text: p.text, cui: p.cui });
     flattenForFlow(p.children, depth + 1, out);
   });
 }
 
-function ParaFlow({ fp, portion }: { fp: FlatPara; portion: boolean }) {
+function ParaFlow({ fp, portionActive }: { fp: FlatPara; portionActive: boolean }) {
   return (
     <p className="para" style={{ textIndent: `${depthIndentIn(fp.depth)}in` }}>
       <MarkerSpan depth={fp.depth} index={fp.index} />
       <span className="pgap" />
-      {portion ? '(CUI) ' : ''}
+      {portionActive ? (fp.cui ? '(CUI) ' : '(U) ') : ''}
       {fp.text}
     </p>
   );
@@ -283,7 +285,9 @@ export function LetterPreview({ state }: { state: LetterState }) {
 
 function LetterDoc({ state }: { state: LetterState }) {
   const cui = state.cui;
-  const portion = cui.enabled && cui.portionMarkings;
+  // Portion markings show only once at least one paragraph is marked (per the user's flow:
+  // enabling CUI doesn't auto-mark every paragraph). When active: (CUI) marked, (U) otherwise.
+  const portionActive = cui.enabled && anyCui(state.body);
   const bannerText = cui.banner || 'CUI';
   const copyTo = state.copyTo.filter((c) => c.trim());
 
@@ -291,7 +295,7 @@ function LetterDoc({ state }: { state: LetterState }) {
   const flat: FlatPara[] = [];
   flattenForFlow(state.body, 0, flat);
   const items: FlowItem[] = [
-    ...flat.map((fp) => ({ key: `p_${fp.key}`, node: <ParaFlow fp={fp} portion={portion} /> })),
+    ...flat.map((fp) => ({ key: `p_${fp.key}`, node: <ParaFlow fp={fp} portionActive={portionActive} /> })),
     { key: 'sig', node: <Signature state={state} /> },
     ...(copyTo.length ? [{ key: 'copy', node: <CopyTo items={copyTo} /> }] : []),
   ];

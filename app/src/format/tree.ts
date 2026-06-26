@@ -13,6 +13,18 @@ export function updateText(list: Tree, id: string, text: string): Tree {
   );
 }
 
+// Toggle a paragraph's CUI portion marking.
+export function setCui(list: Tree, id: string, on: boolean): Tree {
+  return list.map((p) =>
+    p.id === id ? { ...p, cui: on } : { ...p, children: setCui(p.children, id, on) },
+  );
+}
+
+// Does any paragraph (at any depth) carry a CUI portion marking?
+export function anyCui(list: Tree): boolean {
+  return list.some((p) => p.cui || anyCui(p.children));
+}
+
 export function addChild(list: Tree, id: string): Tree {
   return list.map((p) =>
     p.id === id
