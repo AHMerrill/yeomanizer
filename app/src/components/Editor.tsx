@@ -13,6 +13,7 @@ import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { COMMON_SSIC } from '../data/ssic';
 import { CUI_CATEGORIES } from '../data/cui';
 import { NAVY_RANKS } from '../data/ranks';
+import { buildIdent } from '../format/identification';
 
 type SetState = Dispatch<SetStateAction<LetterState>>;
 
@@ -139,6 +140,29 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
   const patchNato = (p: Partial<LetterState['nato']>) =>
     setState((s) => ({ ...s, nato: { ...s.nato, ...p } }));
 
+  // Turn the current letter into a FIRST endorsement: the first Via addressee becomes the
+  // endorser (From), the rest stay as Via, To/Subj/refs/encls carry forward, and the
+  // "FIRST ENDORSEMENT on <basic letter>" line is derived from this letter (Ch 9).
+  const createEndorsement = () => {
+    const vias = state.via.filter((v) => v.text.trim());
+    if (!vias.length) return;
+    const date = buildIdent(state).date;
+    const basicId = `${state.from} ltr ${state.ssic}${
+      state.serial ? ` Ser ${state.originatorCode}/${state.serial}` : ''
+    }${date ? ` of ${date}` : ''}`
+      .replace(/\s+/g, ' ')
+      .trim();
+    setState((s) => ({
+      ...s,
+      type: 'endorsement',
+      endorsementNumber: 'FIRST',
+      endorsementOf: basicId,
+      from: vias[0].text,
+      via: vias.slice(1).map((v) => ({ ...v })),
+      body: [{ id: uid(), text: '', children: [] }],
+    }));
+  };
+
   return (
     <div className="editor">
       <Card title="Correspondence Type">
@@ -221,10 +245,15 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
           <Field label="Expected return date">
             <input value={state.nato.returnDate} placeholder="3 June 2025" onChange={(e) => patchNato({ returnDate: e.target.value })} />
           </Field>
-          <label className="check">
-            <input type="checkbox" checked={state.nato.armsGranted} onChange={(e) => patchNato({ armsGranted: e.target.checked })} />
-            Para 3: authorized to possess and carry arms
-          </label>
+          <div className="sub-label">Para 3 — authority to possess &amp; carry arms</div>
+          <div className="pills">
+            <Pill on={state.nato.armsGranted} onClick={() => patchNato({ armsGranted: true })}>
+              is granted
+            </Pill>
+            <Pill on={!state.nato.armsGranted} onClick={() => patchNato({ armsGranted: false })}>
+              is not granted
+            </Pill>
+          </div>
           <Field label="Para 4: authorized to carry">
             <input value={state.nato.dispatchQty} placeholder="no/none" onChange={(e) => patchNato({ dispatchQty: e.target.value })} />
           </Field>
@@ -306,11 +335,13 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
         <>
       <Card
         title="Identification"
-        hint="Usually added by a yeoman. Not sure? Leave blank — most people only set the date — or pick a common SSIC / insert placeholders."
+        hint={
+          state.type === 'memo-from-to'
+            ? "A memo's only identification symbol is the date (10-2)."
+            : 'Usually added by a yeoman. Not sure? Leave blank — most people only set the date.'
+        }
       >
-        {state.type === 'memo-from-to' ? (
-          <p className="hint">Memos use the date only — SSIC, code, and serial don't apply (10-2).</p>
-        ) : (
+        {state.type !== 'memo-from-to' && (
           <>
             <div className="pills">
               <Pill on={state.includeSsic} onClick={() => patch({ includeSsic: !state.includeSsic })}>
@@ -400,6 +431,11 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
         </Field>
         <div className="sub-label">Via (numbered automatically when 2+)</div>
         <EntryList items={state.via} placeholder="Via addressee" onChange={(via) => patch({ via })} />
+        {state.type === 'standard-letter' && state.via.some((v) => v.text.trim()) && (
+          <button className="add-btn" onClick={createEndorsement}>
+            ↪ Create endorsement (you're the first Via addressee)
+          </button>
+        )}
       </Card>
 
       <Card title="Subject" hint="Rendered in ALL CAPS, no punctuation (7-2.9).">

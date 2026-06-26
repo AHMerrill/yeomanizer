@@ -307,9 +307,12 @@ function LetterDoc({ state }: { state: LetterState }) {
           {cui.enabled && <CuiBanner pos="top" text={bannerText} />}
           {p === 0 ? <Head state={state} /> : <ContinuationHead subj={state.subj} />}
           <div className="body">
-            {idxs.map((i) => (
-              <Fragment key={items[i].key}>{items[i].node}</Fragment>
-            ))}
+            {idxs.map((i) => {
+              // pages can briefly hold stale indices after content shrinks (before the
+              // measurer re-runs); guard so a missing item never crashes the render.
+              const it = items[i];
+              return it ? <Fragment key={it.key}>{it.node}</Fragment> : null;
+            })}
           </div>
           {p === 0 && cui.enabled && <Designation cui={cui} />}
           {pageList.length > 1 && p >= 1 && <div className="page-number">{p + 1}</div>}

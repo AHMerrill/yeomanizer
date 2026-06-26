@@ -77,14 +77,14 @@ export default function App() {
           Questions? <a href="mailto:info@yeomanizer.com">info@yeomanizer.com</a>
         </span>
         <span className="foot-mid">
-          Your draft never leaves this browser. We log only an anonymous count of completed
-          downloads — never any document content or personal data.
+          Your draft never leaves this browser — only an anonymous, site-wide download tally (a
+          number, never any content) is recorded.
         </span>
         <span
           className="foot-count"
-          title="We record that a download happened — a running number only. No document content, no personal data, no identifiers are ever stored."
+          title="A site-wide count of completed downloads across all users. No document content, personal data, or identifiers are ever sent or stored — only an integer is incremented."
         >
-          {downloads === null ? '' : `${downloads.toLocaleString()} documents created`}
+          Downloads: {downloads === null ? '—' : downloads.toLocaleString()}
         </span>
       </footer>
     </div>
