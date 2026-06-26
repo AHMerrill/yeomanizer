@@ -101,4 +101,19 @@ describe('Editor ↔ preview integration', () => {
     expect(p).toContain('NATO TRAVEL ORDER');
     expect(p).toContain('OF-2'); // default grade O-3 -> OF-2 (STANAG 2116)
   });
+
+  // Regression guard for the memo/letter toggle bug ("toggle to memo and there's still SSIC
+  // stuff"): a memorandum's only ID symbol is the date — no SSIC line (§10-2).
+  it('toggling memo<->letter shows/hides the SSIC line (memo = date only)', () => {
+    render(<App />);
+    const typeSel = screen.getByLabelText('Correspondence type');
+    expect(previewText()).toContain('SSIC'); // letter: SSIC line present
+    fireEvent.change(typeSel, { target: { value: 'memo-from-to' } });
+    const memo = previewText();
+    expect(memo).toContain('MEMORANDUM');
+    expect(memo).not.toContain('SSIC'); // memo: no SSIC line
+    fireEvent.change(typeSel, { target: { value: 'standard-letter' } });
+    expect(previewText()).toContain('SSIC'); // back to a letter: SSIC returns
+    expect(previewText()).not.toContain('MEMORANDUM');
+  });
 });
