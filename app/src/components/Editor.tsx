@@ -325,7 +325,8 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
                 value={state.letterhead.seal}
                 onChange={(e) => patchLH({ seal: e.target.value as Letterhead['seal'] })}
               >
-                <option value="dod">DoD seal</option>
+                <option value="dod">DoD seal (letterhead blue)</option>
+                <option value="dod-color">DoD seal (full color)</option>
                 <option value="don">DON seal</option>
                 <option value="none">None</option>
               </select>

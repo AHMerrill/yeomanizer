@@ -32,7 +32,7 @@ export interface Letterhead {
   activityName: string; // e.g. "CHIEF OF NAVAL OPERATIONS"
   addressLine: string; // e.g. "2000 NAVY PENTAGON"
   cityStateZip: string; // e.g. "WASHINGTON DC 20350-2000"
-  seal: 'dod' | 'don' | 'none';
+  seal: 'dod' | 'dod-color' | 'don' | 'none'; // dod = manual letterhead blue; dod-color = full-color vector
   replyRefPrinted: boolean; // "in reply refer to" printed on the letterhead?
   // on = render letterhead; off = plain paper (content to top margin);
   // preprinted = don't print it but RESERVE its space (for pre-printed letterhead stock).

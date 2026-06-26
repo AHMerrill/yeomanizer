@@ -152,4 +152,15 @@ describe('Editor ↔ preview integration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Print letterhead' }));
     expect(previewText()).toContain('DEPARTMENT OF THE NAVY'); // back on
   });
+
+  it('the Seal style choice swaps the letterhead seal image', () => {
+    render(<App />);
+    const sealSrc = () =>
+      document.querySelector('.paper-backdrop img.seal')?.getAttribute('src') ?? null;
+    expect(sealSrc()).toBe('/dod-seal.png'); // default: manual letterhead blue
+    fireEvent.change(screen.getByLabelText('Seal'), { target: { value: 'dod-color' } });
+    expect(sealSrc()).toBe('/dod-seal.svg'); // full-color vector
+    fireEvent.change(screen.getByLabelText('Seal'), { target: { value: 'none' } });
+    expect(sealSrc()).toBeNull(); // no seal
+  });
 });

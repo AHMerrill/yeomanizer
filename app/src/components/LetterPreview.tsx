@@ -49,10 +49,17 @@ function ParaFlow({ fp, portion }: { fp: FlatPara; portion: boolean }) {
 
 function Letterhead({ state }: { state: LetterState }) {
   const lh = state.letterhead;
-  // The actual letterhead seal as printed in SECNAV M-5216.5 Fig 7-1 (the real DoD seal in
-  // letterhead blue), extracted from the manual — downloaded, not recolored or redrawn.
+  // Seal options (all authentic, downloaded — never recolored/redrawn):
+  //   dod       = the letterhead seal as printed in SECNAV M-5216.5 Fig 7-1 (DoD seal, blue)
+  //   dod-color = the official full-color DoD seal vector (razor-sharp, full color)
   const sealSrc =
-    lh.seal === 'dod' ? '/dod-seal.png' : lh.seal === 'don' ? '/don-seal.svg' : null;
+    lh.seal === 'dod'
+      ? '/dod-seal.png'
+      : lh.seal === 'dod-color'
+        ? '/dod-seal.svg'
+        : lh.seal === 'don'
+          ? '/don-seal.svg'
+          : null;
   return (
     <>
       {sealSrc && <img className="seal" src={sealSrc} alt="" />}
