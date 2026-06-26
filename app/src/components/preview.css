@@ -357,6 +357,14 @@
   color: #888;
   margin-top: 8px;
 }
+/* Enclosure marking — "Enclosure (n)" in the lower-right corner (§7). */
+.encl-mark {
+  position: absolute;
+  bottom: 1in;
+  right: 1in;
+  font-size: 12pt;
+  color: #000;
+}
 
 /* ---- Print: each .page is one sheet; banners are per-page (absolute) ---- */
 @media print {

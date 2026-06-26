@@ -285,6 +285,8 @@ function EnclosurePage({ encl, index }: { encl: EnclosureEntry; index: number })
           <div className="encl-page-sub">PDF attached — page rendering in the preview is coming.</div>
         </div>
       )}
+      {/* §7: enclosure marking, "Enclosure (n)", lower-right corner of each page. */}
+      <div className="encl-mark">Enclosure ({index})</div>
     </div>
   );
 }
