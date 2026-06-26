@@ -8,6 +8,10 @@ import {
   UnderlineType,
   Header,
   Footer,
+  ImageRun,
+  HorizontalPositionRelativeFrom,
+  VerticalPositionRelativeFrom,
+  TextWrappingType,
 } from 'docx';
 import type { LetterState, Paragraph as P } from '../types';
 import {
@@ -52,6 +56,52 @@ const center = (text: string, size: number) =>
 
 const spacer = (after = 120) => new Paragraph({ children: [R('')], spacing: { after } });
 
+const EMU = 914400; // EMUs per inch (floating-image offsets)
+
+// Floating seal at the top-left — matches the preview's 1-inch seal at 0.62in / 0.5in.
+function sealRun(bytes: ArrayBuffer | Uint8Array): ImageRun {
+  return new ImageRun({
+    type: 'png',
+    data: bytes,
+    transformation: { width: 96, height: 96 }, // 1 inch @ 96 DPI
+    floating: {
+      horizontalPosition: {
+        relative: HorizontalPositionRelativeFrom.PAGE,
+        offset: Math.round(0.62 * EMU),
+      },
+      verticalPosition: { relative: VerticalPositionRelativeFrom.PAGE, offset: Math.round(0.5 * EMU) },
+      wrap: { type: TextWrappingType.NONE },
+      allowOverlap: true,
+    },
+  });
+}
+
+// Fetch the chosen seal as PNG bytes (rasterizing the SVG seals via canvas) for embedding.
+export async function loadSealBytes(state: LetterState): Promise<ArrayBuffer | undefined> {
+  const lh = state.letterhead;
+  if (lh.mode !== 'on' || lh.seal === 'none') return undefined;
+  const src =
+    lh.seal === 'dod' ? '/dod-seal.png' : lh.seal === 'dod-color' ? '/dod-seal.svg' : '/don-seal.svg';
+  try {
+    if (src.endsWith('.png')) return await (await fetch(src)).arrayBuffer();
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise<void>((res, rej) => {
+      img.onload = () => res();
+      img.onerror = () => rej(new Error('seal load failed'));
+      img.src = src;
+    });
+    const c = document.createElement('canvas');
+    c.width = 300;
+    c.height = 300;
+    c.getContext('2d')?.drawImage(img, 0, 0, 300, 300);
+    const blob = await new Promise<Blob | null>((res) => c.toBlob(res, 'image/png'));
+    return blob ? await blob.arrayBuffer() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function flattenBody(list: P[], depth: number, out: Paragraph[], portionActive: boolean): void {
   list.forEach((p, i) => {
     const m = paragraphMarker(depth, i);
@@ -73,7 +123,11 @@ function flattenBody(list: P[], depth: number, out: Paragraph[], portionActive: 
 }
 
 // Assemble the Word document (pure — no DOM), so it can be unit-tested without a browser.
-export function buildDocxDocument(state: LetterState, today: Date = new Date()): Document {
+export function buildDocxDocument(
+  state: LetterState,
+  today: Date = new Date(),
+  sealBytes?: ArrayBuffer | Uint8Array,
+): Document {
   const ident = buildIdent(state, today);
   const lh = state.letterhead;
   const cui = state.cui;
@@ -83,7 +137,16 @@ export function buildDocxDocument(state: LetterState, today: Date = new Date()):
 
   // Letterhead: on = print it (text only in v1); preprinted = reserve blank lines; off = none.
   if (lh.mode === 'on') {
-    children.push(center(lh.line1, 22));
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          ...(sealBytes ? [sealRun(sealBytes)] : []),
+          R(lh.line1, { bold: true, size: 22, color: NAVY }),
+        ],
+        spacing: { after: 0 },
+      }),
+    );
     if (lh.activityName) children.push(center(lh.activityName, 15));
     if (lh.addressLine) children.push(center(lh.addressLine, 15));
     if (lh.cityStateZip) children.push(center(lh.cityStateZip, 15));
@@ -102,12 +165,16 @@ export function buildDocxDocument(state: LetterState, today: Date = new Date()):
       new Paragraph({ children: [R('MEMORANDUM')], spacing: { before: BLANK, after: BLANK } }),
     );
   } else {
-    const identIndent = Math.round(3.55 * IN);
+    // SSIC / code / date block sits at the top-right (matches the preview's right-aligned ident).
     [ident.ssic, ident.codeLine, ident.date]
       .filter(Boolean)
       .forEach((line) =>
         children.push(
-          new Paragraph({ children: [R(line)], indent: { left: identIndent }, spacing: { after: 0 } }),
+          new Paragraph({
+            alignment: AlignmentType.RIGHT,
+            children: [R(line)],
+            spacing: { after: 0 },
+          }),
         ),
       );
     children.push(spacer());
@@ -251,7 +318,7 @@ export function buildDocxDocument(state: LetterState, today: Date = new Date()):
     sections: [
       {
         properties: {
-          page: { margin: { top: IN, right: IN, bottom: IN, left: IN } },
+          page: { margin: { top: Math.round(0.5 * IN), right: IN, bottom: IN, left: IN } },
           titlePage: cui.enabled,
         },
         headers,
@@ -264,7 +331,8 @@ export function buildDocxDocument(state: LetterState, today: Date = new Date()):
 
 // Build the .docx and trigger a browser download.
 export async function exportDocx(state: LetterState, today: Date = new Date()): Promise<void> {
-  const blob = await Packer.toBlob(buildDocxDocument(state, today));
+  const sealBytes = await loadSealBytes(state);
+  const blob = await Packer.toBlob(buildDocxDocument(state, today, sealBytes));
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

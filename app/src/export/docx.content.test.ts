@@ -29,6 +29,23 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('unique body sentence here');
   });
 
+  it('embeds the seal as a media image when seal bytes are provided', async () => {
+    // a 1x1 PNG stands in for the seal
+    const png =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    const bytes = new Uint8Array(Buffer.from(png, 'base64'));
+    const buf = await Packer.toBuffer(
+      buildDocxDocument({ ...defaultState, from: 'CO, USS Test' }, new Date(2006, 8, 7), bytes),
+    );
+    const zip = await JSZip.loadAsync(buf);
+    expect(Object.keys(zip.files).some((f) => f.startsWith('word/media/'))).toBe(true);
+  });
+
+  it('right-aligns the SSIC/date ident block (top-right, like the preview)', async () => {
+    const xml = await docxText({ from: 'CO', ssic: '5216', includeSsic: true });
+    expect(xml).toContain('w:val="right"'); // ident lines are right-aligned, not left-indented
+  });
+
   it('a memorandum carries MEMORANDUM and omits the SSIC (§10-2)', async () => {
     const xml = await docxText({ type: 'memo-from-to', ssic: '9999', subj: 'memo subject' });
     expect(xml).toContain('MEMORANDUM');

@@ -130,7 +130,6 @@
   color: #cfd3dc;
 }
 .jump-menu {
-  display: none;
   position: absolute;
   top: 100%;
   left: 0;
@@ -144,10 +143,6 @@
   border-radius: 8px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
   z-index: 20;
-}
-.jump:hover .jump-menu,
-.jump:focus-within .jump-menu {
-  display: block;
 }
 .jump-item {
   display: block;
@@ -332,6 +327,7 @@
   border: 1px solid #2f323b;
   border-radius: 10px;
   padding: 12px 13px;
+  scroll-margin-top: 56px; /* clear the sticky "Jump to a section" bar when jumped to */
 }
 .card h2 {
   margin: 0 0 6px;

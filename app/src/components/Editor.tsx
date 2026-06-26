@@ -38,6 +38,7 @@ function Card({ title, hint, children }: { title: string; hint?: string; childre
 // e.g. the correspondence type) so the list always matches what's on screen.
 function JumpNav({ dep }: { dep: unknown }) {
   const [sections, setSections] = useState<{ id: string; title: string }[]>([]);
+  const [open, setOpen] = useState(false);
   useLayoutEffect(() => {
     setSections(
       [...document.querySelectorAll<HTMLElement>('.editor .card')].map((c) => ({
@@ -47,25 +48,28 @@ function JumpNav({ dep }: { dep: unknown }) {
     );
   }, [dep]);
   return (
-    <div className="jump">
-      <button type="button" className="jump-btn" aria-haspopup="menu">
+    <div className="jump" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button type="button" className="jump-btn" aria-haspopup="menu" aria-expanded={open}>
         Jump to a section ▾
       </button>
-      <div className="jump-menu" role="menu">
-        {sections.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            role="menuitem"
-            className="jump-item"
-            onClick={() =>
-              document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }
-          >
-            {s.title}
-          </button>
-        ))}
-      </div>
+      {open && (
+        <div className="jump-menu" role="menu">
+          {sections.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              role="menuitem"
+              className="jump-item"
+              onClick={() => {
+                document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setOpen(false); // collapse on select; re-opens on hover
+              }}
+            >
+              {s.title}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
