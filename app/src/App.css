@@ -1,0 +1,319 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 0;
+}
+
+/* ---- Toolbar ---- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #15161a;
+  border-bottom: 1px solid #2c2e36;
+  flex: 0 0 auto;
+}
+.brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.12;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.3px;
+}
+.brand-sub {
+  font-weight: 400;
+  color: #8a8f9c;
+  font-size: 11px;
+  letter-spacing: 0.2px;
+}
+.grow {
+  flex: 1;
+}
+.toolbar button {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1px solid #3a3d47;
+  background: #25272f;
+  color: #e7e7ea;
+  cursor: pointer;
+}
+.toolbar button:hover {
+  background: #2d3039;
+}
+.toolbar button.primary {
+  background: #2f6df0;
+  border-color: #2f6df0;
+  color: #fff;
+  font-weight: 600;
+}
+.toolbar button.primary:hover {
+  background: #2a61d6;
+}
+
+/* ---- Disclaimer banner (top) ---- */
+.disclaimer {
+  flex: 0 0 auto;
+  background: #3a2a12;
+  color: #f0d9a8;
+  border-bottom: 1px solid #5a4420;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 7px 16px;
+  text-align: center;
+}
+.disclaimer strong {
+  color: #ffd27a;
+}
+
+/* ---- Footer ---- */
+.footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 16px;
+  background: #15161a;
+  border-top: 1px solid #2c2e36;
+  font-size: 12px;
+  color: #8a8f9c;
+}
+.footer a {
+  color: #6aa0ff;
+  text-decoration: none;
+}
+.footer a:hover {
+  text-decoration: underline;
+}
+.foot-mid {
+  color: #6f757f;
+}
+.foot-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Panes ---- */
+.panes {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.editor-pane {
+  flex: 0 0 440px;
+  max-width: 440px;
+  overflow-y: auto;
+  background: #1b1c21;
+  border-right: 1px solid #2c2e36;
+  padding: 14px;
+}
+
+/* ---- Editor cards ---- */
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.card {
+  background: #23252c;
+  border: 1px solid #2f323b;
+  border-radius: 10px;
+  padding: 12px 13px;
+}
+.card h2 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #aab0bd;
+}
+.card .hint {
+  margin: 0 0 9px;
+  font-size: 11.5px;
+  color: #7d8290;
+  line-height: 1.35;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+.field:last-child {
+  margin-bottom: 0;
+}
+.field-label,
+.sub-label {
+  font-size: 11px;
+  color: #8a8f9c;
+  font-weight: 600;
+}
+.sub-label {
+  margin: 4px 0 5px;
+}
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: #cfd3dc;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+.check input {
+  width: auto;
+  margin-top: 2px;
+}
+
+/* Pill toggles */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.pill {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid #3a3d47;
+  background: #1c1d22;
+  color: #9aa0ad;
+  cursor: pointer;
+}
+.pill:hover {
+  border-color: #4a566e;
+}
+.pill.on {
+  background: #2f6df0;
+  border-color: #2f6df0;
+  color: #fff;
+}
+.editor input,
+.editor textarea,
+.editor select {
+  font: inherit;
+  font-size: 13px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 6px;
+  border: 1px solid #383b45;
+  background: #16171b;
+  color: #f0f0f3;
+  resize: vertical;
+}
+.editor input:focus,
+.editor textarea:focus,
+.editor select:focus {
+  outline: none;
+  border-color: #2f6df0;
+}
+
+/* ---- Entry lists (via/refs/encls) ---- */
+.entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.entry-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.entry-idx {
+  flex: 0 0 18px;
+  text-align: center;
+  font-size: 11px;
+  color: #7d8290;
+}
+.entry-row input {
+  flex: 1;
+}
+.entry-row button,
+.para-btns button {
+  flex: 0 0 auto;
+  font-size: 12px;
+  line-height: 1;
+  padding: 6px 7px;
+  border-radius: 5px;
+  border: 1px solid #383b45;
+  background: #2a2d36;
+  color: #cfd3dc;
+  cursor: pointer;
+}
+.entry-row button:hover,
+.para-btns button:hover {
+  background: #343843;
+}
+.entry-row button:disabled,
+.para-btns button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.add-btn {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 11px;
+  border-radius: 6px;
+  border: 1px dashed #454956;
+  background: transparent;
+  color: #9aa0ad;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.add-btn:hover {
+  background: #25272f;
+  color: #d6dae2;
+}
+
+/* ---- Paragraph tree ---- */
+.para-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-left: 2px solid #2f323b;
+  padding-left: 8px;
+}
+.para-node {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.para-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.para-marker {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  color: #2f9be0;
+  min-width: 30px;
+}
+.para-btns {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+/* ---- Print ---- */
+@media print {
+  .toolbar,
+  .editor-pane {
+    display: none !important;
+  }
+  .app,
+  .panes {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+}

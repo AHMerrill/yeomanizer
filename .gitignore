@@ -1,0 +1,16 @@
+# Reference material — NEVER commit. Contains the copyrighted correspondence manual,
+# extracted text, seals, and PERSONAL example documents with PII (e.g. NATO orders).
+research/
+*.pdf
+
+# Dependencies & build output
+node_modules/
+app/node_modules/
+app/dist/
+dist/
+
+# Local tooling / OS cruft
+.claude/
+.DS_Store
+*.log
+npm-debug.log*

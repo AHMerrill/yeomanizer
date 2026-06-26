@@ -1,0 +1,70 @@
+import type { LetterState } from './types';
+
+let _id = 0;
+export const uid = (): string => `n${++_id}_${Math.round(performance.now() * 1000) % 100000}`;
+
+export const defaultState: LetterState = {
+  type: 'standard-letter',
+  letterhead: {
+    line1: 'DEPARTMENT OF THE NAVY',
+    activityName: '',
+    addressLine: '',
+    cityStateZip: '',
+    seal: 'dod',
+    replyRefPrinted: false,
+    mode: 'on',
+  },
+  ssic: '',
+  originatorCode: '',
+  serial: '',
+  includeSsic: true,
+  includeCode: true,
+  dateMode: 'auto',
+  dateManual: '',
+  from: '',
+  to: '',
+  via: [],
+  subj: '',
+  refs: [{ id: uid(), text: 'SECNAV M-5216.5 of June 2015' }],
+  encls: [{ id: uid(), text: 'Sample Enclosure Title' }],
+  body: [
+    {
+      id: uid(),
+      text: 'This letter was produced by the yeomanizer, which renders correspondence to the standard letter format prescribed by reference (a). Whatever you type on the left appears, correctly formatted, on the right.',
+      children: [],
+    },
+    {
+      id: uid(),
+      text: 'The format engine handles the mechanical details automatically.',
+      children: [
+        {
+          id: uid(),
+          text: 'Paragraph numbering, indentation, and the heading block follow the manual exactly.',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'Continuation lines return to the left margin, as required by paragraph 7-2.13.',
+          children: [],
+        },
+      ],
+    },
+    {
+      id: uid(),
+      text: 'Point of contact is the originating office.',
+      children: [],
+    },
+  ],
+  signature: { name: '', title: '', authority: 'none' },
+  copyTo: [],
+  cui: {
+    enabled: false,
+    banner: 'CUI',
+    controlledBy1: 'Department of the Navy',
+    controlledBy2: '',
+    category: 'PRVCY',
+    dissemination: 'FEDCON',
+    poc: '',
+    portionMarkings: false,
+  },
+};

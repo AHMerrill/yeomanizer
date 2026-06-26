@@ -1,0 +1,231 @@
+/* ============================================================
+   Pixel-accurate naval letter (SECNAV M-5216.5). All sizes in
+   real-world units so print == screen. Tunable via the CSS vars
+   on .page — "the look is the result."
+   ============================================================ */
+
+.paper-backdrop {
+  flex: 1;
+  min-width: 0;
+  background: #525659;
+  overflow: auto;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.page {
+  /* --- tunables --- */
+  --label-col: 0.52in;   /* width of From:/To:/Subj: label column */
+  --marker-col: 0.34in;  /* width of (a)/(1) marker column in lists */
+  --para-gap: 11.5pt;    /* one blank line between blocks */
+  --navy: #002c77;
+
+  position: relative;
+  width: 8.5in;
+  height: 11in;
+  overflow: hidden;
+  flex: 0 0 auto;
+  padding: 0.5in 1in 1in 1in;
+  box-sizing: border-box;
+  background: #fff;
+  color: #000;
+  font-family: 'Times New Roman', 'Liberation Serif', Times, serif;
+  font-size: 12pt;
+  line-height: 1.14;
+  box-shadow: 0 3px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* Continuation pages: repeated Subj starts at the 1-inch top margin (7-2.16). */
+.page.cont {
+  padding-top: 1in;
+}
+
+/* Page number — centered, 1/2 inch from the bottom, starting at 2 (7-2.17). */
+.page-number {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.5in;
+  text-align: center;
+  font-size: 12pt;
+}
+
+/* Hidden measurer used to compute page breaks. */
+.measurer {
+  position: absolute;
+  left: -100000px;
+  top: 0;
+  visibility: hidden;
+  height: auto !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+.measurer [data-m] {
+  display: flow-root; /* contain child margins so offsetHeight = full advance */
+}
+
+/* DoD seal, ~1in dia, upper-left */
+.seal {
+  position: absolute;
+  top: 0.5in;
+  left: 0.62in;
+  width: 1in;
+  height: 1in;
+  object-fit: contain;
+}
+
+/* Reserve the letterhead's vertical space when printing on pre-printed stock
+   (no ink, but the SSIC/date/body start below where the physical letterhead sits). */
+.lh-spacer {
+  height: 0.9in;
+}
+
+/* Letterhead — centered, navy blue */
+.letterhead {
+  text-align: center;
+  color: var(--navy);
+  line-height: 1.04;
+  min-height: 0.86in;
+}
+.lh-dept {
+  font-size: 11pt;
+  font-weight: 700;
+}
+.lh-sub {
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+}
+
+/* Identification block (SSIC / code / date) — right side, left-aligned within */
+.ident {
+  width: max-content;
+  margin-left: auto; /* right-align so the longest line ends near the right margin (7-2.3) */
+  margin-top: 0.16in;
+}
+.ident.no-letterhead {
+  margin-top: 0.5in; /* ~1in from the top of the page when no letterhead is printed */
+}
+
+/* Faint, screen-only placeholder for a blank required field (omitted from print/export). */
+.ph {
+  color: #b3b3b3;
+}
+@media print {
+  .ph {
+    display: none;
+  }
+}
+
+/* Heading block */
+.headings {
+  margin-top: 0.3in;
+}
+
+/* Memorandum: "MEMORANDUM" at the left margin, one blank line above and below (fig 10-3) */
+.memo-title {
+  margin: var(--para-gap) 0;
+}
+.headings.memo {
+  margin-top: 0;
+}
+.hrow {
+  display: grid;
+  grid-template-columns: var(--label-col) 1fr;
+  align-items: start;
+}
+.hrow.h-gap {
+  margin-top: var(--para-gap);
+}
+.subj {
+  text-transform: uppercase;
+}
+.hlist {
+  display: block;
+}
+.hitem {
+  display: grid;
+  grid-template-columns: var(--marker-col) 1fr;
+}
+
+/* Body paragraphs */
+.body {
+  margin-top: var(--para-gap);
+}
+.para {
+  margin: 0 0 var(--para-gap) 0;
+}
+.pgap {
+  display: inline-block;
+  width: 0.09in;
+}
+.pmark u {
+  text-decoration: underline;
+}
+
+/* Signature — left edge at the horizontal center of the page */
+.signature {
+  margin-top: calc(var(--para-gap) * 2.6);
+  margin-left: 3.25in;
+}
+
+/* Copy to */
+.copyto {
+  margin-top: var(--para-gap);
+}
+
+/* ---- CUI markings (DoDI 5200.48 / ISOO handbook / DON PII guidance) ----
+   Banner top & bottom of every page; designation indicator block on the
+   first page, lower-right. Bold, capitalized, centered, black, 12pt. */
+.cui-banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-weight: 700;
+  font-size: 12pt;
+  letter-spacing: 0.5px;
+  color: #000;
+}
+.cui-top {
+  top: 0.22in;
+}
+.cui-bottom {
+  bottom: 0.22in;
+}
+.cui-designation {
+  position: absolute;
+  right: 1in;
+  bottom: 0.46in;
+  font-size: 8pt;
+  line-height: 1.3;
+  text-align: left;
+}
+
+/* ---- Print: each .page is one sheet; banners are per-page (absolute) ---- */
+@media print {
+  .paper-backdrop {
+    padding: 0;
+    background: #fff;
+    overflow: visible;
+    gap: 0;
+  }
+  .page {
+    box-shadow: none;
+    margin: 0;
+    break-after: page;
+  }
+  .page:last-of-type {
+    break-after: auto;
+  }
+  .measurer {
+    display: none !important;
+  }
+  @page {
+    size: letter;
+    margin: 0;
+  }
+}

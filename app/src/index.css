@@ -1,0 +1,21 @@
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+}
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #1e1f22;
+  color: #e7e7ea;
+  -webkit-font-smoothing: antialiased;
+}
+#root {
+  display: flex;
+  flex-direction: column;
+}
