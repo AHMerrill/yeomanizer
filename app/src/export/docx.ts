@@ -175,7 +175,7 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
       `Controlled by: ${cui.controlledBy1}`,
       cui.controlledBy2 ? `Controlled by: ${cui.controlledBy2}` : '',
       `CUI Category: ${cui.category}`,
-      `Distribution/Dissemination Control: ${cui.dissemination}`,
+      `Limited Dissemination Control: ${cui.dissemination}`,
       cui.poc ? `POC: ${cui.poc}` : '',
     ]
       .filter(Boolean)

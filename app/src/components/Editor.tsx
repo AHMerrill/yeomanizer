@@ -627,7 +627,7 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
                 ))}
               </select>
             </Field>
-            <Field label="Distribution / Dissemination">
+            <Field label="Limited Dissemination Control">
               <input
                 value={state.cui.dissemination}
                 placeholder="FEDCON"

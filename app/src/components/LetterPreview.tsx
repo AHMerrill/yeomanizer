@@ -216,7 +216,7 @@ function Designation({ cui }: { cui: LetterState['cui'] }) {
       <div>Controlled by: {cui.controlledBy1}</div>
       {cui.controlledBy2 && <div>Controlled by: {cui.controlledBy2}</div>}
       <div>CUI Category: {cui.category}</div>
-      <div>Distribution/Dissemination Control: {cui.dissemination}</div>
+      <div>Limited Dissemination Control: {cui.dissemination}</div>
       {cui.poc && <div>POC: {cui.poc}</div>}
     </div>
   );
