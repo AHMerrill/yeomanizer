@@ -3,6 +3,7 @@ import { defaultState } from './defaultState';
 import type { LetterState } from './types';
 import { Editor } from './components/Editor';
 import { LetterPreview } from './components/LetterPreview';
+import { About } from './components/About';
 import { printLetter } from './export/print';
 import { exportDocx } from './export/docx';
 import { getDownloadCount, recordDownload } from './api/counter';
@@ -11,6 +12,7 @@ import './App.css';
 export default function App() {
   const [state, setState] = useState<LetterState>(defaultState);
   const [downloads, setDownloads] = useState<number | null>(null);
+  const [view, setView] = useState<'editor' | 'about'>('editor');
 
   useEffect(() => {
     getDownloadCount().then(setDownloads);
@@ -49,28 +51,44 @@ export default function App() {
           the&nbsp;yeomanizer
           <span className="brand-sub">naval correspondence, formatted</span>
         </div>
+        <nav className="tabs">
+          <button className={view === 'editor' ? 'tab on' : 'tab'} onClick={() => setView('editor')}>
+            Editor
+          </button>
+          <button className={view === 'about' ? 'tab on' : 'tab'} onClick={() => setView('about')}>
+            Features
+          </button>
+        </nav>
         <div className="grow" />
-        {state.type !== 'nato' && <button onClick={() => void onDocx()}>Export .docx</button>}
-        <button className="primary" onClick={onPrint}>
-          Print / Save PDF
-        </button>
+        {view === 'editor' && state.type !== 'nato' && (
+          <button onClick={() => void onDocx()}>Export .docx</button>
+        )}
+        {view === 'editor' && (
+          <button className="primary" onClick={onPrint}>
+            Print / Save PDF
+          </button>
+        )}
       </header>
 
-      <main className="panes">
-        {/* autoComplete + spellCheck off so the browser never stores or transmits entries
-            (e.g. autofill history, Chrome Enhanced Spellcheck). */}
-        <form
-          className="editor-pane"
-          autoComplete="off"
-          spellCheck={false}
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <Editor state={state} setState={setState} />
-        </form>
-        <div className="paper-backdrop">
-          <LetterPreview state={state} />
-        </div>
-      </main>
+      {view === 'editor' ? (
+        <main className="panes">
+          {/* autoComplete + spellCheck off so the browser never stores or transmits entries
+              (e.g. autofill history, Chrome Enhanced Spellcheck). */}
+          <form
+            className="editor-pane"
+            autoComplete="off"
+            spellCheck={false}
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <Editor state={state} setState={setState} />
+          </form>
+          <div className="paper-backdrop">
+            <LetterPreview state={state} />
+          </div>
+        </main>
+      ) : (
+        <About />
+      )}
 
       <footer className="footer">
         <span>

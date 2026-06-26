@@ -55,6 +55,129 @@
   background: #2a61d6;
 }
 
+/* Tabs (Editor / Features) */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-left: 18px;
+}
+.tab {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #9aa0ad;
+  cursor: pointer;
+}
+.tab:hover {
+  color: #e7e7ea;
+  background: #25272f;
+}
+.tab.on {
+  color: #fff;
+  background: #2a2d36;
+  border-color: #3a3d47;
+}
+
+/* ---- About / Features page ---- */
+.about {
+  flex: 1;
+  overflow-y: auto;
+  background: #1b1c21;
+  padding: 36px 24px 60px;
+}
+.about-inner {
+  max-width: 940px;
+  margin: 0 auto;
+}
+.about h1 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: 0.3px;
+}
+.about-lede {
+  margin: 10px 0 28px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #aab0bd;
+  max-width: 680px;
+}
+.about-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+}
+@media (max-width: 760px) {
+  .about-cols {
+    grid-template-columns: 1fr;
+  }
+}
+.about-col h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #8a8f9c;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #2c2e36;
+}
+.feat {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.feat li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 22px;
+  position: relative;
+}
+.feat li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: 1px;
+  color: #3da35d;
+  font-weight: 700;
+}
+.feat.planned li::before {
+  content: '◷';
+  color: #c79a3a;
+}
+.feat strong {
+  font-size: 14px;
+  color: #e7e7ea;
+  font-weight: 600;
+}
+.feat span {
+  font-size: 12.5px;
+  color: #8a8f9c;
+  line-height: 1.42;
+}
+.about-suggest {
+  margin-top: 34px;
+  padding: 16px 18px;
+  border: 1px solid #2c2e36;
+  border-radius: 10px;
+  background: #23252c;
+  font-size: 14px;
+  color: #cfd3dc;
+}
+.about-suggest a {
+  color: #6aa0ff;
+  text-decoration: none;
+  font-weight: 600;
+}
+.about-suggest a:hover {
+  text-decoration: underline;
+}
+
 /* ---- Disclaimer banner (top) ---- */
 .disclaimer {
   flex: 0 0 auto;
