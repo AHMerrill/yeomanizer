@@ -25,7 +25,14 @@ Because there is no central store, there is nothing to breach, scrape, or collec
 
     cd app
     npm install
-    npm run dev
+    npm run dev       # local dev server (Vite)
+    npm test          # run the test suite (vitest)
+    npm run lint      # static analysis (oxlint)
+
+The tests cover the format engine (the fig 7-8 paragraph ladder, reference
+and date formatting, paragraph-tree edits, US→NATO rank mapping), the
+PDF/Word export assembly, the content-free download counter (including a
+guard that it never sends a payload), and the editor↔preview React wiring.
 
 ## Build & deploy (Cloudflare Pages)
 
