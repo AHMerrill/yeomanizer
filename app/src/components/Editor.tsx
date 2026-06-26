@@ -181,6 +181,79 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
         </select>
       </Card>
 
+      <Card
+        title="CUI Marking"
+        hint="Controlled Unclassified Information. The banner prints at the very top (and bottom) of every page, so it lives here near the top. Per DON guidance, PII uses a plain 'CUI' banner. Sourced from DoDI 5200.48 + the ISOO handbook + DON PII guidance."
+      >
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={state.cui.enabled}
+            onChange={(e) => patchCui({ enabled: e.target.checked })}
+          />
+          This document contains CUI (marks "CUI" top &amp; bottom of every page)
+        </label>
+        {state.cui.enabled && (
+          <>
+            <Field label="Banner text">
+              <input
+                value={state.cui.banner}
+                placeholder="CUI"
+                onChange={(e) => patchCui({ banner: e.target.value })}
+              />
+            </Field>
+            <div className="sub-label">Designation indicator block (first page, lower-right)</div>
+            <Field label="Controlled by">
+              <input
+                value={state.cui.controlledBy1}
+                onChange={(e) => patchCui({ controlledBy1: e.target.value })}
+              />
+            </Field>
+            <Field label="Controlled by (your office)">
+              <input
+                value={state.cui.controlledBy2}
+                placeholder="e.g. OJAG Code 13"
+                onChange={(e) => patchCui({ controlledBy2: e.target.value })}
+              />
+            </Field>
+            <Field label="CUI Category">
+              <select
+                value={state.cui.category}
+                onChange={(e) => patchCui({ category: e.target.value })}
+              >
+                {CUI_CATEGORIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} — {c.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Limited Dissemination Control">
+              <input
+                value={state.cui.dissemination}
+                placeholder="FEDCON"
+                onChange={(e) => patchCui({ dissemination: e.target.value })}
+              />
+            </Field>
+            <Field label="POC">
+              <input
+                value={state.cui.poc}
+                placeholder="CDR Jane Doe, jane.doe@navy.mil, 703-555-5555"
+                onChange={(e) => patchCui({ poc: e.target.value })}
+              />
+            </Field>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={state.cui.portionMarkings}
+                onChange={(e) => patchCui({ portionMarkings: e.target.checked })}
+              />
+              Add (CUI) portion markings (optional; DON recommends against for PII)
+            </label>
+          </>
+        )}
+      </Card>
+
       {state.type === 'endorsement' && (
         <Card
           title="Endorsement"
@@ -607,79 +680,6 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
       )}
         </>
       )}
-
-      <Card
-        title="CUI Marking"
-        hint="Controlled Unclassified Information. Per DON guidance, PII uses a plain 'CUI' banner — no 'CUI-Privacy' modifiers. Sourced from DoDI 5200.48 + the ISOO handbook + DON PII guidance."
-      >
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={state.cui.enabled}
-            onChange={(e) => patchCui({ enabled: e.target.checked })}
-          />
-          This document contains CUI (marks "CUI" top &amp; bottom of every page)
-        </label>
-        {state.cui.enabled && (
-          <>
-            <Field label="Banner text">
-              <input
-                value={state.cui.banner}
-                placeholder="CUI"
-                onChange={(e) => patchCui({ banner: e.target.value })}
-              />
-            </Field>
-            <div className="sub-label">Designation indicator block (first page, lower-right)</div>
-            <Field label="Controlled by">
-              <input
-                value={state.cui.controlledBy1}
-                onChange={(e) => patchCui({ controlledBy1: e.target.value })}
-              />
-            </Field>
-            <Field label="Controlled by (your office)">
-              <input
-                value={state.cui.controlledBy2}
-                placeholder="e.g. OJAG Code 13"
-                onChange={(e) => patchCui({ controlledBy2: e.target.value })}
-              />
-            </Field>
-            <Field label="CUI Category">
-              <select
-                value={state.cui.category}
-                onChange={(e) => patchCui({ category: e.target.value })}
-              >
-                {CUI_CATEGORIES.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code} — {c.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Limited Dissemination Control">
-              <input
-                value={state.cui.dissemination}
-                placeholder="FEDCON"
-                onChange={(e) => patchCui({ dissemination: e.target.value })}
-              />
-            </Field>
-            <Field label="POC">
-              <input
-                value={state.cui.poc}
-                placeholder="CDR Jane Doe, jane.doe@navy.mil, 703-555-5555"
-                onChange={(e) => patchCui({ poc: e.target.value })}
-              />
-            </Field>
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={state.cui.portionMarkings}
-                onChange={(e) => patchCui({ portionMarkings: e.target.checked })}
-              />
-              Add (CUI) portion markings (optional; DON recommends against for PII)
-            </label>
-          </>
-        )}
-      </Card>
     </div>
   );
 }

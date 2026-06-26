@@ -51,7 +51,7 @@ describe('Editor ↔ preview integration', () => {
   it('the Features tab swaps the editor/preview for the features page', () => {
     render(<App />);
     expect(document.querySelector('.paper-backdrop')).not.toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Features' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Features' }));
     expect(screen.getByText('Available now')).toBeTruthy();
     expect(document.querySelector('.paper-backdrop')).toBeNull();
   });
