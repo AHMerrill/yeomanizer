@@ -643,10 +643,18 @@
   .footer {
     display: none !important;
   }
+  /* Reset the full-height/flex app chrome so print height is just the pages —
+     html/body/#root height:100% (for the on-screen layout) otherwise forces an
+     extra blank trailing page. */
+  html,
+  body,
+  #root,
   .app,
-  .panes {
-    display: block;
-    height: auto;
-    overflow: visible;
+  .panes,
+  .paper-backdrop {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 }
