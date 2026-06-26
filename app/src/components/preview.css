@@ -336,6 +336,28 @@
   text-align: left;
 }
 
+/* In-document enclosure sheet (appended page) */
+.enclosure-sheet {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.encl-page-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.encl-page-note {
+  text-align: center;
+  color: #444;
+  font-size: 13pt;
+}
+.encl-page-sub {
+  font-size: 10pt;
+  color: #888;
+  margin-top: 8px;
+}
+
 /* ---- Print: each .page is one sheet; banners are per-page (absolute) ---- */
 @media print {
   .paper-backdrop {

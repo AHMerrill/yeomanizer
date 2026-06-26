@@ -485,6 +485,55 @@
   color: #7d8290;
 }
 
+/* Enclosure cards */
+.encl-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.encl-card {
+  border: 1px solid #2f323b;
+  border-radius: 8px;
+  padding: 10px;
+}
+.encl-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border: 1px solid #383b45;
+  border-radius: 6px;
+  background: #16171b;
+}
+.encl-thumb {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.encl-pdf-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: #b23b3b;
+  padding: 3px 5px;
+  border-radius: 4px;
+}
+.encl-file .file-name {
+  flex: 1;
+}
+.encl-file button {
+  font-size: 12px;
+  line-height: 1;
+  padding: 5px 7px;
+  border-radius: 5px;
+  border: 1px solid #383b45;
+  background: #2a2d36;
+  color: #cfd3dc;
+  cursor: pointer;
+}
+
 /* Preview render-error fallback (keeps the editor + the user's text alive) */
 .preview-error {
   margin: 40px auto;

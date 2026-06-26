@@ -1,5 +1,5 @@
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import type { LetterState, Paragraph, EndorsementEntry } from '../types';
+import type { LetterState, Paragraph, EndorsementEntry, EnclosureEntry } from '../types';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 import { anyCui } from '../format/tree';
 import {
@@ -270,6 +270,25 @@ function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): L
   };
 }
 
+// An "Add in document" enclosure rendered as its own appended sheet (after the letter +
+// endorsements). Images render full-page; PDFs show a placeholder for now (page-by-page
+// rasterizing is a follow-up — they still merge into the CAC-signable/print export).
+function EnclosurePage({ encl, index }: { encl: EnclosureEntry; index: number }) {
+  const isImage = encl.file?.type.startsWith('image/');
+  return (
+    <div className="page enclosure-sheet">
+      {isImage ? (
+        <img className="encl-page-img" src={encl.file!.dataUrl} alt={encl.text} />
+      ) : (
+        <div className="encl-page-note">
+          Enclosure ({index}): {encl.file?.name}
+          <div className="encl-page-sub">PDF attached — page rendering in the preview is coming.</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function LetterPreview({ state }: { state: LetterState }) {
   if (state.type === 'nato') return <NatoForm state={state} />;
   return (
@@ -279,6 +298,10 @@ export function LetterPreview({ state }: { state: LetterState }) {
         state.endorsements.map((e, i) => (
           <LetterDoc key={e.id} state={endorsementState(state, e, i)} />
         ))}
+      {state.type !== 'endorsement' &&
+        state.encls.map((e, i) =>
+          e.inDocument && e.file ? <EnclosurePage key={e.id} encl={e} index={i + 1} /> : null,
+        )}
     </>
   );
 }

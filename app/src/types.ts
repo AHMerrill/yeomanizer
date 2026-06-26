@@ -44,6 +44,22 @@ export interface ListEntry {
   text: string;
 }
 
+// An attached file held in memory only (data URL) — never persisted, gone when the tab closes.
+export interface AttachedFile {
+  name: string;
+  type: string; // MIME type (image/* or application/pdf)
+  dataUrl: string;
+}
+
+// An enclosure: its title (shown in the "Encl:" line) plus, optionally, an attached file that is
+// either rendered INTO the document (appended pages) or kept separate (bundled at export time).
+export interface EnclosureEntry {
+  id: string;
+  text: string; // the enclosure title
+  inDocument?: boolean; // true = render the file into the document; false = attach separately
+  file?: AttachedFile;
+}
+
 export interface Paragraph {
   id: string;
   text: string;
@@ -104,7 +120,7 @@ export interface LetterState {
   via: ListEntry[];
   subj: string;
   refs: ListEntry[];
-  encls: ListEntry[];
+  encls: EnclosureEntry[];
 
   // Body
   body: Paragraph[];

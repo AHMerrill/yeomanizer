@@ -8,6 +8,8 @@ import type {
   CorrespondenceType,
   SignatureAuthority,
   EndorsementEntry,
+  EnclosureEntry,
+  AttachedFile,
 } from '../types';
 import { uid, syncViaEndorsements } from '../defaultState';
 import * as tree from '../format/tree';
@@ -16,7 +18,6 @@ import { ENDORSE_ORD } from '../format/identification';
 import { COMMON_SSIC } from '../data/ssic';
 import { CUI_CATEGORIES } from '../data/cui';
 import { NAVY_RANKS } from '../data/ranks';
-import { EnclosureMerge } from './EnclosureMerge';
 
 type SetState = Dispatch<SetStateAction<LetterState>>;
 
@@ -189,6 +190,131 @@ function ParaEditor({
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+// Per-enclosure cards: name it, choose embed-in-document vs attach-separately, and drag an
+// image/PDF onto it. Files are read into memory (data URL) only — never persisted.
+function EnclosureCards({
+  encls,
+  onChange,
+}: {
+  encls: EnclosureEntry[];
+  onChange: (e: EnclosureEntry[]) => void;
+}) {
+  const update = (id: string, patch: Partial<EnclosureEntry>) =>
+    onChange(encls.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  const attach = (id: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = () =>
+      update(id, { file: { name: file.name, type: file.type, dataUrl: String(reader.result) } });
+    reader.readAsDataURL(file);
+  };
+  return (
+    <div className="encl-cards">
+      {encls.map((e, i) => (
+        <div className="encl-card" key={e.id}>
+          <div className="endo-head">
+            <span>Enclosure ({i + 1})</span>
+            <button onClick={() => onChange(encls.filter((x) => x.id !== e.id))} title="Remove enclosure">
+              ✕
+            </button>
+          </div>
+          <Field label="Title">
+            <input
+              value={e.text}
+              placeholder="Enclosure title"
+              onChange={(ev) => update(e.id, { text: ev.target.value })}
+            />
+          </Field>
+          {e.text.trim() && (
+            <>
+              <div className="pills">
+                <Pill on={!e.inDocument} onClick={() => update(e.id, { inDocument: false })}>
+                  Attach separately
+                </Pill>
+                <Pill on={!!e.inDocument} onClick={() => update(e.id, { inDocument: true })}>
+                  Add in document
+                </Pill>
+              </div>
+              <FileDrop
+                file={e.file}
+                inDocument={!!e.inDocument}
+                onFile={(f) => attach(e.id, f)}
+                onClear={() => update(e.id, { file: undefined })}
+              />
+            </>
+          )}
+        </div>
+      ))}
+      <button
+        className="add-btn"
+        onClick={() => onChange([...encls, { id: uid(), text: '', inDocument: false }])}
+      >
+        + Add enclosure
+      </button>
+    </div>
+  );
+}
+
+function FileDrop({
+  file,
+  inDocument,
+  onFile,
+  onClear,
+}: {
+  file?: AttachedFile;
+  inDocument: boolean;
+  onFile: (f: File) => void;
+  onClear: () => void;
+}) {
+  const [dragging, setDragging] = useState(false);
+  const ok = (f: File) => f.type.startsWith('image/') || f.type === 'application/pdf';
+  const pick = (list: FileList | null) => {
+    const f = list && list[0];
+    if (f && ok(f)) onFile(f);
+  };
+  if (file)
+    return (
+      <div className="encl-file">
+        {file.type.startsWith('image/') ? (
+          <img src={file.dataUrl} alt="" className="encl-thumb" />
+        ) : (
+          <span className="encl-pdf-badge">PDF</span>
+        )}
+        <span className="file-name">{file.name}</span>
+        <button onClick={onClear} title="Remove file">
+          ✕
+        </button>
+      </div>
+    );
+  return (
+    <div
+      className={dragging ? 'file-drop dragging' : 'file-drop'}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragging(false);
+        pick(e.dataTransfer.files);
+      }}
+    >
+      <label className="file-btn">
+        {inDocument ? '+ Drop image/PDF to embed' : '+ Drop image/PDF to attach'}
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          onChange={(ev) => {
+            pick(ev.target.files);
+            ev.target.value = '';
+          }}
+        />
+      </label>
+      <span className="file-drop-hint">or click to choose</span>
     </div>
   );
 }
@@ -601,9 +727,11 @@ export function Editor({
         />
       </Card>
 
-      <Card title="Enclosures" hint="Numbered (1), (2)…">
-        <EntryList items={state.encls} placeholder="Enclosure title" onChange={(encls) => patch({ encls })} />
-        <EnclosureMerge />
+      <Card
+        title="Enclosures"
+        hint="Numbered (1), (2)… Name one, choose to embed its file in the document or attach it separately, then drag an image or PDF onto it."
+      >
+        <EnclosureCards encls={state.encls} onChange={(encls) => patch({ encls })} />
       </Card>
 
       <Card title="Body" hint="Add paragraphs and subparagraphs; numbering is automatic.">
