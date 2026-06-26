@@ -14,7 +14,8 @@ letter appears on the other.
 - Free, and runs entirely in your web browser. No account or login.
 - Privacy by design: nothing you type is stored or transmitted; it is erased when you close the tab.
 - Unofficial — not affiliated with or endorsed by the U.S. Navy or the Department of Defense.
-- Exports to PDF (via print) and Microsoft Word (.docx).
+- Exports to PDF (via print) and Microsoft Word (.docx), and can combine the saved letter PDF
+  with enclosure files into a single packet — all in the browser.
 - Document types: standard naval letter, memorandum (From-To), endorsements (appended to a
   letter automatically when a Via addressee is added, or built standalone), and the NATO
   travel order (the bilingual two-page form).
