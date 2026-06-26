@@ -491,15 +491,12 @@ export function Editor({ state, setState }: { state: LetterState; setState: SetS
             <option value="acting">Acting</option>
           </select>
         </Field>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={state.signature.electronic}
-            onChange={(e) => patchSig({ electronic: e.target.checked })}
-          />
-          Electronic signature (renders your name in script on export; you can still print &amp;
-          wet-sign)
-        </label>
+        <p className="hint">
+          The export leaves the signature space blank so you can sign for real: print and
+          wet-sign, or open the PDF in Adobe Acrobat/Reader and use{' '}
+          <em>Tools → Certificates → Digitally Sign</em> to draw a box over the signature space
+          and CAC-sign. A pre-placed click-to-sign field is in progress — see Features.
+        </p>
       </Card>
 
       <Card title="Copy to" hint="One addressee per line.">
