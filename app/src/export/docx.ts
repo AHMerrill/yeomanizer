@@ -64,7 +64,8 @@ function flattenBody(list: P[], depth: number, out: Paragraph[], portion: boolea
   });
 }
 
-export async function exportDocx(state: LetterState, today: Date = new Date()): Promise<void> {
+// Assemble the Word document (pure — no DOM), so it can be unit-tested without a browser.
+export function buildDocxDocument(state: LetterState, today: Date = new Date()): Document {
   const ident = buildIdent(state, today);
   const lh = state.letterhead;
   const cui = state.cui;
@@ -198,7 +199,7 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
       }
     : undefined;
 
-  const doc = new Document({
+  return new Document({
     sections: [
       {
         properties: {
@@ -211,8 +212,11 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
       },
     ],
   });
+}
 
-  const blob = await Packer.toBlob(doc);
+// Build the .docx and trigger a browser download.
+export async function exportDocx(state: LetterState, today: Date = new Date()): Promise<void> {
+  const blob = await Packer.toBlob(buildDocxDocument(state, today));
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
