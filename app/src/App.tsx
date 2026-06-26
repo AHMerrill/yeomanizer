@@ -58,6 +58,13 @@ export default function App() {
     void bump();
   };
 
+  const onSignablePdf = async () => {
+    // pdf-lib-generated PDF with an embedded digital-signature field (lazy-loaded).
+    const { exportSignablePdf } = await import('./export/signablePdf');
+    await exportSignablePdf(state);
+    void bump();
+  };
+
   const onPrint = () => {
     const after = () => {
       void bump();
@@ -103,6 +110,14 @@ export default function App() {
         <div className="grow" />
         {view === 'editor' && state.type !== 'nato' && (
           <button onClick={() => void onDocx()}>Export .docx</button>
+        )}
+        {view === 'editor' && state.type !== 'nato' && (
+          <button
+            onClick={() => void onSignablePdf()}
+            title="PDF with a clickable digital-signature field — open in Adobe and CAC/certificate-sign it (no Prepare-a-Form step)"
+          >
+            Signable PDF
+          </button>
         )}
         {view === 'editor' && (
           <button className="primary" onClick={onPrint}>
