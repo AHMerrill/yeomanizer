@@ -1,10 +1,42 @@
 import { describe, it, expect } from 'vitest';
-import { buildIdent, refLetter } from './identification';
+import { buildIdent, refLetter, remainingVias } from './identification';
 import { defaultState } from '../defaultState';
 import type { LetterState } from '../types';
 
 const base = (over: Partial<LetterState> = {}): LetterState => ({ ...defaultState, ...over });
 const sep7 = new Date(2006, 8, 7);
+
+describe('remainingVias — §9-2.2 endorsement Via line', () => {
+  it('returns the Via addressees AFTER the endorser in the chain', () => {
+    const s = base({
+      via: [
+        { id: 'a', text: 'X' },
+        { id: 'b', text: 'Y' },
+        { id: 'c', text: 'Z' },
+      ],
+    });
+    expect(remainingVias(s, 'a').map((v) => v.text)).toEqual(['Y', 'Z']); // first endorser
+    expect(remainingVias(s, 'b').map((v) => v.text)).toEqual(['Z']);
+    expect(remainingVias(s, 'c')).toEqual([]); // last endorser: none remaining
+  });
+
+  it('returns [] for a manual (non-via) endorsement or an unknown id', () => {
+    const s = base({ via: [{ id: 'a', text: 'X' }] });
+    expect(remainingVias(s, undefined)).toEqual([]);
+    expect(remainingVias(s, 'zzz')).toEqual([]);
+  });
+
+  it('skips empty Via rows', () => {
+    const s = base({
+      via: [
+        { id: 'a', text: 'X' },
+        { id: 'b', text: '   ' },
+        { id: 'c', text: 'Z' },
+      ],
+    });
+    expect(remainingVias(s, 'a').map((v) => v.text)).toEqual(['Z']);
+  });
+});
 
 describe('buildIdent — sender symbol block (§7-2.3)', () => {
   it('codeLine is just the code when unserialized', () => {

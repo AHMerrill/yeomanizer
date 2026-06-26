@@ -163,4 +163,21 @@ describe('Editor ↔ preview integration', () => {
     fireEvent.change(screen.getByLabelText('Seal'), { target: { value: 'none' } });
     expect(sealSrc()).toBeNull(); // no seal
   });
+
+  it('a Via endorsement forwards the REMAINING Vias in its own Via line (§9-2.2)', () => {
+    render(<App />);
+    const routingCard = screen.getByRole('heading', { name: 'Routing' }).closest('.card')!;
+    fireEvent.click(within(routingCard as HTMLElement).getByText('+ Add'));
+    fireEvent.change(screen.getByLabelText('Via addressee 1'), { target: { value: 'Commander Alpha' } });
+    fireEvent.click(within(routingCard as HTMLElement).getByText('+ Add'));
+    fireEvent.change(screen.getByLabelText('Via addressee 2'), { target: { value: 'Commander Bravo' } });
+    // the FIRST endorsement (by Alpha) must carry "Via: Commander Bravo"
+    const firstEndoText =
+      [...document.querySelectorAll('.endorsement-line')]
+        .map((el) => el.closest('.page')?.textContent ?? '')
+        .find((t) => t.includes('FIRST ENDORSEMENT'))
+        ?.replace(/\s+/g, ' ') ?? '';
+    expect(firstEndoText).toContain('Via:');
+    expect(firstEndoText).toContain('Commander Bravo');
+  });
 });

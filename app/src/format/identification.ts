@@ -1,4 +1,4 @@
-import type { LetterState } from '../types';
+import type { LetterState, ListEntry } from '../types';
 import { abbreviatedDate } from './date';
 import { alphaIndex } from './alpha';
 
@@ -46,4 +46,13 @@ export function basicLetterId(basic: LetterState, today?: Date): string {
   }${date ? ` of ${date}` : ''}`
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// Ch 9-2.2: an endorsement's "Via:" line carries the Via addressees that remain AFTER this
+// endorser in the routing chain (the "To:" stays the action addressee). For a Via-linked
+// endorsement, "remaining" = the non-empty Via addressees after this one.
+export function remainingVias(basic: LetterState, viaId?: string): ListEntry[] {
+  const vias = basic.via.filter((v) => v.text.trim());
+  const pos = viaId ? vias.findIndex((v) => v.id === viaId) : -1;
+  return pos >= 0 ? vias.slice(pos + 1) : [];
 }

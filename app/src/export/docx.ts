@@ -10,7 +10,13 @@ import {
   Footer,
 } from 'docx';
 import type { LetterState, Paragraph as P } from '../types';
-import { buildIdent, refLetter, ENDORSE_ORD, basicLetterId } from '../format/identification';
+import {
+  buildIdent,
+  refLetter,
+  ENDORSE_ORD,
+  basicLetterId,
+  remainingVias,
+} from '../format/identification';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 
 const IN = 1440; // twips per inch
@@ -183,6 +189,12 @@ export function buildDocxDocument(state: LetterState, today: Date = new Date()):
       );
       children.push(heading('From:', e.endorser));
       children.push(heading('To:', state.to));
+      const evias = remainingVias(state, e.viaId); // Ch 9-2.2: remaining Via addressees
+      if (evias.length === 1) children.push(heading('Via:', evias[0].text));
+      else if (evias.length >= 2)
+        evias.forEach((v, k) =>
+          children.push(heading(k === 0 ? 'Via:' : '', `(${k + 1}) ${v.text}`)),
+        );
       children.push(heading('Subj:', state.subj.toUpperCase(), true));
       children.push(spacer());
       flattenBody(e.body, 0, children, cui.enabled && cui.portionMarkings);

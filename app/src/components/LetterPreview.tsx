@@ -1,7 +1,13 @@
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { LetterState, Paragraph, EndorsementEntry } from '../types';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
-import { buildIdent, refLetter, ENDORSE_ORD, basicLetterId } from '../format/identification';
+import {
+  buildIdent,
+  refLetter,
+  ENDORSE_ORD,
+  basicLetterId,
+  remainingVias,
+} from '../format/identification';
 import { NatoForm } from './NatoForm';
 import './preview.css';
 
@@ -252,7 +258,7 @@ function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): L
     serial: e.serial,
     includeSsic: true,
     includeCode: !!e.serial.trim(),
-    via: [],
+    via: remainingVias(basic, e.viaId),
     refs: [],
     encls: [],
     body: e.body,
