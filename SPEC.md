@@ -140,7 +140,8 @@ it. From ← the Via addressee (the endorser tracks the Via text), To/Subj carry
 "FIRST ENDORSEMENT on <basic letter>" line is derived from the basic document. A "+ Add a
 standalone endorsement" button adds endorsers not in the Via list, and the standalone
 `endorsement` type still exists for endorsing an external letter. Endorsements appear in both
-the PDF (print) and the `.docx` export.
+the PDF (print) and the `.docx` export, and each can be signed normally or "By direction" /
+"Acting" (same authority options as the basic signature).
 
 ## NATO travel order — done
 The bilingual two-page form (order + reverse instructions), with U.S.-grade → NATO (OF/OR)
