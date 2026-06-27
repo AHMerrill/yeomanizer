@@ -799,7 +799,9 @@
 .preview-error button:hover {
   background: #2a61d6;
 }
-.editor input,
+/* Exclude checkboxes/radios: WebKit (Safari) honors width:100% on them (Chrome/FF clamp to intrinsic),
+   which made a checkbox eat its flex row and shove the label off to the side. */
+.editor input:not([type='checkbox']):not([type='radio']),
 .editor textarea,
 .editor select {
   font: inherit;
