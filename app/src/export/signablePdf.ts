@@ -8,7 +8,12 @@
 // that may need fine-tuning against the live preview. Deferred (rendered as TODO, tracked):
 // CUI banners/designation, endorsements, in-document enclosures, continuation-page Subj repeat.
 import type { LetterState, Paragraph } from '../types';
-import { buildIdent } from '../format/identification';
+import {
+  buildIdent,
+  ENDORSE_ORD,
+  basicLetterId,
+  remainingVias,
+} from '../format/identification';
 import { paragraphMarker, markerText, depthIndentIn } from '../format/paragraphs';
 import { loadSealBytes } from './docx';
 
@@ -34,7 +39,7 @@ const baselineDrop = (size: number, lh: number) => (size * lh - size * 1.107) / 
 type PdfFont = Awaited<ReturnType<Awaited<ReturnType<typeof import('pdf-lib').PDFDocument.create>>['embedFont']>>;
 type Ctx = Awaited<ReturnType<typeof import('pdf-lib').PDFDocument.create>>;
 
-export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> {
+export async function buildSignablePdf(state: LetterState, today: Date = new Date()): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb, PDFName, PDFString } = await import('pdf-lib');
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.TimesRoman);
@@ -44,9 +49,10 @@ export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> 
 
   let page = doc.addPage([PAGE_W, PAGE_H]);
   let top = M_TOP; // distance from the page's top edge to the next content
+  const sigRefs: ReturnType<typeof doc.context.register>[] = []; // collected into one AcroForm at the end
   const newPage = () => {
     page = doc.addPage([PAGE_W, PAGE_H]);
-    top = M_TOP;
+    top = M_BOT; // continuation/subsequent pages use the 1-inch top margin (7-2.16)
   };
   const room = (need: number) => {
     if (PAGE_H - top - need < M_BOT) newPage();
@@ -113,7 +119,7 @@ export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> 
   }
 
   // ---- Identification block: lines left-aligned within a right-positioned block ----
-  const ident = buildIdent(state);
+  const ident = buildIdent(state, today);
   const idLines = [
     state.includeSsic ? state.ssic : '',
     state.includeCode ? ident.codeLine : '',
@@ -178,21 +184,26 @@ export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> 
       if (p.children.length) drawBody(p.children, depth + 1);
     });
   };
-  drawBody(state.body, 0);
-
-  // ---- Signature block at the page center (left edge 3.25in past the left margin) ----
-  gap(PARA_GAP * 2.6 - PARA_GAP);
+  // ---- Signature block (page center, left edge 3.25in past the margin). Reusable so each
+  // endorsement gets its own block + CAC field; all fields share one AcroForm built at the end. ----
   const sigX = LEFT + 3.25 * PT;
-  room(SIZE * BODY_LH * 4);
-  // the clickable signature field sits just above the typed name
-  const fieldTopY = PAGE_H - top - 2;
-  const fieldH = 30;
-  top += fieldH;
-  if (state.signature.name) put(state.signature.name, sigX);
-  if (state.signature.title) put(state.signature.title, sigX);
-  if (state.signature.authority === 'by-direction') put('By direction', sigX);
-  if (state.signature.authority === 'acting') put('Acting', sigX);
-  addSignatureField(doc, page, [sigX, fieldTopY - fieldH, sigX + 3 * PT, fieldTopY], PDFName, PDFString);
+  const signatureBlock = (name: string, title: string, authority: string | undefined, fieldName: string) => {
+    gap(PARA_GAP * 2.6 - PARA_GAP);
+    room(SIZE * BODY_LH * 4);
+    const fieldTopY = PAGE_H - top - 2; // the clickable field sits just above the typed name
+    const fieldH = 30;
+    top += fieldH;
+    if (name) put(name, sigX);
+    if (title) put(title, sigX);
+    if (authority === 'by-direction') put('By direction', sigX);
+    if (authority === 'acting') put('Acting', sigX);
+    sigRefs.push(
+      addSignatureField(doc, page, [sigX, fieldTopY - fieldH, sigX + 3 * PT, fieldTopY], fieldName, PDFName, PDFString),
+    );
+  };
+
+  drawBody(state.body, 0);
+  signatureBlock(state.signature.name, state.signature.title, state.signature.authority, 'Signature1');
 
   // ---- Copy to ----
   const copyTo = state.copyTo.filter((c) => c.trim());
@@ -201,6 +212,29 @@ export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> 
     put('Copy to:', LEFT);
     copyTo.forEach((c) => put(c, LEFT));
   }
+
+  // ---- Endorsements — each on its own page with its own signature block + CAC field (Ch 9) ----
+  const onBasic = `ENDORSEMENT on ${basicLetterId(state, today)}`;
+  state.endorsements.forEach((e, i) => {
+    newPage();
+    wrap(`${ENDORSE_ORD[i] ?? String(i + 1)} ${onBasic}`, font, SIZE, RIGHT - LEFT).forEach((ln) =>
+      put(ln, LEFT),
+    );
+    gap(PARA_GAP);
+    if (e.endorser) headRow('From:', e.endorser);
+    if (state.to) headRow('To:', state.to);
+    const evias = remainingVias(state, e.viaId); // Ch 9-2.2: remaining Via addressees
+    if (evias.length === 1) headRow('Via:', evias[0].text);
+    else if (evias.length >= 2)
+      evias.forEach((v, k) => headRow(k === 0 ? 'Via:' : '', `(${k + 1}) ${v.text}`));
+    if (state.subj) {
+      gap(PARA_GAP);
+      headRow('Subj:', state.subj.toUpperCase());
+    }
+    gap(PARA_GAP);
+    drawBody(e.body, 0);
+    signatureBlock(e.sigName, e.sigTitle, e.authority, `Signature${i + 2}`);
+  });
 
   // ---- CUI banners (every page, top + bottom) + designation block (page 1, lower-right) ----
   const cui = state.cui;
@@ -234,35 +268,45 @@ export async function buildSignablePdf(state: LetterState): Promise<Uint8Array> 
     });
   }
 
+  // ---- One AcroForm holding every signature field (basic letter + each endorsement) ----
+  if (sigRefs.length) {
+    const acroForm = doc.context.obj({ Fields: sigRefs, SigFlags: 3 });
+    doc.catalog.set(PDFName.of('AcroForm'), doc.context.register(acroForm));
+  }
+
   return await doc.save();
 }
 
-export async function exportSignablePdf(state: LetterState): Promise<void> {
-  download(await buildSignablePdf(state), 'naval-letter-signable.pdf');
+export async function exportSignablePdf(state: LetterState, today: Date = new Date()): Promise<void> {
+  download(await buildSignablePdf(state, today), 'naval-letter-signable.pdf');
 }
 
 // Construct an AcroForm digital-signature field (/FT /Sig) + a borderless widget annotation, so
 // Adobe shows a clickable "click to sign" box that hands off to the CAC/certificate signing flow.
+// Build one borderless /FT /Sig widget, attach it to the page's Annots, and return its ref so the
+// caller can collect every field into a single AcroForm (one AcroForm per call clobbers the others).
 function addSignatureField(
   doc: Ctx,
   page: ReturnType<Ctx['addPage']>,
   rect: [number, number, number, number],
+  name: string,
   PDFName: typeof import('pdf-lib').PDFName,
   PDFString: typeof import('pdf-lib').PDFString,
-): void {
+): ReturnType<Ctx['context']['register']> {
   const widget = doc.context.obj({
     Type: 'Annot',
     Subtype: 'Widget',
     FT: 'Sig',
-    T: PDFString.of('Signature1'),
+    T: PDFString.of(name),
     F: 4, // Print
     Rect: rect,
     P: page.ref,
   });
   const widgetRef = doc.context.register(widget);
-  page.node.set(PDFName.of('Annots'), doc.context.obj([widgetRef]));
-  const acroForm = doc.context.obj({ Fields: [widgetRef], SigFlags: 3 });
-  doc.catalog.set(PDFName.of('AcroForm'), doc.context.register(acroForm));
+  const annots = page.node.Annots();
+  if (annots) annots.push(widgetRef);
+  else page.node.set(PDFName.of('Annots'), doc.context.obj([widgetRef]));
+  return widgetRef;
 }
 
 function download(bytes: Uint8Array, name: string): void {
