@@ -405,6 +405,17 @@
     overflow: visible;
     gap: 0;
   }
+  /* Undo the responsive fit-to-width scaler (JS sets these inline) so every sheet prints at full
+     letter size, not the on-screen scale, and each .page flows as its own printed page. */
+  .preview-fit {
+    width: auto !important;
+    height: auto !important;
+  }
+  .preview-pages {
+    display: block !important;
+    transform: none !important;
+    width: auto !important;
+  }
   .page {
     box-shadow: none;
     margin: 0;

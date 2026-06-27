@@ -925,6 +925,10 @@
   .toolbar,
   .editor-pane,
   .disclaimer,
+  .export-help,
+  .about,
+  .faq,
+  .import-wrap,
   .footer {
     display: none !important;
   }
