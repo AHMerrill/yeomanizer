@@ -361,11 +361,23 @@ export function LetterPreview({ state }: { state: LetterState }) {
         fit.style.height = '';
       }
     };
-    const ro = new ResizeObserver(apply);
+    // Debounce RO callbacks to the next frame so we always measure the SETTLED layout. Reading
+    // synchronously while the viewport changes (rotating a tablet, crossing the stack/side-by-side
+    // breakpoint, a resize mid-reflow) can catch an intermediate width and leave the sheet scaled
+    // wrong — which is exactly how the preview ends up overflowing its pane after a rotate.
+    let raf = 0;
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(apply);
+    };
+    const ro = new ResizeObserver(schedule);
     ro.observe(backdrop);
     ro.observe(pages);
     apply();
-    return () => ro.disconnect();
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   });
 
   return (

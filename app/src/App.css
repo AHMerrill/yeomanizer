@@ -496,6 +496,13 @@
   }
   .panes {
     flex-direction: column;
+    /* Critical: shed the desktop app-shell behavior. Without these, .panes keeps its `flex: 1` +
+       `overflow-y: auto` from the base rule, collapses to the leftover viewport height (~219px), and
+       turns the whole editor+preview into a tiny inner scroll box with the footer jammed on top of
+       the cards. On mobile/tablet the panes must grow to their content and let the PAGE scroll. */
+    flex: none;
+    min-height: 0;
+    overflow: visible;
   }
   .editor-pane {
     flex: none;
