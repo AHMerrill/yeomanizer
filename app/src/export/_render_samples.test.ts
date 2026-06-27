@@ -65,4 +65,27 @@ const base: LetterState = {
     })),
   };
   writeFileSync(`${OUT}/multipage.pdf`, await buildSignablePdf(longBody, today));
+
+  // Enclosures: an image (embedded) and a PDF (real pages copied), each marked "Enclosure (n)".
+  const pdfLib = await import('pdf-lib');
+  const enclPdf = await pdfLib.PDFDocument.create();
+  const ep = enclPdf.addPage([612, 792]);
+  const ef = await enclPdf.embedFont(pdfLib.StandardFonts.Helvetica);
+  ep.drawText('ENCLOSED PDF DOCUMENT — page 1 (copied as real vector pages)', {
+    x: 72,
+    y: 700,
+    size: 14,
+    font: ef,
+  });
+  const enclPdfUrl = 'data:application/pdf;base64,' + Buffer.from(await enclPdf.save()).toString('base64');
+  const onePx =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  const encls: LetterState = {
+    ...base,
+    encls: [
+      { id: 'en1', text: 'Photograph of the event', inDocument: true, file: { name: 'photo.png', type: 'image/png', dataUrl: onePx } },
+      { id: 'en2', text: 'Supporting documentation', inDocument: true, file: { name: 'doc.pdf', type: 'application/pdf', dataUrl: enclPdfUrl } },
+    ],
+  };
+  writeFileSync(`${OUT}/enclosures.pdf`, await buildSignablePdf(encls, today));
 });

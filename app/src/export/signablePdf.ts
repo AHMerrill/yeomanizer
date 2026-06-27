@@ -236,6 +236,42 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     signatureBlock(e.sigName, e.sigTitle, e.authority, `Signature${i + 2}`);
   });
 
+  // ---- In-document enclosures — appended as their own page(s), marked "Enclosure (n)" (§7).
+  // Images embed directly; PDFs copy their real pages (vector, not rasterized). ----
+  const enclStart = doc.getPageCount(); // enclosure pages get the mark, not a letter page number
+  for (let n = 0; n < state.encls.length; n++) {
+    const e = state.encls[n];
+    if (!e.inDocument || !e.file) continue;
+    const mark = `Enclosure (${n + 1})`;
+    const stamp = (pg: ReturnType<Ctx['addPage']>) => {
+      const pw = pg.getSize().width;
+      pg.drawText(mark, { x: pw - M_SIDE - font.widthOfTextAtSize(mark, SIZE), y: M_BOT, size: SIZE, font });
+    };
+    if (e.file.type === 'application/pdf') {
+      const src = await PDFDocument.load(dataUrlToBytes(e.file.dataUrl), { ignoreEncryption: true });
+      const copied = await doc.copyPages(src, src.getPageIndices());
+      copied.forEach((pg) => {
+        doc.addPage(pg);
+        stamp(pg);
+      });
+    } else {
+      const img = await embedImageFile(doc, e.file);
+      const pg = doc.addPage([PAGE_W, PAGE_H]);
+      if (img) {
+        const bw = RIGHT - LEFT;
+        const bh = PAGE_H - M_TOP - M_BOT;
+        const s = Math.min(bw / img.width, bh / img.height);
+        pg.drawImage(img, {
+          x: LEFT + (bw - img.width * s) / 2,
+          y: M_BOT + (bh - img.height * s) / 2,
+          width: img.width * s,
+          height: img.height * s,
+        });
+      }
+      stamp(pg);
+    }
+  }
+
   // ---- CUI banners (every page, top + bottom) + designation block (page 1, lower-right) ----
   const cui = state.cui;
   const pages = doc.getPages();
@@ -243,8 +279,9 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     const banner = (cui.banner || 'CUI').toUpperCase();
     const bw = bold.widthOfTextAtSize(banner, 12);
     pages.forEach((pg) => {
-      pg.drawText(banner, { x: (PAGE_W - bw) / 2, y: PAGE_H - 0.22 * PT - 10.7, size: 12, font: bold });
-      pg.drawText(banner, { x: (PAGE_W - bw) / 2, y: 0.22 * PT + 2.6, size: 12, font: bold });
+      const { width: pw, height: ph } = pg.getSize();
+      pg.drawText(banner, { x: (pw - bw) / 2, y: ph - 0.22 * PT - 10.7, size: 12, font: bold });
+      pg.drawText(banner, { x: (pw - bw) / 2, y: 0.22 * PT + 2.6, size: 12, font: bold });
     });
     const desig = [
       `Controlled by: ${cui.controlledBy1}`,
@@ -259,10 +296,11 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     );
   }
 
-  // ---- Page numbers — centered, 0.5in from the bottom, page 2 onward (7-2.17) ----
-  if (pages.length > 1) {
+  // ---- Page numbers — centered, 0.5in from the bottom, page 2 onward; enclosure pages are
+  // excluded (they carry the "Enclosure (n)" mark instead) (7-2.17) ----
+  if (enclStart > 1) {
     pages.forEach((pg, i) => {
-      if (i === 0) return;
+      if (i === 0 || i >= enclStart) return;
       const num = String(i + 1);
       pg.drawText(num, { x: (PAGE_W - font.widthOfTextAtSize(num, SIZE)) / 2, y: 0.5 * PT, size: SIZE, font });
     });
@@ -307,6 +345,41 @@ function addSignatureField(
   if (annots) annots.push(widgetRef);
   else page.node.set(PDFName.of('Annots'), doc.context.obj([widgetRef]));
   return widgetRef;
+}
+
+// data: URL → raw bytes (works in the browser and in the jsdom test env).
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const b64 = dataUrl.split(',')[1] ?? '';
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+// Embed an attached image. png/jpg embed directly; any other format is rasterized to PNG via a
+// canvas (browser only — exotic formats just won't appear in the headless test harness).
+async function embedImageFile(doc: Ctx, file: { type: string; dataUrl: string }) {
+  const t = file.type.toLowerCase();
+  if (t.includes('png')) return doc.embedPng(dataUrlToBytes(file.dataUrl));
+  if (t.includes('jpeg') || t.includes('jpg')) return doc.embedJpg(dataUrlToBytes(file.dataUrl));
+  if (typeof document === 'undefined') return null;
+  try {
+    const img = new Image();
+    await new Promise<void>((res, rej) => {
+      img.onload = () => res();
+      img.onerror = () => rej(new Error('image load failed'));
+      img.src = file.dataUrl;
+    });
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth || 1;
+    c.height = img.naturalHeight || 1;
+    const ctx = c.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0);
+    return doc.embedPng(dataUrlToBytes(c.toDataURL('image/png')));
+  } catch {
+    return null;
+  }
 }
 
 function download(bytes: Uint8Array, name: string): void {
