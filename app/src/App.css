@@ -487,6 +487,18 @@
   flex-direction: column;
   gap: 10px;
 }
+.encl-shrink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #aab0bd;
+  cursor: pointer;
+}
+.encl-shrink input {
+  width: auto;
+  margin: 0;
+}
 .encl-card {
   border: 1px solid #2f323b;
   border-radius: 8px;

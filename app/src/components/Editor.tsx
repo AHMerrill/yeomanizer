@@ -1,4 +1,5 @@
 import { useState, useLayoutEffect, useRef, useEffect } from 'react';
+import { shrinkImage } from '../format/image';
 import type { Dispatch, SetStateAction, ReactNode } from 'react';
 import type {
   LetterState,
@@ -231,16 +232,20 @@ function EnclosureCards({
   encls: EnclosureEntry[];
   onChange: (e: EnclosureEntry[]) => void;
 }) {
+  const [shrink, setShrink] = useState(true);
   const update = (id: string, patch: Partial<EnclosureEntry>) =>
     onChange(encls.map((e) => (e.id === id ? { ...e, ...patch } : e)));
-  const attach = (id: string, file: File) => {
-    const reader = new FileReader();
-    reader.onload = () =>
-      update(id, { file: { name: file.name, type: file.type, dataUrl: String(reader.result) } });
-    reader.readAsDataURL(file);
-  };
+  // Shrink images on import when the toggle is on; Infinity disables it (keep the original).
+  const attach = async (id: string, file: File) =>
+    update(id, { file: await shrinkImage(file, shrink ? 2000 : Infinity) });
   return (
     <div className="encl-cards">
+      {encls.length > 0 && (
+        <label className="encl-shrink">
+          <input type="checkbox" checked={shrink} onChange={(e) => setShrink(e.target.checked)} />
+          Shrink large images on import — smaller file, keeps print resolution (PDFs unchanged)
+        </label>
+      )}
       {encls.map((e, i) => (
         <div className="encl-card" key={e.id}>
           <div className="endo-head">
