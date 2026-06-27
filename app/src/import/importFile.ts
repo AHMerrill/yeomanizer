@@ -10,6 +10,9 @@ export interface ImportResult {
 }
 
 export async function importLetterFile(file: File): Promise<ImportResult> {
+  if (file.size > 60 * 1024 * 1024) {
+    return { state: null, error: 'That file is too large to be a yeomanizer editable copy.' };
+  }
   const name = file.name.toLowerCase();
   if (name.endsWith('.json') || file.type === 'application/json') {
     const state = parseProject(await file.text());

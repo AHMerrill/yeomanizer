@@ -50,4 +50,13 @@ describe('project-file round-trip (.yeomanizer.json)', () => {
     expect(parseProject('{"hello":"world"}')).toBeNull();
     expect(parseProject('not json at all')).toBeNull();
   });
+
+  it('strips prototype-pollution keys on import', () => {
+    const hostile =
+      '{"v":1,"state":{"type":"standard-letter","from":"X","body":[],"__proto__":{"polluted":true},"constructor":{"bad":1}}}';
+    const back = parseProject(hostile);
+    expect(back?.from).toBe('X');
+    // the dangerous keys did not reach Object.prototype
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
 });

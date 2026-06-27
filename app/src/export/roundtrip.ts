@@ -35,9 +35,14 @@ function sanitizeEnclosures(state: LetterState): LetterState {
   };
 }
 
+// Keys that could pollute Object.prototype if they survived into a later spread/merge.
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 export function parseProject(text: string): LetterState | null {
+  if (text.length > 60_000_000) return null; // ~60MB ceiling — a real project file is far smaller
   try {
-    const obj = JSON.parse(text) as Project;
+    // The reviver drops prototype-pollution keys before the parsed object reaches any spread/merge.
+    const obj = JSON.parse(text, (key, value) => (DANGEROUS_KEYS.has(key) ? undefined : value)) as Project;
     const s = obj?.state;
     if (!s || typeof s !== 'object' || typeof s.type !== 'string' || !Array.isArray(s.body)) return null;
     // Merge over defaults so a file from an older/partial schema still fills every field.

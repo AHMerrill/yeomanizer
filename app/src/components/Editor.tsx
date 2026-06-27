@@ -236,8 +236,10 @@ function EnclosureCards({
   const update = (id: string, patch: Partial<EnclosureEntry>) =>
     onChange(encls.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   // Shrink images on import when the toggle is on; Infinity disables it (keep the original).
-  const attach = async (id: string, file: File) =>
+  const attach = async (id: string, file: File) => {
+    if (file.size > 50 * 1024 * 1024) return; // guard against a browser-choking enclosure (~50MB)
     update(id, { file: await shrinkImage(file, shrink ? 2000 : Infinity) });
+  };
   return (
     <div className="encl-cards">
       {encls.length > 0 && (
@@ -594,6 +596,17 @@ export function Editor({
         )}
         {state.letterhead.mode === 'on' && (
           <>
+            <p className="hint">
+              Need the command&rsquo;s address?{' '}
+              <a
+                href="https://flankspeed.sharepoint-mil.us/sites/OPNAV/DNS/DNS1/DNS12/SitePages/Home.aspx"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Look it up in the Standard Navy Distribution List
+              </a>{' '}
+              <strong>(CAC required)</strong>.
+            </p>
             <Field label="Activity name">
               <input
                 value={state.letterhead.activityName}
