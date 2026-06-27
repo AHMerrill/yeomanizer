@@ -14,6 +14,7 @@ import {
   TextWrappingType,
 } from 'docx';
 import type { LetterState, Paragraph as P } from '../types';
+import type { RasterPage } from './rasterizePdf';
 import {
   buildIdent,
   refLetter,
@@ -166,6 +167,7 @@ export function buildDocxDocument(
   state: LetterState,
   today: Date = new Date(),
   sealBytes?: ArrayBuffer | Uint8Array,
+  enclImages: Record<string, RasterPage[]> = {},
 ): Document {
   const ident = buildIdent(state, today);
   const lh = state.letterhead;
@@ -326,37 +328,45 @@ export function buildDocxDocument(
   // can't carry vector PDF pages (matches the preview's note — the signable PDF copies them).
   state.encls.forEach((e, n) => {
     if (!e.inDocument || !e.file) return;
-    if (e.file.type.startsWith('image/')) {
-      const bytes = dataUrlToBytes(e.file.dataUrl);
-      const sz = imageSize(bytes);
-      const s = Math.min((6 * 96) / sz.width, (8 * 96) / sz.height); // fit within the margins
+    const mark = () =>
+      children.push(
+        new Paragraph({
+          alignment: AlignmentType.RIGHT,
+          children: [R(`Enclosure (${n + 1})`)],
+          spacing: { before: BLANK },
+        }),
+      );
+    const pageImage = (data: Uint8Array, w: number, h: number, kind: 'png' | 'jpg' | 'gif' | 'bmp') => {
+      const s = Math.min((6.5 * 96) / w, (8.7 * 96) / h); // fit within the 1-inch margins
       children.push(
         new Paragraph({
           pageBreakBefore: true,
           alignment: AlignmentType.CENTER,
           children: [
-            new ImageRun({
-              type: imageKind(e.file.type),
-              data: bytes,
-              transformation: { width: Math.round(sz.width * s), height: Math.round(sz.height * s) },
-            }),
+            new ImageRun({ type: kind, data, transformation: { width: Math.round(w * s), height: Math.round(h * s) } }),
           ],
           spacing: { after: 0 },
         }),
       );
+    };
+    if (e.file.type.startsWith('image/')) {
+      const bytes = dataUrlToBytes(e.file.dataUrl);
+      const sz = imageSize(bytes);
+      pageImage(bytes, sz.width, sz.height, imageKind(e.file.type));
+      mark();
+    } else if (enclImages[e.id]?.length) {
+      // PDF rasterized to page images in-memory (export/rasterizePdf.ts) — one image per page
+      enclImages[e.id].forEach((pg) => {
+        pageImage(pg.bytes, pg.width, pg.height, 'png');
+        mark();
+      });
     } else {
       children.push(
         new Paragraph({ pageBreakBefore: true, children: [R(e.text || 'Enclosure')], spacing: { after: BLANK } }),
       );
       children.push(new Paragraph({ children: [R(`${e.file.name} — PDF attached separately.`)] }));
+      mark();
     }
-    children.push(
-      new Paragraph({
-        alignment: AlignmentType.RIGHT,
-        children: [R(`Enclosure (${n + 1})`)],
-        spacing: { before: BLANK },
-      }),
-    );
   });
 
   // CUI banner (header + footer, repeats on every page via Word's native headers/footers)
@@ -409,7 +419,20 @@ export function buildDocxDocument(
 // Build the .docx and trigger a browser download.
 export async function exportDocx(state: LetterState, today: Date = new Date()): Promise<void> {
   const sealBytes = await loadSealBytes(state);
-  const blob = await Packer.toBlob(buildDocxDocument(state, today, sealBytes));
+  // Rasterize any in-document PDF enclosures to page images (in-memory) so Word shows the actual
+  // pages, not just a reference. pdf.js lazy-loads only when there's a PDF enclosure to render.
+  const enclImages: Record<string, RasterPage[]> = {};
+  for (const e of state.encls) {
+    if (e.inDocument && e.file && e.file.type === 'application/pdf') {
+      try {
+        const { rasterizePdf } = await import('./rasterizePdf');
+        enclImages[e.id] = await rasterizePdf(dataUrlToBytes(e.file.dataUrl));
+      } catch {
+        /* leave it out → buildDocxDocument falls back to a reference note */
+      }
+    }
+  }
+  const blob = await Packer.toBlob(buildDocxDocument(state, today, sealBytes, enclImages));
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
