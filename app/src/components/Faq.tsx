@@ -23,6 +23,7 @@ const SRC = {
   evalMdn: { label: 'MDN — why eval is different', url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval' },
   owaspXss: { label: 'OWASP — XSS prevention', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html' },
   adobeCac: { label: 'Adobe — certificate-based signatures', url: 'https://helpx.adobe.com/acrobat/using/certificate-based-signatures.html' },
+  repo: { label: 'Source code (GitHub)', url: 'https://github.com/AHMerrill/yeomanizer' },
 } satisfies Record<string, Link>;
 
 function QA({ q, sources, children }: { q: string; sources?: Link[]; children: ReactNode }) {
@@ -53,10 +54,11 @@ export function Faq() {
           How the yeomanizer handles your information, and why it&rsquo;s built to stay out of the
           CUI-handling chain. This is an <strong>unofficial</strong> tool — it makes no authorization
           claim. Always follow your command&rsquo;s policy and your security manager&rsquo;s guidance.
-          Each answer links to authoritative sources so you can verify it yourself.
+          Each answer links to authoritative sources — and the tool&rsquo;s full source code is
+          public — so you (or your security team) can verify every claim.
         </p>
 
-        <QA q="Does anything I type get saved or sent anywhere?">
+        <QA q="Does anything I type get saved or sent anywhere?" sources={[SRC.repo]}>
           No. The tool sends and stores nothing. What you type lives only in this browser tab, in
           memory, and is erased when you close it. The single thing that ever leaves your browser is
           an anonymous, content-free download counter (an integer) — never any of your content. You
@@ -99,7 +101,7 @@ export function Faq() {
 
         <QA
           q="Could the .json — or a document — contain or run code?"
-          sources={[SRC.jsonParse, SRC.evalMdn, SRC.owaspXss]}
+          sources={[SRC.jsonParse, SRC.evalMdn, SRC.owaspXss, SRC.repo]}
         >
           No. The app never executes file content. It reads the .json with <code>JSON.parse</code>,
           which only produces data — unlike <code>eval</code>, it does not run code. All text is
@@ -131,7 +133,7 @@ export function Faq() {
           32 CFR 2002 and your command&rsquo;s policy.
         </QA>
 
-        <QA q="Bottom line — is this above board?" sources={[SRC.cuiProgram, SRC.nara]}>
+        <QA q="Bottom line — is this above board?" sources={[SRC.cuiProgram, SRC.nara, SRC.repo]}>
           The tool is built to stay out of the CUI-handling chain: it doesn&rsquo;t store or transmit
           your content, embeds nothing hidden, uses ordinary file types, runs entirely in your
           browser, and makes no authorization claim. Used on an authorized system, per your
