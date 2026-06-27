@@ -1,4 +1,5 @@
 import { PDFDocument } from 'pdf-lib';
+import { stripPdfMetadata } from './pdfMeta';
 
 export interface MergeResult {
   bytes: Uint8Array; // the combined PDF (empty if nothing merged)
@@ -26,6 +27,7 @@ export async function mergePdfs(parts: Uint8Array[]): Promise<MergeResult> {
   // pdf-lib cannot save a page-less document; report an empty result instead of throwing.
   if (out.getPageCount() === 0) return { bytes: new Uint8Array(), pageCount: 0, skipped };
 
+  stripPdfMetadata(out); // no identifying metadata in the combined packet (last step before save)
   const bytes = await out.save();
   return { bytes, pageCount: out.getPageCount(), skipped };
 }

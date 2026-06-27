@@ -408,6 +408,17 @@ export function buildDocxDocument(
     : undefined;
 
   return new Document({
+    // No identifying metadata in the exported file: override the docx library's default core
+    // properties so the .docx is "silent" — no creator/author, title, subject, description,
+    // keywords, or last-modified-by name. (The created/modified TIMESTAMPS are stamped by the
+    // library no matter what we pass here, so they're neutralized after packing — see silenceDocx.
+    // A signature the user adds later is separate + intended.)
+    creator: '',
+    title: '',
+    subject: '',
+    description: '',
+    keywords: '',
+    lastModifiedBy: '',
     sections: [
       {
         properties: {
@@ -419,6 +430,27 @@ export function buildDocxDocument(
         children,
       },
     ],
+  });
+}
+
+// The docx library stamps real created/modified timestamps into docProps/core.xml regardless of the
+// core-properties options. Blank them to a fixed epoch so the file reveals no creation time. Pure +
+// exported for testing; silenceDocx applies it to the packed zip.
+export function neutralizeCoreXml(xml: string): string {
+  const EPOCH = '1970-01-01T00:00:00Z';
+  return xml
+    .replace(/(<dcterms:created[^>]*>)[^<]*(<\/dcterms:created>)/, `$1${EPOCH}$2`)
+    .replace(/(<dcterms:modified[^>]*>)[^<]*(<\/dcterms:modified>)/, `$1${EPOCH}$2`);
+}
+
+async function silenceDocx(blob: Blob): Promise<Blob> {
+  const JSZip = (await import('jszip')).default;
+  const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+  const core = zip.file('docProps/core.xml');
+  if (core) zip.file('docProps/core.xml', neutralizeCoreXml(await core.async('string')));
+  return zip.generateAsync({
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   });
 }
 
@@ -438,7 +470,7 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
       }
     }
   }
-  const blob = await Packer.toBlob(buildDocxDocument(state, today, sealBytes, enclImages));
+  const blob = await silenceDocx(await Packer.toBlob(buildDocxDocument(state, today, sealBytes, enclImages)));
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

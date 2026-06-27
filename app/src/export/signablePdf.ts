@@ -18,6 +18,7 @@ import { paragraphMarker, markerText, depthIndentIn } from '../format/paragraphs
 import { parseInline } from '../format/inline';
 import { anyCui } from '../format/tree';
 import { loadSealBytes } from './docx';
+import { stripPdfMetadata } from './pdfMeta';
 
 const PT = 72;
 const PAGE_W = 8.5 * PT;
@@ -395,6 +396,10 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     doc.catalog.set(PDFName.of('AcroForm'), doc.context.register(acroForm));
   }
 
+  // Clear ALL identifying metadata as the very LAST step before serializing. pdf-lib stamps its own
+  // Producer + a fresh ModDate when the document is created (updateInfoDict), so wiping must happen
+  // after every build step for the empty values to survive. save() itself never re-stamps.
+  stripPdfMetadata(doc);
   return await doc.save();
 }
 
