@@ -16,6 +16,7 @@ import {
 } from '../format/identification';
 import { paragraphMarker, markerText, depthIndentIn } from '../format/paragraphs';
 import { parseInline } from '../format/inline';
+import { anyCui } from '../format/tree';
 import { loadSealBytes } from './docx';
 
 const PT = 72;
@@ -170,15 +171,19 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
 
   // ---- Body (numbered paragraphs; first line indented, continuation at the left margin) ----
   gap(PARA_GAP);
-  const drawBody = (list: Paragraph[], depth: number) => {
+  const drawBody = (list: Paragraph[], depth: number, portionActive: boolean) => {
     list.forEach((p, i) => {
       const marker = markerText(paragraphMarker(depth, i));
       const indent = depthIndentIn(depth) * PT;
       const markerX = LEFT + indent;
       const textX = markerX + font.widthOfTextAtSize(marker, SIZE) + PGAP;
-      // Optional underlined section title, inline after the marker: "N.  Title.  body…"
+      // Portion marking when active: "(CUI)" on a marked paragraph, else "(U)" — sits before the title.
+      const portion = portionActive ? (p.cui ? '(CUI) ' : '(U) ') : '';
+      const portionW = portion ? font.widthOfTextAtSize(portion, SIZE) : 0;
+      // Optional underlined section title, inline after the marker (+ portion): "N.  (CUI) Title.  body…"
+      const titleX = textX + portionW;
       const titleW = p.title ? font.widthOfTextAtSize(p.title + '.  ', SIZE) : 0;
-      const firstX = textX + titleW; // body text begins after the title on the first line
+      const firstX = titleX + titleW; // body begins after the portion mark + title on the first line
       // Split into whitespace-delimited words; each word is one or more inline-markup segments
       // (**bold** *italic* __underline__), so attached punctuation keeps no spurious space.
       const spaceW = font.widthOfTextAtSize(' ', SIZE);
@@ -226,12 +231,13 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
         const baseY = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
         if (li === 0) {
           page.drawText(marker, { x: markerX, y: baseY, font, size: SIZE });
+          if (portion) page.drawText(portion, { x: textX, y: baseY, font, size: SIZE });
           if (p.title) {
-            page.drawText(p.title + '.', { x: textX, y: baseY, font, size: SIZE });
+            page.drawText(p.title + '.', { x: titleX, y: baseY, font, size: SIZE });
             const tW = font.widthOfTextAtSize(p.title, SIZE);
             page.drawLine({
-              start: { x: textX, y: baseY - 1.6 },
-              end: { x: textX + tW, y: baseY - 1.6 },
+              start: { x: titleX, y: baseY - 1.6 },
+              end: { x: titleX + tW, y: baseY - 1.6 },
               thickness: 0.6,
               color: black,
             });
@@ -256,7 +262,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
         top += SIZE * BODY_LH;
       });
       gap(PARA_GAP);
-      if (p.children.length) drawBody(p.children, depth + 1);
+      if (p.children.length) drawBody(p.children, depth + 1, portionActive);
     });
   };
   // ---- Signature block (page center, left edge 3.25in past the margin). Reusable so each
@@ -277,7 +283,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     );
   };
 
-  drawBody(state.body, 0);
+  drawBody(state.body, 0, state.cui.enabled && anyCui(state.body));
   signatureBlock(state.signature.name, state.signature.title, state.signature.authority, 'Signature1');
 
   // ---- Copy to ----
@@ -309,7 +315,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
       headRow('Subj:', state.subj.toUpperCase());
     }
     gap(PARA_GAP);
-    drawBody(e.body, 0);
+    drawBody(e.body, 0, state.cui.enabled && anyCui(e.body));
     signatureBlock(e.sigName, e.sigTitle, e.authority, `Signature${i + 2}`);
   });
 

@@ -87,6 +87,15 @@ const base: LetterState = {
   const cui: LetterState = { ...base, cui: { ...base.cui, enabled: true } };
   writeFileSync(`${OUT}/cui.pdf`, await buildSignablePdf(cui, today));
 
+  // CUI portion markings: paras 1 & 3 marked CUI → "(CUI)", para 2 unmarked → "(U)". Tests the mark
+  // sitting before a section title and ahead of inline emphasis (must match preview + docx).
+  const portions: LetterState = {
+    ...base,
+    cui: { ...base.cui, enabled: true },
+    body: base.body.map((p, i) => (i !== 1 ? { ...p, cui: true } : p)),
+  };
+  writeFileSync(`${OUT}/portions.pdf`, await buildSignablePdf(portions, today));
+
   const longBody: LetterState = {
     ...base,
     body: Array.from({ length: 16 }, (_, i) => ({
@@ -139,5 +148,6 @@ const base: LetterState = {
   await writeDocx('headwrap', headwrap);
   await writeDocx('endorsement', endo);
   await writeDocx('cui', cui);
+  await writeDocx('portions', portions);
   await writeDocx('enclosures', encls);
 });
