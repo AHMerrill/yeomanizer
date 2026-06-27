@@ -82,6 +82,7 @@ const base: LetterState = {
     'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC';
   const encls: LetterState = {
     ...base,
+    cui: { ...base.cui, enabled: true }, // verify the CUI banner reaches enclosure pages too (§6)
     encls: [
       { id: 'en1', text: 'Photograph of the event', inDocument: true, file: { name: 'photo.png', type: 'image/png', dataUrl: onePx } },
       { id: 'en2', text: 'Supporting documentation', inDocument: true, file: { name: 'doc.pdf', type: 'application/pdf', dataUrl: enclPdfUrl } },
