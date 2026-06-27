@@ -164,7 +164,7 @@
 }
 .faq-sources {
   margin-top: 22px;
-  color: #6b7180;
+  color: #9aa1b0;
   font-size: 11.5px;
   line-height: 1.5;
 }
@@ -177,7 +177,7 @@
   font-size: 12px;
 }
 .faq-links-label {
-  color: #6b7180;
+  color: #9aa1b0;
 }
 .faq-links a {
   color: #6fa0ff;
@@ -245,7 +245,7 @@
 .import-note {
   max-width: 540px;
   text-align: center;
-  color: #6b7180;
+  color: #9aa1b0;
   font-size: 11.5px;
   line-height: 1.5;
 }
@@ -473,7 +473,7 @@
   text-decoration: underline;
 }
 .foot-mid {
-  color: #6f757f;
+  color: #9aa1b0;
 }
 .foot-count {
   font-variant-numeric: tabular-nums;
@@ -582,7 +582,7 @@
 .card .hint {
   margin: 0 0 9px;
   font-size: 11.5px;
-  color: #7d8290;
+  color: #9aa1b0;
   line-height: 1.35;
 }
 /* Links inside hints (e.g. the SNDL lookup) — readable blue, underlined, and an explicit :visited
@@ -730,7 +730,7 @@
 }
 .file-drop-hint {
   font-size: 12px;
-  color: #7d8290;
+  color: #9aa1b0;
 }
 
 /* Enclosure cards */
@@ -860,7 +860,7 @@
   flex: 0 0 18px;
   text-align: center;
   font-size: 11px;
-  color: #7d8290;
+  color: #9aa1b0;
 }
 .entry-row input {
   flex: 1;
@@ -938,7 +938,7 @@
   font-weight: 700;
   letter-spacing: 0.2px;
   padding: 4px 5px;
-  color: #7d8290;
+  color: #9aa1b0;
 }
 .para-btns .cui-tog.on {
   background: #2f6df0;
