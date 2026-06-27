@@ -16,6 +16,29 @@
   gap: 28px;
 }
 
+/* Fit-to-width wrapper (see LetterPreview): .preview-pages holds every sheet + the absolute
+   measurers; on screens narrower than the 8.5in sheet, JS scales it via transform and sizes
+   .preview-fit to the scaled footprint, so the full page width is always visible without
+   horizontal scrolling. transform (not zoom) keeps measurer offsetHeight true → pagination intact. */
+.preview-fit {
+  align-self: center;
+}
+.preview-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: max-content;
+  transform-origin: top left;
+}
+
+/* Tighten the grey gutter on small screens so the scaled sheet gets the most width. */
+@media (max-width: 880px) {
+  .paper-backdrop {
+    padding: 12px;
+  }
+}
+
 .page {
   /* --- tunables --- */
   --label-col: 0.52in;   /* width of From:/To:/Subj: label column */

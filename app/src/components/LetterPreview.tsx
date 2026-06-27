@@ -331,27 +331,71 @@ function EnclosurePage({
 }
 
 export function LetterPreview({ state }: { state: LetterState }) {
-  if (state.type === 'nato') return <NatoForm state={state} />;
+  const fitRef = useRef<HTMLDivElement>(null);
+  const pagesRef = useRef<HTMLDivElement>(null);
+
+  // Fit-to-width: on screens narrower than the 8.5in sheet, scale the whole preview down so the
+  // full page width is always visible (no horizontal scrolling/pinching). We use CSS `transform`,
+  // NOT `zoom`: transform is visual-only, so the measurers' offsetHeight stays at true size and
+  // pagination (which compares against pixel constants) is unaffected. The outer .preview-fit box
+  // is sized to the SCALED footprint so the scroll container reserves the right space.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const fit = fitRef.current;
+    const pages = pagesRef.current;
+    const backdrop = fit?.closest('.paper-backdrop') as HTMLElement | null;
+    if (!fit || !pages || !backdrop) return;
+    if (typeof ResizeObserver === 'undefined') return; // jsdom/SSR has no layout — skip fit-to-width
+    const apply = () => {
+      const cs = getComputedStyle(backdrop);
+      const avail = backdrop.clientWidth - parseFloat(cs.paddingLeft || '0') - parseFloat(cs.paddingRight || '0');
+      const natural = pages.offsetWidth; // true content width — transform does not affect offsetWidth
+      const z = natural > 0 ? Math.min(1, avail / natural) : 1;
+      if (z < 0.999) {
+        pages.style.transform = `scale(${z})`;
+        fit.style.width = `${natural * z}px`;
+        fit.style.height = `${pages.offsetHeight * z}px`;
+      } else {
+        pages.style.transform = '';
+        fit.style.width = '';
+        fit.style.height = '';
+      }
+    };
+    const ro = new ResizeObserver(apply);
+    ro.observe(backdrop);
+    ro.observe(pages);
+    apply();
+    return () => ro.disconnect();
+  });
+
   return (
-    <>
-      <LetterDoc state={state} />
-      {state.type !== 'endorsement' &&
-        state.endorsements.map((e, i) => (
-          <LetterDoc key={e.id} state={endorsementState(state, e, i)} />
-        ))}
-      {state.type !== 'endorsement' &&
-        state.encls.map((e, i) =>
-          e.inDocument && e.file ? (
-            <EnclosurePage
-              key={e.id}
-              encl={e}
-              index={i + 1}
-              cuiOn={state.cui.enabled}
-              banner={state.cui.banner || 'CUI'}
-            />
-          ) : null,
+    <div className="preview-fit" ref={fitRef}>
+      <div className="preview-pages" ref={pagesRef}>
+        {state.type === 'nato' ? (
+          <NatoForm state={state} />
+        ) : (
+          <>
+            <LetterDoc state={state} />
+            {state.type !== 'endorsement' &&
+              state.endorsements.map((e, i) => (
+                <LetterDoc key={e.id} state={endorsementState(state, e, i)} />
+              ))}
+            {state.type !== 'endorsement' &&
+              state.encls.map((e, i) =>
+                e.inDocument && e.file ? (
+                  <EnclosurePage
+                    key={e.id}
+                    encl={e}
+                    index={i + 1}
+                    cuiOn={state.cui.enabled}
+                    banner={state.cui.banner || 'CUI'}
+                  />
+                ) : null,
+              )}
+          </>
         )}
-    </>
+      </div>
+    </div>
   );
 }
 

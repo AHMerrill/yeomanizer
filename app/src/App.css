@@ -487,6 +487,55 @@
   padding: 14px;
 }
 
+/* ---- Responsive: stack the panes on tablet/phone; let the page scroll instead of two inner
+   scrollbars. The preview itself fits-to-width via .preview-fit (see preview.css). ---- */
+@media (max-width: 880px) {
+  .app {
+    height: auto;
+    min-height: 100vh;
+  }
+  .panes {
+    flex-direction: column;
+  }
+  .editor-pane {
+    flex: none;
+    max-width: none;
+    width: 100%;
+    overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid #2c2e36;
+  }
+  /* The preview pane sizes to its (scaled) content and the whole page scrolls, instead of being a
+     collapsed inner scroll area that clips the sheet. */
+  .paper-backdrop {
+    flex: none;
+    overflow: visible;
+  }
+}
+
+/* Narrow: wrap the toolbar onto rows — brand, the tab pill, then the export buttons (full-width,
+   easy to tap). 760px is just above the toolbar's ~740px single-row content width. */
+@media (max-width: 760px) {
+  .toolbar {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 10px 12px;
+  }
+  .grow {
+    display: none;
+  }
+  .brand {
+    flex: 1 1 100%;
+  }
+  .seg-toggle {
+    margin-left: 0;
+    flex: 1 1 100%;
+  }
+  .toolbar > button {
+    flex: 1 1 auto;
+  }
+}
+
 /* ---- Editor cards ---- */
 .editor {
   display: flex;
