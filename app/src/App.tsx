@@ -111,11 +111,8 @@ export default function App() {
         {view === 'editor' && state.type !== 'nato' && (
           <button onClick={() => void onDocx()}>Export .docx</button>
         )}
-        {view === 'editor' && (
-          <button
-            onClick={onPrint}
-            title="Exact-format PDF — print it and wet-sign, or keep as the record copy"
-          >
+        {view === 'editor' && state.type === 'nato' && (
+          <button className="primary" onClick={onPrint} title="Print or save the travel order as a PDF">
             Print / Save PDF
           </button>
         )}
@@ -123,9 +120,9 @@ export default function App() {
           <button
             className="primary"
             onClick={() => void onSignablePdf()}
-            title="PDF with a built-in digital-signature field — open in Adobe and sign with your CAC (no Prepare-a-Form step). The field is invisible when printed."
+            title="Pixel-accurate, searchable PDF of the full document — endorsements, enclosures, and CUI included — with a CAC-signable signature field. Open it to print, save, or CAC-sign (no Prepare-a-Form step)."
           >
-            CAC-signable PDF
+            Export PDF
           </button>
         )}
       </header>
