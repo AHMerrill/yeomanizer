@@ -24,6 +24,11 @@ const base: LetterState = {
   via: [{ id: 'v1', text: 'Commander, Naval Surface Force, U.S. Pacific Fleet' }],
   subj: 'EXAMPLE NAVAL LETTER FORMAT FOR LAYOUT VERIFICATION',
   signature: { name: 'I. M. SAILOR', title: '', authority: 'none' },
+  body: [
+    { id: 'b1', title: 'Purpose', text: 'This letter demonstrates the underlined section-title lead-in — the title renders underlined and inline, then a period and the body wrap after it.', children: [] },
+    { id: 'b2', title: 'Background', text: 'This paragraph also has a title; the body should continue past it and wrap to the left margin on the second line, per 7-2.13.', children: [] },
+    { id: 'b3', text: 'This paragraph has no title and renders exactly as before — number, gap, body.', children: [] },
+  ],
 };
 
 (RUN ? it : it.skip)('render sample PDFs to disk', async () => {

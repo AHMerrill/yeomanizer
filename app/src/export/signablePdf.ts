@@ -171,14 +171,44 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
       const indent = depthIndentIn(depth) * PT;
       const markerX = LEFT + indent;
       const textX = markerX + font.widthOfTextAtSize(marker, SIZE) + PGAP;
-      const lines = wrap(p.text, font, SIZE, RIGHT - textX);
+      // Optional underlined section title, inline after the marker: "N.  Title.  body…"
+      const titleW = p.title ? font.widthOfTextAtSize(p.title + '.  ', SIZE) : 0;
+      const firstX = textX + titleW; // body text begins after the title on the first line
+      // wrap with the first line narrower (room taken by the title); continuation matches the body
+      const lines: string[] = [];
+      {
+        let line = '';
+        let first = true;
+        for (const w of p.text.split(/\s+/)) {
+          const trial = line ? line + ' ' + w : w;
+          const maxW = first ? RIGHT - firstX : RIGHT - textX;
+          if (line && font.widthOfTextAtSize(trial, SIZE) > maxW) {
+            lines.push(line);
+            line = w;
+            first = false;
+          } else line = trial;
+        }
+        if (line) lines.push(line);
+        if (!lines.length) lines.push('');
+      }
       lines.forEach((ln, li) => {
         room(SIZE * BODY_LH);
-        const yTop = top;
-        if (li === 0)
-          page.drawText(marker, { x: markerX, y: PAGE_H - yTop - baselineDrop(SIZE, BODY_LH), font, size: SIZE });
+        const baseY = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
+        if (li === 0) {
+          page.drawText(marker, { x: markerX, y: baseY, font, size: SIZE });
+          if (p.title) {
+            page.drawText(p.title + '.', { x: textX, y: baseY, font, size: SIZE });
+            const tW = font.widthOfTextAtSize(p.title, SIZE);
+            page.drawLine({
+              start: { x: textX, y: baseY - 1.6 },
+              end: { x: textX + tW, y: baseY - 1.6 },
+              thickness: 0.6,
+              color: black,
+            });
+          }
+        }
         // continuation lines return to the left margin (7-2.13)
-        put(ln, li === 0 ? textX : LEFT);
+        put(ln, li === 0 ? firstX : LEFT);
       });
       gap(PARA_GAP);
       if (p.children.length) drawBody(p.children, depth + 1);

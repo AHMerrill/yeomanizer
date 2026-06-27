@@ -65,6 +65,7 @@ export interface Paragraph {
   text: string;
   children: Paragraph[];
   cui?: boolean; // per-paragraph CUI portion marking — (CUI) when true, (U) when marking is active
+  title?: string; // optional underlined lead-in: "N.  <u>Title</u>.  body…" (per OPNAVINST 5400.45A)
 }
 
 export type SignatureAuthority = 'none' | 'by-direction' | 'acting';

@@ -36,10 +36,11 @@ interface FlatPara {
   index: number;
   text: string;
   cui?: boolean;
+  title?: string;
 }
 function flattenForFlow(list: Paragraph[], depth: number, out: FlatPara[]): void {
   list.forEach((p, i) => {
-    out.push({ key: p.id, depth, index: i, text: p.text, cui: p.cui });
+    out.push({ key: p.id, depth, index: i, text: p.text, cui: p.cui, title: p.title });
     flattenForFlow(p.children, depth + 1, out);
   });
 }
@@ -50,6 +51,11 @@ function ParaFlow({ fp, portionActive }: { fp: FlatPara; portionActive: boolean 
       <MarkerSpan depth={fp.depth} index={fp.index} />
       <span className="pgap" />
       {portionActive ? (fp.cui ? '(CUI) ' : '(U) ') : ''}
+      {fp.title && (
+        <>
+          <u>{fp.title}</u>.<span className="pgap" />
+        </>
+      )}
       {fp.text}
     </p>
   );

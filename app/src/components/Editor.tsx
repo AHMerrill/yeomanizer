@@ -201,6 +201,13 @@ function ParaEditor({
               )}
             </div>
           </div>
+          <input
+            className="para-title"
+            value={p.title ?? ''}
+            placeholder="Section title (optional — underlined, e.g. Purpose)"
+            aria-label="Section title (optional)"
+            onChange={(e) => mut((r) => tree.updateTitle(r, p.id, e.target.value))}
+          />
           <textarea
             value={p.text}
             rows={2}
@@ -507,72 +514,6 @@ export function Editor({
         </Card>
       )}
 
-      {state.type === 'nato' && (
-        <Card
-          title="NATO Travel Order"
-          hint="Bilingual NATO travel order. Pick your US rank and the NATO OF/OR code fills in automatically. Set the command in the Letterhead card."
-        >
-          <Field label="Order number">
-            <input value={state.nato.orderNumber} onChange={(e) => patchNato({ orderNumber: e.target.value })} />
-          </Field>
-          <Field label="Rank (US → NATO code auto-fills)">
-            <select value={state.nato.rankGrade} onChange={(e) => patchNato({ rankGrade: e.target.value })}>
-              {NAVY_RANKS.map((r) => (
-                <option key={r.grade} value={r.grade}>
-                  {r.abbr} ({r.grade}) → {r.nato}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Full name">
-            <input value={state.nato.name} placeholder="Last, First MI" onChange={(e) => patchNato({ name: e.target.value })} />
-          </Field>
-          <Field label="DoD ID number">
-            <input value={state.nato.dodId} onChange={(e) => patchNato({ dodId: e.target.value })} />
-          </Field>
-          <Field label="Travel from">
-            <input value={state.nato.from} placeholder="San Diego, California, USA" onChange={(e) => patchNato({ from: e.target.value })} />
-          </Field>
-          <Field label="Travel to">
-            <input value={state.nato.to} placeholder="Ramstein, DE" onChange={(e) => patchNato({ to: e.target.value })} />
-          </Field>
-          <Field label="Via (countries traveled to / through)">
-            <textarea value={state.nato.via} rows={2} placeholder="Belgium, Germany, Italy, …" onChange={(e) => patchNato({ via: e.target.value })} />
-          </Field>
-          <Field label="Date of departure">
-            <input value={state.nato.departureDate} placeholder="24 May 2025" onChange={(e) => patchNato({ departureDate: e.target.value })} />
-          </Field>
-          <Field label="Expected return date">
-            <input value={state.nato.returnDate} placeholder="3 June 2025" onChange={(e) => patchNato({ returnDate: e.target.value })} />
-          </Field>
-          <div className="sub-label">Para 3 — authority to possess &amp; carry arms</div>
-          <div className="pills">
-            <Pill on={state.nato.armsGranted} onClick={() => patchNato({ armsGranted: true })}>
-              is granted
-            </Pill>
-            <Pill on={!state.nato.armsGranted} onClick={() => patchNato({ armsGranted: false })}>
-              is not granted
-            </Pill>
-          </div>
-          <Field label="Para 4: authorized to carry">
-            <input value={state.nato.dispatchQty} placeholder="no/none" onChange={(e) => patchNato({ dispatchQty: e.target.value })} />
-          </Field>
-          <Field label="Para 4: sealed dispatches numbered">
-            <input value={state.nato.dispatchNumbers} placeholder="N/A" onChange={(e) => patchNato({ dispatchNumbers: e.target.value })} />
-          </Field>
-          <label className="check">
-            <input type="checkbox" checked={state.nato.includeSofa} onChange={(e) => patchNato({ includeSofa: e.target.checked })} />
-            Para 5: include NATO SOFA certification
-          </label>
-          <Field label="Officer authorizing movement">
-            <input value={state.nato.authorizingOfficer} onChange={(e) => patchNato({ authorizingOfficer: e.target.value })} />
-          </Field>
-          <Field label="Date of issue">
-            <input value={state.nato.dateOfIssue} placeholder="12 May 2025" onChange={(e) => patchNato({ dateOfIssue: e.target.value })} />
-          </Field>
-        </Card>
-      )}
-
       <Card title="Letterhead" hint="No abbreviations or punctuation in the address (2-12).">
         <div className="pills">
           <Pill on={state.letterhead.mode === 'on'} onClick={() => patchLH({ mode: 'on' })}>
@@ -642,6 +583,72 @@ export function Editor({
           </>
         )}
       </Card>
+
+      {state.type === 'nato' && (
+        <Card
+          title="NATO Travel Order"
+          hint="Bilingual NATO travel order. Pick your US rank and the NATO OF/OR code fills in automatically. Set the command in the Letterhead card."
+        >
+          <Field label="Order number">
+            <input value={state.nato.orderNumber} onChange={(e) => patchNato({ orderNumber: e.target.value })} />
+          </Field>
+          <Field label="Rank (US → NATO code auto-fills)">
+            <select value={state.nato.rankGrade} onChange={(e) => patchNato({ rankGrade: e.target.value })}>
+              {NAVY_RANKS.map((r) => (
+                <option key={r.grade} value={r.grade}>
+                  {r.abbr} ({r.grade}) → {r.nato}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Full name">
+            <input value={state.nato.name} placeholder="Last, First MI" onChange={(e) => patchNato({ name: e.target.value })} />
+          </Field>
+          <Field label="DoD ID number">
+            <input value={state.nato.dodId} onChange={(e) => patchNato({ dodId: e.target.value })} />
+          </Field>
+          <Field label="Travel from">
+            <input value={state.nato.from} placeholder="San Diego, California, USA" onChange={(e) => patchNato({ from: e.target.value })} />
+          </Field>
+          <Field label="Travel to">
+            <input value={state.nato.to} placeholder="Ramstein, DE" onChange={(e) => patchNato({ to: e.target.value })} />
+          </Field>
+          <Field label="Via (countries traveled to / through)">
+            <textarea value={state.nato.via} rows={2} placeholder="Belgium, Germany, Italy, …" onChange={(e) => patchNato({ via: e.target.value })} />
+          </Field>
+          <Field label="Date of departure">
+            <input value={state.nato.departureDate} placeholder="24 May 2025" onChange={(e) => patchNato({ departureDate: e.target.value })} />
+          </Field>
+          <Field label="Expected return date">
+            <input value={state.nato.returnDate} placeholder="3 June 2025" onChange={(e) => patchNato({ returnDate: e.target.value })} />
+          </Field>
+          <div className="sub-label">Para 3 — authority to possess &amp; carry arms</div>
+          <div className="pills">
+            <Pill on={state.nato.armsGranted} onClick={() => patchNato({ armsGranted: true })}>
+              is granted
+            </Pill>
+            <Pill on={!state.nato.armsGranted} onClick={() => patchNato({ armsGranted: false })}>
+              is not granted
+            </Pill>
+          </div>
+          <Field label="Para 4: authorized to carry">
+            <input value={state.nato.dispatchQty} placeholder="no/none" onChange={(e) => patchNato({ dispatchQty: e.target.value })} />
+          </Field>
+          <Field label="Para 4: sealed dispatches numbered">
+            <input value={state.nato.dispatchNumbers} placeholder="N/A" onChange={(e) => patchNato({ dispatchNumbers: e.target.value })} />
+          </Field>
+          <label className="check">
+            <input type="checkbox" checked={state.nato.includeSofa} onChange={(e) => patchNato({ includeSofa: e.target.checked })} />
+            Para 5: include NATO SOFA certification
+          </label>
+          <Field label="Officer authorizing movement">
+            <input value={state.nato.authorizingOfficer} onChange={(e) => patchNato({ authorizingOfficer: e.target.value })} />
+          </Field>
+          <Field label="Date of issue">
+            <input value={state.nato.dateOfIssue} placeholder="12 May 2025" onChange={(e) => patchNato({ dateOfIssue: e.target.value })} />
+          </Field>
+        </Card>
+      )}
 
       {state.type !== 'nato' && (
         <>

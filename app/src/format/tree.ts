@@ -13,6 +13,13 @@ export function updateText(list: Tree, id: string, text: string): Tree {
   );
 }
 
+// Set a paragraph's optional underlined title (lead-in). Empty clears it.
+export function updateTitle(list: Tree, id: string, title: string): Tree {
+  return list.map((p) =>
+    p.id === id ? { ...p, title } : { ...p, children: updateTitle(p.children, id, title) },
+  );
+}
+
 // Toggle a paragraph's CUI portion marking.
 export function setCui(list: Tree, id: string, on: boolean): Tree {
   return list.map((p) =>
