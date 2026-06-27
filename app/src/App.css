@@ -571,6 +571,16 @@
   color: #7d8290;
   line-height: 1.35;
 }
+/* Links inside hints (e.g. the SNDL lookup) — readable blue, underlined, and an explicit :visited
+   so they don't fall back to the unreadable default link blue / visited purple on the dark card. */
+.hint a,
+.hint a:visited {
+  color: #6aa0ff;
+  text-decoration: underline;
+}
+.hint a:hover {
+  color: #93bcff;
+}
 .field {
   display: flex;
   flex-direction: column;
