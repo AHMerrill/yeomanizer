@@ -15,6 +15,7 @@ import {
   remainingVias,
 } from '../format/identification';
 import { paragraphMarker, markerText, depthIndentIn } from '../format/paragraphs';
+import { parseInline } from '../format/inline';
 import { loadSealBytes } from './docx';
 
 const PT = 72;
@@ -44,6 +45,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.TimesRoman);
   const bold = await doc.embedFont(StandardFonts.TimesRomanBold);
+  const italicFont = await doc.embedFont(StandardFonts.TimesRomanItalic);
   const black = rgb(0, 0, 0);
   const navy = rgb(...NAVY);
 
@@ -174,24 +176,49 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
       // Optional underlined section title, inline after the marker: "N.  Title.  body…"
       const titleW = p.title ? font.widthOfTextAtSize(p.title + '.  ', SIZE) : 0;
       const firstX = textX + titleW; // body text begins after the title on the first line
-      // wrap with the first line narrower (room taken by the title); continuation matches the body
-      const lines: string[] = [];
-      {
-        let line = '';
-        let first = true;
-        for (const w of p.text.split(/\s+/)) {
-          const trial = line ? line + ' ' + w : w;
-          const maxW = first ? RIGHT - firstX : RIGHT - textX;
-          if (line && font.widthOfTextAtSize(trial, SIZE) > maxW) {
-            lines.push(line);
-            line = w;
-            first = false;
-          } else line = trial;
+      // Split into whitespace-delimited words; each word is one or more inline-markup segments
+      // (**bold** *italic* __underline__), so attached punctuation keeps no spurious space.
+      const spaceW = font.widthOfTextAtSize(' ', SIZE);
+      type Seg = { text: string; f: PdfFont; ul: boolean; w: number };
+      type Word = { segs: Seg[]; w: number };
+      const words: Word[] = [];
+      let acc: Seg[] = [];
+      const flush = () => {
+        if (acc.length) {
+          words.push({ segs: acc, w: acc.reduce((s, g) => s + g.w, 0) });
+          acc = [];
         }
-        if (line) lines.push(line);
-        if (!lines.length) lines.push('');
+      };
+      for (const r of parseInline(p.text)) {
+        const f = r.bold ? bold : r.italic ? italicFont : font;
+        for (const part of r.text.split(/(\s+)/)) {
+          if (part === '') continue;
+          if (/^\s+$/.test(part)) flush();
+          else acc.push({ text: part, f, ul: !!r.underline, w: f.widthOfTextAtSize(part, SIZE) });
+        }
       }
-      lines.forEach((ln, li) => {
+      flush();
+      // Wrap words into rows: row 0 begins after the title; continuation returns to LEFT (7-2.13).
+      const rows: { words: Word[]; startX: number }[] = [];
+      {
+        let cur: Word[] = [];
+        let startX = firstX;
+        let x = firstX;
+        for (const wd of words) {
+          const sp = cur.length ? spaceW : 0;
+          if (cur.length && x + sp + wd.w > RIGHT) {
+            rows.push({ words: cur, startX });
+            cur = [wd];
+            startX = LEFT;
+            x = LEFT + wd.w;
+          } else {
+            cur.push(wd);
+            x += sp + wd.w;
+          }
+        }
+        if (cur.length || !rows.length) rows.push({ words: cur, startX });
+      }
+      rows.forEach((row, li) => {
         room(SIZE * BODY_LH);
         const baseY = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
         if (li === 0) {
@@ -207,8 +234,23 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
             });
           }
         }
-        // continuation lines return to the left margin (7-2.13)
-        put(ln, li === 0 ? firstX : LEFT);
+        let wx = row.startX;
+        row.words.forEach((wd, wi) => {
+          if (wi > 0) wx += spaceW;
+          for (const seg of wd.segs) {
+            page.drawText(seg.text, { x: wx, y: baseY, font: seg.f, size: SIZE });
+            if (seg.ul) {
+              page.drawLine({
+                start: { x: wx, y: baseY - 1.6 },
+                end: { x: wx + seg.w, y: baseY - 1.6 },
+                thickness: 0.6,
+                color: black,
+              });
+            }
+            wx += seg.w;
+          }
+        });
+        top += SIZE * BODY_LH;
       });
       gap(PARA_GAP);
       if (p.children.length) drawBody(p.children, depth + 1);

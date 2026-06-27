@@ -24,6 +24,7 @@ import {
 } from '../format/identification';
 import { anyCui } from '../format/tree';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
+import { parseInline } from '../format/inline';
 
 const IN = 1440; // twips per inch
 const FONT = 'Times New Roman';
@@ -33,6 +34,7 @@ const BLANK = 240; // ~one 12pt blank line
 
 interface RunOpts {
   bold?: boolean;
+  italics?: boolean;
   size?: number;
   color?: string;
   underline?: boolean;
@@ -43,6 +45,7 @@ function R(text: string, opts: RunOpts = {}): TextRun {
     font: FONT,
     size: opts.size ?? SZ,
     bold: opts.bold,
+    italics: opts.italics,
     color: opts.color,
     underline: opts.underline ? { type: UnderlineType.SINGLE } : undefined,
   });
@@ -154,7 +157,9 @@ function flattenBody(list: P[], depth: number, out: Paragraph[], portionActive: 
           R(m.suffix),
           R('  ' + mark),
           ...(p.title ? [R(p.title, { underline: true }), R('.  ')] : []),
-          R(p.text),
+          ...parseInline(p.text).map((r) =>
+            R(r.text, { bold: r.bold, italics: r.italic, underline: r.underline }),
+          ),
         ],
         indent: { firstLine: Math.round(depthIndentIn(depth) * IN) },
         spacing: { after: BLANK },

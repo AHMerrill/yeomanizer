@@ -1,5 +1,6 @@
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { LetterState, Paragraph, EndorsementEntry, EnclosureEntry } from '../types';
+import { parseInline } from '../format/inline';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 import { anyCui } from '../format/tree';
 import {
@@ -45,6 +46,25 @@ function flattenForFlow(list: Paragraph[], depth: number, out: FlatPara[]): void
   });
 }
 
+// Renders inline markup (**bold** *italic* __underline__) as escaped emphasis spans.
+function Inline({ text }: { text: string }) {
+  return (
+    <>
+      {parseInline(text).map((r, i) =>
+        r.bold ? (
+          <strong key={i}>{r.text}</strong>
+        ) : r.italic ? (
+          <em key={i}>{r.text}</em>
+        ) : r.underline ? (
+          <u key={i}>{r.text}</u>
+        ) : (
+          <span key={i}>{r.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 function ParaFlow({ fp, portionActive }: { fp: FlatPara; portionActive: boolean }) {
   return (
     <p className="para" style={{ textIndent: `${depthIndentIn(fp.depth)}in` }}>
@@ -56,7 +76,7 @@ function ParaFlow({ fp, portionActive }: { fp: FlatPara; portionActive: boolean 
           <u>{fp.title}</u>.<span className="pgap" />
         </>
       )}
-      {fp.text}
+      <Inline text={fp.text} />
     </p>
   );
 }

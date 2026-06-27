@@ -787,7 +787,10 @@ export function Editor({
         <EnclosureCards encls={state.encls} onChange={(encls) => patch({ encls })} />
       </Card>
 
-      <Card title="Body" hint="Add paragraphs and subparagraphs; numbering is automatic.">
+      <Card
+        title="Body"
+        hint="Add paragraphs and subparagraphs; numbering is automatic. For emphasis, type **bold**, *italic*, or __underline__."
+      >
         <ParaEditor
           root={state.body}
           list={state.body}
