@@ -2,25 +2,32 @@
 
 > A free, unofficial web tool that drafts U.S. Navy correspondence — standard naval letters,
 > memoranda, endorsements, and NATO travel orders — in the exact format prescribed by SECNAV
-> M-5216.5, with a live preview and one-click PDF / Microsoft Word (.docx) export.
+> M-5216.5, with a live preview and in-browser .docx / .pdf / .json export.
 
 the yeomanizer formats naval correspondence automatically: the letterhead, the
 SSIC/identification block, the From/To/Via/Subj/Ref/Encl heading block, automatic paragraph
-numbering and indentation, the signature block, CUI markings, and multi-page pagination —
-all to the manual's standard. You type plain text on one side and a correctly formatted
-letter appears on the other.
+numbering and indentation, optional underlined section titles, the signature block, CUI
+markings, and multi-page pagination — all to the manual's standard. You type plain text on one
+side and a correctly formatted letter appears on the other.
 
 ## Key facts
 - Free, and runs entirely in your web browser. No account or login.
-- Privacy by design: nothing you type is stored or transmitted; it is erased when you close the tab.
-- Unofficial — not affiliated with or endorsed by the U.S. Navy or the Department of Defense.
-- Exports to PDF (via print) and Microsoft Word (.docx), and can combine the saved letter PDF
-  with enclosure files into a single packet — all in the browser.
+- Privacy by design: the tool stores and transmits nothing — your draft lives only in the browser
+  tab and is erased when you close it. You download and handle the exported files yourself.
+- Unofficial — not affiliated with or endorsed by the U.S. Navy or the Department of Defense, and
+  not an official system of record. It makes no authorization claim; CUI belongs only on authorized
+  Government-Furnished Equipment.
+- Three exports, all generated in the browser: a pixel-accurate vector/searchable PDF with a
+  CAC-signable signature field; an editable Microsoft Word (.docx) document; and a small plain-text
+  .json copy of the draft that can be re-imported to keep working. The exported documents are clean
+  — no hidden or embedded data. It can also combine a saved letter PDF with enclosure files into a
+  single packet.
 - Document types: standard naval letter, memorandum (From-To), endorsements (appended to a
   letter automatically when a Via addressee is added, or built standalone), and the NATO
   travel order (the bilingual two-page form).
-- Also handles CUI markings, automatic U.S.-grade to NATO (OF/OR) rank translation, and
-  letterhead in printed / plain-paper / pre-printed modes with the DoD seal.
+- Also handles CUI markings, inline emphasis (bold, italic, underline), automatic U.S.-grade to
+  NATO (OF/OR) rank translation, letterhead in printed / plain-paper / pre-printed modes with the
+  DoD seal, and a layout that works on phones, tablets, and desktops.
 
 ## Where
 - https://yeomanizer.com

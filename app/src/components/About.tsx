@@ -9,15 +9,19 @@ const AVAILABLE: [string, string][] = [
   ['Live preview', 'Overleaf-style: the formatted page updates with every keystroke.'],
   ['CAC-signable PDF', 'One pixel-accurate PDF of the whole package — letter, endorsements, enclosures, CUI — with selectable, searchable text and a built-in CAC signature field. Open it to print, save, or sign (no Prepare-a-Form step).'],
   ['Word (.docx) export', 'An editable Word version of the full document — endorsements, enclosures, and CUI included.'],
+  ['Editable .json copy', 'Export a small plain-text .json of your draft and drop it back into the Editor tab later to keep working — the .docx and PDF stay clean, with nothing hidden inside them.'],
   ['Enclosures in the document', "Mark an enclosure “in the document” and drop in an image or PDF — it's appended and marked “Enclosure (n)”. Images embed; PDFs come in as real, searchable pages in the PDF."],
   ['Combine into one PDF', 'Or merge an already-saved letter PDF with separate enclosure files into one packet — entirely in your browser.'],
   ['Letterhead control', 'Printed, plain paper, or pre-printed stock; the authentic DoD seal.'],
   ['Identification block', "SSIC, originator's code, serial, and date — each optional."],
   ['References, enclosures, copy-to', 'Auto-lettered (a), (b)… and numbered (1), (2)…'],
   ['Automatic paragraph numbering', 'Nested subparagraphs indent and renumber themselves.'],
+  ['Section titles', 'An optional underlined lead-in per paragraph — “1. Purpose. …” — per OPNAVINST 5400.45A.'],
+  ['Inline emphasis', 'Type **bold**, *italic*, or __underline__ anywhere; it renders the same in the preview, the .docx, and the PDF.'],
   ['Rank auto-translation', 'Pick a U.S. grade (E-1…O-10); the NATO OF/OR code is filled in.'],
   ['Multi-page handling', 'Continuation pages start at the 1-inch margin and number from page 2 (§7-2.17).'],
   ['CUI marking', 'Banner top & bottom of every page — enclosures included — plus the designation block and optional per-paragraph (CUI)/(U) marks. Per DoDI 5200.48 and DON PII guidance.'],
+  ['Phone, tablet, desktop', 'The two-pane layout stacks and the sheet scales to fit — usable from a phone up to a wide monitor.'],
   ['Private by design', 'The tool stores and transmits nothing — your draft lives only in this tab and is erased when you close it. You download and handle the files yourself.'],
 ];
 
@@ -25,9 +29,7 @@ const PLANNED: [string, string][] = [
   ['Per-enclosure CUI', 'Mark individual enclosures as CUI or not — each enclosure is its own document under the marking rules.'],
   ['PDF pages inside Word', 'Render attached PDF pages into the .docx as images (today they embed as real pages in the PDF and are referenced by name in Word).'],
   ['More letter types', 'Business letter, multiple-address, and multiple-reply letters.'],
-  ['Save drafts locally', 'Optional, on your device only — never on a server.'],
   ['Expanded SSIC lookup', 'Search the full Standard Subject Identification Code list.'],
-  ['Mobile polish', 'A layout tuned for phones and tablets.'],
 ];
 
 function Column({ title, items, planned }: { title: string; items: [string, string][]; planned?: boolean }) {

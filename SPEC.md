@@ -1,4 +1,4 @@
-# YN-AI — Naval Correspondence Format Spec
+# the yeomanizer — Naval Correspondence Format Spec
 
 Derived from **SECNAV M-5216.5 (June 2015) w/ CH-1 (16 May 2018)**, Chapter 7
 (Correspondence Format) and Chapter 2, plus the *Navy Writing Guide*. This is the
@@ -73,6 +73,12 @@ after the heading. Literal space counts (for reference / .txt export only):
 
 - Citing a paragraph in text: no periods/spaces, e.g. `2b(4)(a)`.
 - Paragraph headings: underline, Title Case, consistent across siblings.
+- **Section titles (impl):** each paragraph has an optional underlined lead-in rendered inline after
+  the marker — `1.  <u>Purpose</u>.  body…` — per the OPNAVINST 5400.45A example. Identical in the
+  preview, `.docx`, and PDF.
+- **Inline emphasis (impl):** bold / underline / italics are permitted for occasional emphasis. The
+  editor accepts `**bold**`, `*italic*`, `__underline__` as plain-text markup, parsed identically by
+  every renderer (`format/inline.ts`).
 
 ## Signature (7-2.14)
 - Start all lines at the **horizontal center of the page**, on the **4th line below the text**.
@@ -150,16 +156,20 @@ format/identification.ts, used by both the preview and the .docx export.
 The bilingual two-page form (order + reverse instructions), with U.S.-grade → NATO (OF/OR)
 rank-code translation and the arms / dispatch / SOFA options.
 
+## Exports — done
+- **PDF** (`export/signablePdf.ts`): pixel-accurate, vector/searchable; embeds a real AcroForm
+  digital-signature field (`/FT /Sig`) over each signature space (basic letter + every endorsement),
+  all collected into one AcroForm; renders endorsements, in-document enclosures (images embedded,
+  PDFs copied as real pages), and CUI banners top/bottom of every page.
+- **.docx** (`export/docx.ts`): editable Word mirror — embeds the seal as an image, CUI via Word
+  headers/footers, section titles + inline emphasis as styled runs.
+- **.json** (`export/roundtrip.ts`): a separate plain-text project file for lossless re-import via
+  the Editor tab — never embedded in the `.docx`/PDF (clean documents).
+
 ## Known gaps / TODO
-- Pre-placed CAC signature field — EVALUATED (spike) and deferred: adding an empty AcroForm
-  /Sig widget needs fiddly low-level pdf-lib dict work, and there's no way to verify Adobe
-  recognizes it as clickable without Adobe itself. Payoff is marginal — Adobe already signs
-  any PDF (Certificates → Digitally Sign). The current export is CAC-signable in Adobe today,
-  or wet-signed on paper.
 - Enclosure packets: shipped a client-side "combine into one PDF" tool (pdf-lib merge of the
   saved letter PDF + enclosure files). Still TODO: tying attachments to specific enclosure
   entries and auto-marking "Enclosure (n)" on the merged pages.
-- Seal not yet embedded in `.docx` (letterhead text only).
 - Mid-paragraph page splitting (currently breaks only at paragraph boundaries).
 - Other types: business letter (Ch 11), multiple-address (Ch 8).
 - The advisor / style-suggestion layer.
