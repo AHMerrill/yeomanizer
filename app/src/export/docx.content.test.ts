@@ -90,4 +90,24 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('A. B. SEADOG');
     expect(xml).toContain('By direction');
   });
+
+  it('appends in-document enclosures — image embedded, PDF referenced, each marked', async () => {
+    const png =
+      'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC';
+    const state: LetterState = {
+      ...defaultState,
+      from: 'CO, USS Test',
+      encls: [
+        { id: 'i1', text: 'A photo', inDocument: true, file: { name: 'p.png', type: 'image/png', dataUrl: `data:image/png;base64,${png}` } },
+        { id: 'i2', text: 'A document', inDocument: true, file: { name: 'd.pdf', type: 'application/pdf', dataUrl: 'data:application/pdf;base64,JVBERi0=' } },
+      ],
+    };
+    const buf = await Packer.toBuffer(buildDocxDocument(state, new Date(2006, 8, 7)));
+    const zip = await JSZip.loadAsync(buf);
+    const xml = (await zip.file('word/document.xml')?.async('string')) ?? '';
+    expect(Object.keys(zip.files).some((f) => f.startsWith('word/media/'))).toBe(true); // image embedded
+    expect(xml).toContain('Enclosure (1)');
+    expect(xml).toContain('Enclosure (2)');
+    expect(xml).toContain('PDF attached separately'); // PDF referenced (docx can't hold vector pages)
+  });
 });

@@ -58,6 +58,45 @@ const spacer = (after = 120) => new Paragraph({ children: [R('')], spacing: { af
 
 const EMU = 914400; // EMUs per inch (floating-image offsets)
 
+// data: URL → bytes (sync; works in the browser and the jsdom test env).
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const b64 = dataUrl.split(',')[1] ?? '';
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+// Intrinsic pixel size from a PNG/JPEG header (no image decode needed); falls back to 4:3.
+function imageSize(bytes: Uint8Array): { width: number; height: number } {
+  if (bytes.length >= 24 && bytes[0] === 0x89 && bytes[1] === 0x50) {
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    return { width: dv.getUint32(16), height: dv.getUint32(20) };
+  }
+  if (bytes.length >= 10 && bytes[0] === 0xff && bytes[1] === 0xd8) {
+    let o = 2;
+    while (o + 9 < bytes.length) {
+      if (bytes[o] !== 0xff) {
+        o++;
+        continue;
+      }
+      const m = bytes[o + 1];
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc)
+        return { width: (bytes[o + 7] << 8) | bytes[o + 8], height: (bytes[o + 5] << 8) | bytes[o + 6] };
+      o += 2 + ((bytes[o + 2] << 8) | bytes[o + 3]);
+    }
+  }
+  return { width: 800, height: 600 };
+}
+
+function imageKind(mime: string): 'png' | 'jpg' | 'gif' | 'bmp' {
+  const m = mime.toLowerCase();
+  if (m.includes('jpeg') || m.includes('jpg')) return 'jpg';
+  if (m.includes('gif')) return 'gif';
+  if (m.includes('bmp')) return 'bmp';
+  return 'png';
+}
+
 // Floating seal at the top-left — matches the preview's 1-inch seal at 0.62in / 0.5in.
 function sealRun(bytes: ArrayBuffer | Uint8Array): ImageRun {
   return new ImageRun({
@@ -281,6 +320,44 @@ export function buildDocxDocument(
       );
     });
   }
+
+  // In-document enclosures (§7) — appended after the body/endorsements, each on its own page,
+  // marked "Enclosure (n)". Images embed (full fidelity); PDFs are referenced, since a .docx
+  // can't carry vector PDF pages (matches the preview's note — the signable PDF copies them).
+  state.encls.forEach((e, n) => {
+    if (!e.inDocument || !e.file) return;
+    if (e.file.type.startsWith('image/')) {
+      const bytes = dataUrlToBytes(e.file.dataUrl);
+      const sz = imageSize(bytes);
+      const s = Math.min((6 * 96) / sz.width, (8 * 96) / sz.height); // fit within the margins
+      children.push(
+        new Paragraph({
+          pageBreakBefore: true,
+          alignment: AlignmentType.CENTER,
+          children: [
+            new ImageRun({
+              type: imageKind(e.file.type),
+              data: bytes,
+              transformation: { width: Math.round(sz.width * s), height: Math.round(sz.height * s) },
+            }),
+          ],
+          spacing: { after: 0 },
+        }),
+      );
+    } else {
+      children.push(
+        new Paragraph({ pageBreakBefore: true, children: [R(e.text || 'Enclosure')], spacing: { after: BLANK } }),
+      );
+      children.push(new Paragraph({ children: [R(`${e.file.name} — PDF attached separately.`)] }));
+    }
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        children: [R(`Enclosure (${n + 1})`)],
+        spacing: { before: BLANK },
+      }),
+    );
+  });
 
   // CUI banner (header + footer, repeats on every page via Word's native headers/footers)
   // and the designation indicator block in the first-page footer (lower-right).

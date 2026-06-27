@@ -79,7 +79,7 @@ const base: LetterState = {
   });
   const enclPdfUrl = 'data:application/pdf;base64,' + Buffer.from(await enclPdf.save()).toString('base64');
   const onePx =
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC';
   const encls: LetterState = {
     ...base,
     encls: [
@@ -88,4 +88,19 @@ const base: LetterState = {
     ],
   };
   writeFileSync(`${OUT}/enclosures.pdf`, await buildSignablePdf(encls, today));
+
+  // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
+  // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
+  const { Packer } = await import('docx');
+  const { buildDocxDocument } = await import('./docx');
+  const seal = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC',
+    'base64',
+  );
+  const writeDocx = async (name: string, st: LetterState) =>
+    writeFileSync(`${OUT}/${name}.docx`, await Packer.toBuffer(buildDocxDocument(st, today, seal)));
+  await writeDocx('basic', base);
+  await writeDocx('endorsement', endo);
+  await writeDocx('cui', cui);
+  await writeDocx('enclosures', encls);
 });
