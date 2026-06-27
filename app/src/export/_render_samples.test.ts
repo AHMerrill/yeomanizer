@@ -35,6 +35,32 @@ const base: LetterState = {
   mkdirSync(OUT, { recursive: true });
   writeFileSync(`${OUT}/basic.pdf`, await buildSignablePdf(base, today));
 
+  // Long From/To/Via/Subj/Ref/Encl that must wrap — verifies hang-indent alignment per part (7-2.6–11).
+  const headwrap: LetterState = {
+    ...base,
+    from: 'Commanding Officer, United States Ship Yeoman (DDG 1000), Naval Surface Force, U.S. Pacific Fleet, San Diego, California 92136',
+    to: 'Deputy Chief of Naval Operations for Information Warfare (N2/N6), Office of the Chief of Naval Operations, 2000 Navy Pentagon, Washington DC 20350',
+    via: [
+      { id: 'v1', text: 'Commander, Naval Surface Force, U.S. Pacific Fleet, San Diego, California, via the established administrative chain of command' },
+      { id: 'v2', text: 'Commander, U.S. Pacific Fleet' },
+    ],
+    subj: 'REQUEST FOR APPROVAL OF A SUBJECT LINE LONG ENOUGH TO EXCEED ONE LINE AND WRAP TO A SECOND LINE FOR ALIGNMENT VERIFICATION',
+    refs: [
+      { id: 'r1', text: 'SECNAV M-5216.5, Department of the Navy Correspondence Manual, of June 2015, Chapter 7, paragraphs 7-2.6 through 7-2.11' },
+      { id: 'r2', text: 'OPNAVINST 5400.45A' },
+    ],
+    encls: [
+      { id: 'en1', text: 'A supporting document whose title is long enough to wrap onto a second line for enclosure-alignment verification', inDocument: false },
+    ],
+  };
+  writeFileSync(`${OUT}/headwrap.pdf`, await buildSignablePdf(headwrap, today));
+
+  // Round-trip the long-headings sample through .json export → import, then re-render — the
+  // generate → export → re-import → view-again pipeline; proves the import preserves every heading.
+  const { serializeProject, parseProject } = await import('./roundtrip');
+  const headwrapRT = parseProject(serializeProject(headwrap));
+  if (headwrapRT) writeFileSync(`${OUT}/headwrap-roundtrip.pdf`, await buildSignablePdf(headwrapRT, today));
+
   const endo: LetterState = {
     ...base,
     endorsements: [
@@ -106,6 +132,7 @@ const base: LetterState = {
   const writeDocx = async (name: string, st: LetterState) =>
     writeFileSync(`${OUT}/${name}.docx`, await Packer.toBuffer(buildDocxDocument(st, today, seal)));
   await writeDocx('basic', base);
+  await writeDocx('headwrap', headwrap);
   await writeDocx('endorsement', endo);
   await writeDocx('cui', cui);
   await writeDocx('enclosures', encls);

@@ -30,7 +30,6 @@ const SIZE = 12; // body pt
 const BODY_LH = 1.14; // .page line-height
 const PARA_GAP = 11.5; // --para-gap
 const LABEL_COL = 0.52 * PT; // --label-col
-const MARKER_COL = 0.34 * PT; // --marker-col
 const PGAP = 0.09 * PT; // .pgap (gap after a body marker)
 const NAVY: [number, number, number] = [0, 0x2c / 0xff, 0x77 / 0xff];
 
@@ -135,21 +134,25 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
 
   // ---- Heading block (From/To/Via/Subj/Ref/Encl) ----
   gap(0.3 * PT - PARA_GAP < 0 ? 0.14 * PT : 0.3 * PT); // .headings margin-top (~0.3in from ident)
-  const headRow = (label: string, value: string, valIndent = 0) => {
-    const vx = LEFT + LABEL_COL + valIndent;
-    const lines = wrap(value, font, SIZE, RIGHT - vx);
+  // A long heading entry hangs its continuation under the entry's FIRST WORD (7-2.6–11): under the
+  // content for From/To/Via/Subj, and under the text — past the marker — for the numbered Via/Ref/Encl
+  // lists. The optional `marker` (e.g. "(a)  ") sits in the content column; the wrapped text and every
+  // continuation line start just after it. (Was wrongly returning continuations to the left margin.)
+  const headRow = (label: string, value: string, marker = '') => {
+    const vx = LEFT + LABEL_COL;
+    const textX = marker ? vx + font.widthOfTextAtSize(marker, SIZE) : vx;
+    const lines = wrap(value, font, SIZE, RIGHT - textX);
     room(SIZE * BODY_LH);
-    const yTop = top;
-    if (label) page.drawText(label, { x: LEFT, y: PAGE_H - yTop - baselineDrop(SIZE, BODY_LH), font, size: SIZE });
-    put(lines[0] ?? '', vx);
-    lines.slice(1).forEach((ln) => put(ln, LEFT)); // continuation returns to the left margin
+    const baseY = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
+    if (label) page.drawText(label, { x: LEFT, y: baseY, font, size: SIZE });
+    if (marker) page.drawText(marker, { x: vx, y: baseY, font, size: SIZE });
+    put(lines[0] ?? '', textX);
+    lines.slice(1).forEach((ln) => put(ln, textX));
   };
   if (state.from) headRow('From:', state.from);
   if (state.to) headRow('To:', state.to);
   const vias = state.via.filter((v) => v.text.trim());
-  vias.forEach((v, i) =>
-    headRow(i === 0 ? 'Via:' : '', vias.length > 1 ? `(${i + 1}) ${v.text}` : v.text),
-  );
+  vias.forEach((v, i) => headRow(i === 0 ? 'Via:' : '', v.text, vias.length > 1 ? `(${i + 1}) ` : ''));
   if (state.subj) {
     gap(PARA_GAP);
     headRow('Subj:', state.subj.toUpperCase());
@@ -157,12 +160,12 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   const refs = state.refs.filter((r) => r.text.trim());
   refs.forEach((r, i) => {
     if (i === 0) gap(PARA_GAP);
-    headRow(i === 0 ? 'Ref:' : '', `(${String.fromCharCode(97 + i)})  ${r.text}`, MARKER_COL - 0.34 * PT);
+    headRow(i === 0 ? 'Ref:' : '', r.text, `(${String.fromCharCode(97 + i)})  `);
   });
   const encls = state.encls.filter((e) => e.text.trim());
   encls.forEach((e, i) => {
     if (i === 0) gap(PARA_GAP);
-    headRow(i === 0 ? 'Encl:' : '', `(${i + 1})  ${e.text}`);
+    headRow(i === 0 ? 'Encl:' : '', e.text, `(${i + 1})  `);
   });
 
   // ---- Body (numbered paragraphs; first line indented, continuation at the left margin) ----
@@ -298,7 +301,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     const evias = remainingVias(state, e.viaId); // Ch 9-2.2: remaining Via addressees
     if (evias.length === 1) headRow('Via:', evias[0].text);
     else if (evias.length >= 2)
-      evias.forEach((v, k) => headRow(k === 0 ? 'Via:' : '', `(${k + 1}) ${v.text}`));
+      evias.forEach((v, k) => headRow(k === 0 ? 'Via:' : '', v.text, `(${k + 1}) `));
     if (state.subj) {
       gap(PARA_GAP);
       headRow('Subj:', state.subj.toUpperCase());
