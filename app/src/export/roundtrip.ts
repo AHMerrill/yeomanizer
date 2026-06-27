@@ -6,7 +6,7 @@
 // sanitization and DLP scanning). The project file is an obvious, fully-readable data file you
 // keep locally; open it in any text editor and see exactly what's there. Nothing is uploaded.
 import { defaultState } from '../defaultState';
-import type { LetterState } from '../types';
+import type { LetterState, Paragraph } from '../types';
 
 const VERSION = 1;
 interface Project {
@@ -38,6 +38,31 @@ function sanitizeEnclosures(state: LetterState): LetterState {
 // Keys that could pollute Object.prototype if they survived into a later spread/merge.
 const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
+// Bound + type-coerce the body tree from a hostile or corrupt file: cap total nodes (a render hang
+// from millions of paragraphs) and depth (a stack overflow in the recursive format/render passes),
+// and force every field to its expected type so a renderer never meets a wrong-typed value. Over the
+// node cap → throw, which parseProject's catch turns into a clean null (reject the file).
+const MAX_BODY_NODES = 2000; // a real letter has tens of paragraphs — far below this
+const MAX_BODY_DEPTH = 12; // the manual's paragraph scheme tops out at 8 levels
+
+function sanitizeBody(nodes: unknown, depth: number, counter: { n: number }): Paragraph[] {
+  if (!Array.isArray(nodes) || depth > MAX_BODY_DEPTH) return [];
+  const out: Paragraph[] = [];
+  for (const raw of nodes) {
+    if (!raw || typeof raw !== 'object') continue;
+    if (++counter.n > MAX_BODY_NODES) throw new Error('project body exceeds node cap');
+    const p = raw as Record<string, unknown>;
+    out.push({
+      id: typeof p.id === 'string' && p.id ? p.id.slice(0, 100) : `b${counter.n}`,
+      text: typeof p.text === 'string' ? p.text.slice(0, 50_000) : '',
+      title: typeof p.title === 'string' ? p.title.slice(0, 2_000) : undefined,
+      cui: p.cui === true ? true : undefined,
+      children: sanitizeBody(p.children, depth + 1, counter),
+    });
+  }
+  return out;
+}
+
 export function parseProject(text: string): LetterState | null {
   if (text.length > 60_000_000) return null; // ~60MB ceiling — a real project file is far smaller
   try {
@@ -45,9 +70,11 @@ export function parseProject(text: string): LetterState | null {
     const obj = JSON.parse(text, (key, value) => (DANGEROUS_KEYS.has(key) ? undefined : value)) as Project;
     const s = obj?.state;
     if (!s || typeof s !== 'object' || typeof s.type !== 'string' || !Array.isArray(s.body)) return null;
+    // Replace the body with a bounded, well-typed copy before it can reach any renderer.
+    const body = sanitizeBody(s.body, 0, { n: 0 });
     // Merge over defaults so a file from an older/partial schema still fills every field.
     // (Future versions migrate off obj.v here.)
-    return sanitizeEnclosures({ ...defaultState, ...s });
+    return sanitizeEnclosures({ ...defaultState, ...s, body });
   } catch {
     return null;
   }

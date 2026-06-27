@@ -60,3 +60,34 @@ describe('project-file round-trip (.yeomanizer.json)', () => {
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
   });
 });
+
+describe('parseProject — body-tree hardening', () => {
+  const wrapState = (overrides: object): string =>
+    JSON.stringify({ v: 1, state: { ...defaultState, ...overrides } });
+
+  it('coerces malformed nodes (wrong-typed text, non-array children)', () => {
+    const back = parseProject(wrapState({ body: [{ id: 'a', text: { evil: 1 }, children: 'nope' }] }));
+    expect(back).not.toBeNull();
+    expect(back!.body[0].text).toBe('');
+    expect(back!.body[0].children).toEqual([]);
+  });
+
+  it('rejects a body that exceeds the node cap (render-DoS guard)', () => {
+    const huge = Array.from({ length: 2001 }, (_, i) => ({ id: `n${i}`, text: 't', children: [] }));
+    expect(parseProject(wrapState({ body: huge }))).toBeNull();
+  });
+
+  it('drops nesting beyond the depth cap (stack-overflow guard)', () => {
+    let node: unknown = { id: 'leaf', text: 'deep', children: [] };
+    for (let i = 0; i < 20; i++) node = { id: `d${i}`, text: 't', children: [node] };
+    const back = parseProject(wrapState({ body: [node] }));
+    expect(back).not.toBeNull();
+    let p = back!.body[0];
+    let depth = 0;
+    while (p.children.length) {
+      p = p.children[0];
+      depth++;
+    }
+    expect(depth).toBeLessThanOrEqual(12);
+  });
+});
