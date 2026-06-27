@@ -5,6 +5,7 @@ import { Editor } from './components/Editor';
 import { LetterPreview } from './components/LetterPreview';
 import { About } from './components/About';
 import { ImportDropZone } from './components/ImportDropZone';
+import { Faq } from './components/Faq';
 import { PreviewErrorBoundary } from './components/PreviewErrorBoundary';
 import { printLetter } from './export/print';
 import { getDownloadCount, recordDownload } from './api/counter';
@@ -30,7 +31,7 @@ export default function App() {
     useState<Record<CorrespondenceType, LetterState>>(makeStates);
   const [activeType, setActiveType] = useState<CorrespondenceType>('standard-letter');
   const [downloads, setDownloads] = useState<number | null>(null);
-  const [view, setView] = useState<'editor' | 'builder' | 'features'>('builder');
+  const [view, setView] = useState<'editor' | 'builder' | 'features' | 'faq'>('builder');
   // The Editor tab edits a separately-imported letter, so importing never clobbers a Builder draft.
   const [importedState, setImportedState] = useState<LetterState | null>(null);
 
@@ -46,7 +47,7 @@ export default function App() {
 
   // Which state the cards, preview, and exports operate on, by tab: Builder → the per-type draft;
   // Editor → the imported letter (null until a file is dropped, which shows the drop zone instead).
-  const editingState = view === 'editor' ? importedState : state;
+  const editingState = view === 'editor' ? importedState : view === 'builder' ? state : null;
   const setEditingState: Dispatch<SetStateAction<LetterState>> =
     view === 'editor'
       ? (update) =>
@@ -125,7 +126,7 @@ export default function App() {
           <span className="brand-sub">naval correspondence, formatted</span>
         </div>
         <nav
-          className={`seg-toggle seg-3 ${view === 'editor' ? 'pos-0' : view === 'builder' ? 'pos-1' : 'pos-2'}`}
+          className={`seg-toggle seg-4 ${view === 'editor' ? 'pos-0' : view === 'builder' ? 'pos-1' : view === 'features' ? 'pos-2' : 'pos-3'}`}
           role="tablist"
           aria-label="Page"
         >
@@ -153,6 +154,14 @@ export default function App() {
             onClick={() => setView('features')}
           >
             Features
+          </button>
+          <button
+            className={view === 'faq' ? 'seg on' : 'seg'}
+            role="tab"
+            aria-selected={view === 'faq'}
+            onClick={() => setView('faq')}
+          >
+            FAQ
           </button>
         </nav>
         <div className="grow" />
@@ -210,6 +219,8 @@ export default function App() {
 
       {view === 'features' ? (
         <About />
+      ) : view === 'faq' ? (
+        <Faq />
       ) : editingState ? (
         <main className="panes">
           {/* autoComplete + spellCheck off so the browser never stores or transmits entries
