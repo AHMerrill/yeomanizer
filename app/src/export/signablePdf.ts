@@ -285,7 +285,9 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   if (copyTo.length) {
     gap(PARA_GAP);
     put('Copy to:', LEFT);
-    copyTo.forEach((c) => put(c, LEFT));
+    // wrap each addressee (a long SNDL title must not run off the page); continuation at the left
+    // margin, matching the preview's block lines and the docx.
+    copyTo.forEach((c) => wrap(c, font, SIZE, RIGHT - LEFT).forEach((ln) => put(ln, LEFT)));
   }
 
   // ---- Endorsements — each on its own page with its own signature block + CAC field (Ch 9) ----

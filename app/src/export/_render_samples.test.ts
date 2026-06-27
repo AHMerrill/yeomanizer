@@ -52,6 +52,10 @@ const base: LetterState = {
     encls: [
       { id: 'en1', text: 'A supporting document whose title is long enough to wrap onto a second line for enclosure-alignment verification', inDocument: false },
     ],
+    copyTo: [
+      'Commander, Naval Surface Force, U.S. Pacific Fleet, San Diego, California, Attention Administrative Officer Code N01',
+      'Chief of Naval Personnel',
+    ],
   };
   writeFileSync(`${OUT}/headwrap.pdf`, await buildSignablePdf(headwrap, today));
 
