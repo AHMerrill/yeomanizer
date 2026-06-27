@@ -85,3 +85,12 @@ guidance).
   anonymous counters; both store a single integer each in a Cloudflare KV namespace bound as
   `COUNTER`. Their handlers take only the KV binding — they never read the request, so no IP or
   region is ever seen.
+
+## License
+
+Licensed under the **Apache License, Version 2.0** — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+You may use, modify, and redistribute this software, including commercially, provided you retain the
+copyright/attribution notice and the license (Apache-2.0 §4). © 2026 AHMerrill.
+
+Exports themselves carry **no** tool attribution or identifying metadata — the Apache notice applies
+to the source code, not to the letters you generate.
