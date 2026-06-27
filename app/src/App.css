@@ -944,6 +944,7 @@
     display: block !important;
     height: auto !important;
     min-height: 0 !important;
+    margin: 0 !important;
     overflow: visible !important;
   }
 }

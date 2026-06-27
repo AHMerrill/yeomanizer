@@ -419,10 +419,11 @@
   .page {
     box-shadow: none;
     margin: 0;
-    break-after: page;
-  }
-  .page:last-of-type {
-    break-after: auto;
+    /* Each sheet is exactly one printed page (8.5x11, with @page margin:0), so the sheets tile 1:1.
+       Do NOT use break-after: page here — on a full-page-height sheet Chrome's interactive print
+       inserts a BLANK page after each one (the sheet already fills the page, then the break adds
+       another). break-inside:avoid keeps a sheet from splitting across two printed pages. */
+    break-inside: avoid;
   }
   .measurer {
     display: none !important;
