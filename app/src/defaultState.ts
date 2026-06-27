@@ -1,4 +1,4 @@
-import type { LetterState } from './types';
+import type { CorrespondenceType, LetterState } from './types';
 
 let _id = 0;
 export const uid = (): string => `n${++_id}_${Math.round(performance.now() * 1000) % 100000}`;
@@ -88,6 +88,43 @@ export const defaultState: LetterState = {
     dateOfIssue: '',
   },
 };
+
+// Per-type starting draft. Most types share `defaultState`; some need faithful defaults that match
+// their manual figure. NB: these are DEFAULTS, not limits — every field stays toggleable (e.g. the
+// MFR's identification block and letterhead are off by default per Figure 10-1, but a command whose
+// local practice uses a file number can switch them on; "not required" ≠ removed).
+export function defaultFor(type: CorrespondenceType): LetterState {
+  const base: LetterState = { ...defaultState, type };
+  if (type === 'mfr') {
+    return {
+      ...base,
+      letterhead: { ...base.letterhead, mode: 'off' }, // MFR is plain bond (fig 10-1)
+      includeSsic: false, // identification symbols are optional on an MFR — date only by default
+      includeCode: false,
+      refs: [],
+      encls: [],
+      subj: '',
+      body: [
+        {
+          id: uid(),
+          text: 'Use a Memorandum for the Record to capture information that is not recorded elsewhere — the results of a meeting, an important telephone conversation, or an oral agreement.',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'An MFR is the most informal memorandum; it may be typed or handwritten. If it is only two or three lines, it can be added directly to the file copy of the document it supports.',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'A full signature line and identification symbols are not required, but the memorandum should be dated, signed, and show the signer’s organizational code.',
+          children: [],
+        },
+      ],
+    };
+  }
+  return base;
+}
 
 // Keep one auto-endorsement per non-empty Via addressee (From = the via), preserving any
 // body/signature already entered, plus any manually-added (non-via) endorsements. This is why

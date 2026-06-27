@@ -1,5 +1,5 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-import { defaultState } from './defaultState';
+import { defaultFor } from './defaultState';
 import type { LetterState, CorrespondenceType } from './types';
 import { Editor } from './components/Editor';
 import { LetterPreview } from './components/LetterPreview';
@@ -14,12 +14,13 @@ import './App.css';
 const ALL_TYPES: CorrespondenceType[] = [
   'standard-letter',
   'memo-from-to',
+  'mfr',
   'business-letter',
   'endorsement',
   'nato',
 ];
 const makeStates = (): Record<CorrespondenceType, LetterState> =>
-  Object.fromEntries(ALL_TYPES.map((t) => [t, { ...defaultState, type: t }])) as Record<
+  Object.fromEntries(ALL_TYPES.map((t) => [t, defaultFor(t)])) as Record<
     CorrespondenceType,
     LetterState
   >;

@@ -118,6 +118,7 @@ function Head({ state }: { state: LetterState }) {
   const ident = buildIdent(state);
   const lh = state.letterhead;
   const isMemo = state.type === 'memo-from-to';
+  const isMfr = state.type === 'mfr';
   const isEndorsement = state.type === 'endorsement';
   const via = state.via.filter((v) => v.text.trim());
   const refs = state.refs.filter((r) => r.text.trim());
@@ -138,6 +139,7 @@ function Head({ state }: { state: LetterState }) {
         {ident.date ? <div>{ident.date}</div> : <div className="ph">Date</div>}
       </div>
       {isMemo && <div className="memo-title">MEMORANDUM</div>}
+      {isMfr && <div className="memo-title">MEMORANDUM FOR THE RECORD</div>}
       {isEndorsement && (
         <div className="endorsement-line">
           {state.endorsementNumber} ENDORSEMENT on{' '}
@@ -146,19 +148,24 @@ function Head({ state }: { state: LetterState }) {
           )}
         </div>
       )}
-      <div className={isMemo ? 'headings memo' : isEndorsement ? 'headings endo' : 'headings'}>
-        <div className="hrow">
-          <span className="label">From:</span>
-          <span className={state.from ? 'content' : 'content ph'}>
-            {state.from || 'Commanding Officer, [your command]'}
-          </span>
-        </div>
-        <div className="hrow">
-          <span className="label">To:</span>
-          <span className={state.to ? 'content' : 'content ph'}>
-            {state.to || 'Action addressee — e.g., Chief of Naval Operations (N1)'}
-          </span>
-        </div>
+      <div className={isMemo || isMfr ? 'headings memo' : isEndorsement ? 'headings endo' : 'headings'}>
+        {/* MFR is "for the record" — no addressee, so no From/To/Via. */}
+        {!isMfr && (
+          <>
+            <div className="hrow">
+              <span className="label">From:</span>
+              <span className={state.from ? 'content' : 'content ph'}>
+                {state.from || 'Commanding Officer, [your command]'}
+              </span>
+            </div>
+            <div className="hrow">
+              <span className="label">To:</span>
+              <span className={state.to ? 'content' : 'content ph'}>
+                {state.to || 'Action addressee — e.g., Chief of Naval Operations (N1)'}
+              </span>
+            </div>
+          </>
+        )}
         {via.length === 1 && (
           <div className="hrow">
             <span className="label">Via:</span>

@@ -38,6 +38,15 @@ The four output surfaces must ALL agree and ALL be verified for every type:
 
 Each is a real thing Zan found that "looked plausible" but was wrong. Check your new type against ALL of them.
 
+**0. "Not required" / "optional" in the manual ≠ omit it. DON'T BE LAZY.** When the manual calls a field,
+block, or marking "not required" (or "unless local practice calls for more"), that means **OPTIONAL and
+present-if-wanted** — support it as a toggle with a sensible default; **never strip it out.** Build the
+type FLEXIBLE and faithful to the manual's actual language, not a reductive subset. (Lesson from the MFR:
+*"A full signature line and identification symbols are not required"* means the SSIC / serial / originator-code
+identification block AND a full signature line are **optional on an MFR** — support them, defaulting to the
+minimal `date + name + org-code` form, rather than hardcoding them away. A user whose command includes a
+file number or a fuller signature must be able to add them.)
+
 1. **Heading continuation lines went to the LEFT margin** instead of hang-indenting under the entry's first
    word. From/To/Via/Subj hang under the content column; numbered Via/Ref/Encl hang under the text past the
    (a)/(1) marker. → **Test every heading with VERY long content; confirm the wrap hang-indents per part.**

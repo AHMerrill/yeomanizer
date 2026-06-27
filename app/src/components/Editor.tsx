@@ -409,6 +409,7 @@ export function Editor({
         >
           <option value="standard-letter">Standard Naval Letter</option>
           <option value="memo-from-to">Memorandum (plain-paper / letterhead)</option>
+          <option value="mfr" disabled>Memorandum for the Record (MFR) — building</option>
           <option value="endorsement">Endorsement</option>
           <option value="nato">NATO Travel Order</option>
           <option value="business-letter" disabled>Business Letter — soon</option>

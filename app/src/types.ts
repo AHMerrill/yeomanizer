@@ -4,6 +4,7 @@
 export type CorrespondenceType =
   | 'standard-letter'
   | 'memo-from-to'
+  | 'mfr'
   | 'business-letter'
   | 'endorsement'
   | 'nato';
