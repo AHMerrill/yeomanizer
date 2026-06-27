@@ -6,7 +6,7 @@ Product + architecture: [README.md](README.md) and [app/README.md](app/README.md
 ## The two non-negotiables
 
 1. **Privacy / CUI.** Nothing persists or is transmitted — in-memory only; the sole network calls are
-   two content-free counters (a visit tally and a download tally, each an integer; their handlers
+   two content-free counters (a page-load tally and a download-click tally, each an integer; their handlers
    take only the KV binding and never read the request, so no IP or region is seen). Exported
    documents stay clean — no hidden or
    embedded data. Regular, non-executable file types. No code-execution path anywhere

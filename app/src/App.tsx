@@ -113,7 +113,8 @@ export default function App() {
         <strong>Unofficial tool</strong> — not affiliated with or endorsed by the U.S. Navy or DoD,
         and not an official system of record. <strong>The tool sends and stores nothing</strong> —
         what you type stays in this browser tab and is erased when you close it (only an anonymous
-        visit and download count ever leaves — two integers, never any IP, region, or content). <strong>CUI belongs only on authorized equipment</strong> —
+        page-load and download-click count ever leaves — two integers, never any cookies, IP, region,
+        or content). <strong>CUI belongs only on authorized equipment</strong> —
         Government-Furnished Equipment, or a system specifically approved for it, never a personal
         device — so use this on such a system and follow your command&rsquo;s policy. The files you
         download are yours to mark, store, transmit, and handle under the applicable CUI and
@@ -248,16 +249,17 @@ export default function App() {
           Questions? <a href="mailto:info@yeomanizer.com">info@yeomanizer.com</a>
         </span>
         <span className="foot-mid">
-          The tool sends nothing but an anonymous, site-wide visit and download tally (two numbers —
-          never your content, IP, or region). Your draft stays in this browser until you download it.
+          The tool sends nothing but two anonymous, site-wide counters — page loads and
+          download-button clicks (raw numbers; no cookies, no IP, no region, no memory of who). Your
+          draft stays in this browser until you download it.
         </span>
         <span
           className="foot-count"
-          title="Site-wide tallies across all users — page views and completed downloads. No document content, personal data, IP, or region is ever sent or stored; only two integers are incremented."
+          title="Two raw site-wide counters: page loads (a refresh counts again) and download-button clicks (counts even if you cancel the save). No cookies, no per-visitor memory, no IP, no region — just two integers shared by everyone."
         >
           {counts === null
-            ? 'Visits — · Downloads —'
-            : `Visits ${counts.visits.toLocaleString()} · Downloads ${counts.downloads.toLocaleString()}`}
+            ? 'Page Loads — · Download Clicks —'
+            : `Page Loads ${counts.visits.toLocaleString()} · Download Clicks ${counts.downloads.toLocaleString()}`}
         </span>
       </footer>
     </div>

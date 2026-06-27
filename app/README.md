@@ -53,7 +53,7 @@ HMR can be stale).
 ## Invariants — do not break
 
 - **Nothing persists or is transmitted** (no storage, no cookies, no external calls; only the two
-  content-free integer counters — visits and downloads — neither carrying content, IP, or region).
+  content-free integer counters — page loads and download clicks — neither carrying content, cookies, IP, or region).
   Never loosen the CSP or add persistence.
 - **Exported documents stay clean** — no hidden or embedded data. The round-trip copy is a
   *separate* `.json` file, parsed with a prototype-pollution-guarded `JSON.parse`, never `eval`.

@@ -61,22 +61,24 @@ export function Faq() {
         <QA q="Does anything I type get saved or sent anywhere?" sources={[SRC.repo]}>
           No. The tool sends and stores nothing. What you type lives only in this browser tab, in
           memory, and is erased when you close it. The only things that ever leave your browser are
-          two anonymous, content-free tallies — a visit count and a download count, each just an
-          integer — never any of your content, and never your IP address or region. You can confirm
+          two anonymous, content-free counters — page loads and download-button clicks, each just an
+          integer — never any of your content, no cookies, and never your IP address or region. You
+          can confirm
           this yourself in your browser&rsquo;s developer tools (Network tab): no request carries your
           content. You download the files and handle them yourself.
         </QA>
 
-        <QA q="What exactly do the visit and download counters record?" sources={[SRC.repo]}>
-          Two integers, and nothing else. One ticks up when the page loads; the other when a file is
-          downloaded. The server code that handles them takes only the storage handle — it never
-          reads the request, so it cannot see, let alone store, your IP address, your region, your
-          browser, or any document content. There are no cookies, no analytics script, and no
-          per-user tracking — no one, including the owner, can tell who visited or downloaded. (Like
-          every website, the hosting network routes your connection and can show the owner only
-          coarse, aggregate country totals at the transport layer — but the yeomanizer&rsquo;s own
-          counter never receives or keeps any of that.) The totals are simple site-wide numbers shown
-          in the footer.
+        <QA q="What exactly do the page-load and download-click counters record?" sources={[SRC.repo]}>
+          Two integers, and nothing else. One ticks up every time the page loads — a refresh counts
+          again — and the other every time a download button is clicked, whether or not you actually
+          save the file. They are deliberately <em>not</em> unique-visitor counts: recognizing you
+          across visits would require a cookie, a stored ID, or your IP address, and the tool uses
+          none of those. The server code takes only the storage handle, so it never sees your IP,
+          region, browser, or any document content; there are no cookies and no per-visitor memory of
+          any kind. (Like every website, the hosting network routes your connection and can show the
+          owner only coarse, aggregate country totals at the transport layer — the yeomanizer&rsquo;s
+          own counter never receives or keeps any of that.) They&rsquo;re just two raw, site-wide
+          numbers shown in the footer.
         </QA>
 
         <QA q="Is this an official or DoD-approved tool?" sources={[SRC.cuiProgram, SRC.nara]}>

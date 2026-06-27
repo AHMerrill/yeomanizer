@@ -14,7 +14,7 @@ side and a correctly formatted letter appears on the other.
 - Free, and runs entirely in your web browser. No account or login.
 - Privacy by design: the tool stores no draft and transmits no content — your draft lives only in
   the browser tab and is erased when you close it. The only data that ever leaves the browser is two
-  anonymous, content-free counters (visits and downloads, each an integer; no IP, no region, no
+  anonymous, content-free counters (page loads and download clicks, each an integer; no IP, no region, no
   cookies). You download and handle the exported files yourself.
 - Unofficial — not affiliated with or endorsed by the U.S. Navy or the Department of Defense, and
   not an official system of record. It makes no authorization claim; CUI belongs only on authorized
