@@ -4,6 +4,7 @@ import type { LetterState, CorrespondenceType } from './types';
 import { Editor } from './components/Editor';
 import { LetterPreview } from './components/LetterPreview';
 import { About } from './components/About';
+import { ImportDropZone } from './components/ImportDropZone';
 import { PreviewErrorBoundary } from './components/PreviewErrorBoundary';
 import { printLetter } from './export/print';
 import { getDownloadCount, recordDownload } from './api/counter';
@@ -29,7 +30,9 @@ export default function App() {
     useState<Record<CorrespondenceType, LetterState>>(makeStates);
   const [activeType, setActiveType] = useState<CorrespondenceType>('standard-letter');
   const [downloads, setDownloads] = useState<number | null>(null);
-  const [view, setView] = useState<'editor' | 'about'>('editor');
+  const [view, setView] = useState<'editor' | 'builder' | 'features'>('builder');
+  // The Editor tab edits a separately-imported letter, so importing never clobbers a Builder draft.
+  const [importedState, setImportedState] = useState<LetterState | null>(null);
 
   const state = statesByType[activeType];
   const setState: Dispatch<SetStateAction<LetterState>> = (update) =>
@@ -41,6 +44,25 @@ export default function App() {
           : update,
     }));
 
+  // Which state the cards, preview, and exports operate on, by tab: Builder → the per-type draft;
+  // Editor → the imported letter (null until a file is dropped, which shows the drop zone instead).
+  const editingState = view === 'editor' ? importedState : state;
+  const setEditingState: Dispatch<SetStateAction<LetterState>> =
+    view === 'editor'
+      ? (update) =>
+          setImportedState((prev) =>
+            prev
+              ? typeof update === 'function'
+                ? (update as (s: LetterState) => LetterState)(prev)
+                : update
+              : prev,
+          )
+      : setState;
+  const setEditingType = (t: CorrespondenceType) =>
+    view === 'editor'
+      ? setImportedState((prev) => (prev ? { ...prev, type: t } : prev))
+      : setActiveType(t);
+
   useEffect(() => {
     getDownloadCount().then(setDownloads);
   }, []);
@@ -51,17 +73,19 @@ export default function App() {
     });
 
   const onDocx = async () => {
+    if (!editingState) return;
     // Lazy-load the .docx exporter (and the heavy `docx` library it pulls in) only when the
     // user actually exports — keeps ~all of it out of the initial page bundle.
     const { exportDocx } = await import('./export/docx');
-    await exportDocx(state);
+    await exportDocx(editingState);
     void bump();
   };
 
   const onSignablePdf = async () => {
+    if (!editingState) return;
     // pdf-lib-generated PDF with an embedded digital-signature field (lazy-loaded).
     const { exportSignablePdf } = await import('./export/signablePdf');
-    await exportSignablePdf(state);
+    await exportSignablePdf(editingState);
     void bump();
   };
 
@@ -88,7 +112,11 @@ export default function App() {
           the&nbsp;yeomanizer
           <span className="brand-sub">naval correspondence, formatted</span>
         </div>
-        <nav className={`seg-toggle ${view === 'about' ? 'pos-1' : 'pos-0'}`} role="tablist" aria-label="Page">
+        <nav
+          className={`seg-toggle seg-3 ${view === 'editor' ? 'pos-0' : view === 'builder' ? 'pos-1' : 'pos-2'}`}
+          role="tablist"
+          aria-label="Page"
+        >
           <span className="seg-thumb" aria-hidden="true" />
           <button
             className={view === 'editor' ? 'seg on' : 'seg'}
@@ -99,24 +127,32 @@ export default function App() {
             Editor
           </button>
           <button
-            className={view === 'about' ? 'seg on' : 'seg'}
+            className={view === 'builder' ? 'seg on' : 'seg'}
             role="tab"
-            aria-selected={view === 'about'}
-            onClick={() => setView('about')}
+            aria-selected={view === 'builder'}
+            onClick={() => setView('builder')}
+          >
+            Builder
+          </button>
+          <button
+            className={view === 'features' ? 'seg on' : 'seg'}
+            role="tab"
+            aria-selected={view === 'features'}
+            onClick={() => setView('features')}
           >
             Features
           </button>
         </nav>
         <div className="grow" />
-        {view === 'editor' && state.type !== 'nato' && (
+        {editingState && editingState.type !== 'nato' && (
           <button onClick={() => void onDocx()}>Export .docx</button>
         )}
-        {view === 'editor' && state.type === 'nato' && (
+        {editingState && editingState.type === 'nato' && (
           <button className="primary" onClick={onPrint} title="Print or save the travel order as a PDF">
             Print / Save PDF
           </button>
         )}
-        {view === 'editor' && state.type !== 'nato' && (
+        {editingState && editingState.type !== 'nato' && (
           <button
             className="primary"
             onClick={() => void onSignablePdf()}
@@ -127,7 +163,9 @@ export default function App() {
         )}
       </header>
 
-      {view === 'editor' ? (
+      {view === 'features' ? (
+        <About />
+      ) : editingState ? (
         <main className="panes">
           {/* autoComplete + spellCheck off so the browser never stores or transmits entries
               (e.g. autofill history, Chrome Enhanced Spellcheck). */}
@@ -137,16 +175,16 @@ export default function App() {
             spellCheck={false}
             onSubmit={(e) => e.preventDefault()}
           >
-            <Editor state={state} setState={setState} setType={setActiveType} />
+            <Editor state={editingState} setState={setEditingState} setType={setEditingType} />
           </form>
           <div className="paper-backdrop">
             <PreviewErrorBoundary>
-              <LetterPreview state={state} />
+              <LetterPreview state={editingState} />
             </PreviewErrorBoundary>
           </div>
         </main>
       ) : (
-        <About />
+        <ImportDropZone onImport={setImportedState} />
       )}
 
       <footer className="footer">
