@@ -1,29 +1,47 @@
-// Anonymous download tally.
+// Anonymous visit + download tallies.
 //
-// PRIVACY: this sends NO document content — ever. A GET reads the running total; a POST is
-// an empty, content-free "a download happened" signal to the app's OWN origin. It stores
-// only an integer server-side. If the endpoint isn't deployed (e.g. local dev), every call
-// fails silently and the UI simply hides the count. This is the only network call the app
-// makes beyond loading itself.
-const ENDPOINT = '/api/count';
+// PRIVACY: these send NO document content — ever — and carry no IP or region. A GET reads the
+// running totals; a POST is an empty, content-free "a page was loaded" / "a download happened"
+// signal to the app's OWN origin. The server stores only two integers. If the endpoints aren't
+// deployed (e.g. local dev), every call fails silently and the UI simply hides the counts. These
+// are the only network calls the app makes beyond loading itself.
+export interface Counts {
+  downloads: number;
+  visits: number;
+}
 
-export async function getDownloadCount(): Promise<number | null> {
+function parse(j: unknown): Counts | null {
+  const o = j as { downloads?: unknown; visits?: unknown };
+  return typeof o?.downloads === 'number' && typeof o?.visits === 'number'
+    ? { downloads: o.downloads, visits: o.visits }
+    : null;
+}
+
+// Read both totals without recording anything.
+export async function getCounts(): Promise<Counts | null> {
   try {
-    const r = await fetch(ENDPOINT, { method: 'GET' });
-    if (!r.ok) return null;
-    const j = (await r.json()) as { count?: number };
-    return typeof j.count === 'number' ? j.count : null;
+    const r = await fetch('/api/count', { method: 'GET' });
+    return r.ok ? parse(await r.json()) : null;
   } catch {
     return null;
   }
 }
 
-export async function recordDownload(): Promise<number | null> {
+// Record one page view (empty POST — nothing to send) and return the updated totals.
+export async function recordVisit(): Promise<Counts | null> {
   try {
-    const r = await fetch(ENDPOINT, { method: 'POST' }); // no body — nothing to send
-    if (!r.ok) return null;
-    const j = (await r.json()) as { count?: number };
-    return typeof j.count === 'number' ? j.count : null;
+    const r = await fetch('/api/visit', { method: 'POST' });
+    return r.ok ? parse(await r.json()) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Record one download (empty POST — nothing to send) and return the updated totals.
+export async function recordDownload(): Promise<Counts | null> {
+  try {
+    const r = await fetch('/api/count', { method: 'POST' });
+    return r.ok ? parse(await r.json()) : null;
   } catch {
     return null;
   }

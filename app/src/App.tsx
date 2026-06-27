@@ -8,7 +8,7 @@ import { ImportDropZone } from './components/ImportDropZone';
 import { Faq } from './components/Faq';
 import { PreviewErrorBoundary } from './components/PreviewErrorBoundary';
 import { printLetter } from './export/print';
-import { getDownloadCount, recordDownload } from './api/counter';
+import { recordVisit, recordDownload, type Counts } from './api/counter';
 import './App.css';
 
 const ALL_TYPES: CorrespondenceType[] = [
@@ -30,7 +30,7 @@ export default function App() {
   const [statesByType, setStatesByType] =
     useState<Record<CorrespondenceType, LetterState>>(makeStates);
   const [activeType, setActiveType] = useState<CorrespondenceType>('standard-letter');
-  const [downloads, setDownloads] = useState<number | null>(null);
+  const [counts, setCounts] = useState<Counts | null>(null);
   const [view, setView] = useState<'editor' | 'builder' | 'features' | 'faq'>('builder');
   // The Editor tab edits a separately-imported letter, so importing never clobbers a Builder draft.
   const [importedState, setImportedState] = useState<LetterState | null>(null);
@@ -64,14 +64,14 @@ export default function App() {
       ? setImportedState((prev) => (prev ? { ...prev, type: t } : prev))
       : setActiveType(t);
 
+  // Record one anonymous page view on load — a content-free POST (no body, no IP, no region; the
+  // server stores only an integer) — and show both running totals. In local dev the endpoint isn't
+  // present, so this fails silently and the counts simply stay hidden.
   useEffect(() => {
-    getDownloadCount().then(setDownloads);
+    recordVisit().then(setCounts);
   }, []);
 
-  const bump = () =>
-    recordDownload().then((n) => {
-      if (typeof n === 'number') setDownloads(n);
-    });
+  const bump = () => recordDownload().then((c) => c && setCounts(c));
 
   const onDocx = async () => {
     if (!editingState) return;
@@ -113,7 +113,7 @@ export default function App() {
         <strong>Unofficial tool</strong> — not affiliated with or endorsed by the U.S. Navy or DoD,
         and not an official system of record. <strong>The tool sends and stores nothing</strong> —
         what you type stays in this browser tab and is erased when you close it (only an anonymous
-        download count ever leaves). <strong>CUI belongs only on authorized equipment</strong> —
+        visit and download count ever leaves — two integers, never any IP, region, or content). <strong>CUI belongs only on authorized equipment</strong> —
         Government-Furnished Equipment, or a system specifically approved for it, never a personal
         device — so use this on such a system and follow your command&rsquo;s policy. The files you
         download are yours to mark, store, transmit, and handle under the applicable CUI and
@@ -248,14 +248,16 @@ export default function App() {
           Questions? <a href="mailto:info@yeomanizer.com">info@yeomanizer.com</a>
         </span>
         <span className="foot-mid">
-          The tool sends nothing but an anonymous, site-wide download tally (a number — never your
-          content). Your draft stays in this browser until you download it yourself.
+          The tool sends nothing but an anonymous, site-wide visit and download tally (two numbers —
+          never your content, IP, or region). Your draft stays in this browser until you download it.
         </span>
         <span
           className="foot-count"
-          title="A site-wide count of completed downloads across all users. No document content, personal data, or identifiers are ever sent or stored — only an integer is incremented."
+          title="Site-wide tallies across all users — page views and completed downloads. No document content, personal data, IP, or region is ever sent or stored; only two integers are incremented."
         >
-          Downloads: {downloads === null ? '—' : downloads.toLocaleString()}
+          {counts === null
+            ? 'Visits — · Downloads —'
+            : `Visits ${counts.visits.toLocaleString()} · Downloads ${counts.downloads.toLocaleString()}`}
         </span>
       </footer>
     </div>

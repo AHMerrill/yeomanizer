@@ -30,7 +30,9 @@ so importing never clobbers the Builder draft), **Builder** (the card-based form
 - `src/export/` — `signablePdf.ts` (the canonical **vector** PDF via pdf-lib, one AcroForm with a
   `/Sig` CAC field, enclosures copied as real pages), `docx.ts` (Word), `roundtrip.ts` (the separate
   `.json` project file).
-- `functions/api/count.js` — the content-free download counter (Cloudflare KV `COUNTER`).
+- `functions/api/count.js` (downloads) + `functions/api/visit.js` (page views) — the content-free
+  counters; each stores one integer in Cloudflare KV `COUNTER`, and neither reads the request (no
+  IP/region).
 - `public/_headers` — the strict CSP and security headers.
 
 ## Visual verification (no human in the loop)
@@ -50,8 +52,9 @@ HMR can be stale).
 
 ## Invariants — do not break
 
-- **Nothing persists or is transmitted** (no storage, no cookies, no external calls; only the
-  content-free counter). Never loosen the CSP or add persistence.
+- **Nothing persists or is transmitted** (no storage, no cookies, no external calls; only the two
+  content-free integer counters — visits and downloads — neither carrying content, IP, or region).
+  Never loosen the CSP or add persistence.
 - **Exported documents stay clean** — no hidden or embedded data. The round-trip copy is a
   *separate* `.json` file, parsed with a prototype-pollution-guarded `JSON.parse`, never `eval`.
 - **Faithfulness** — the export must match the preview and the manual; the PDF is vector, never

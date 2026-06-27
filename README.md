@@ -51,8 +51,9 @@ per-user storage.
   Nothing is written to disk unless *you* click an export.
 - Browser autofill and spellcheck are off, and a strict **Content-Security-Policy**
   (`connect-src 'self'`) blocks the app from connecting to any external origin.
-- The only network call beyond loading the page is an **anonymous, content-free** increment to a
-  site-wide download counter — it never carries any document content.
+- The only network calls beyond loading the page are **anonymous, content-free** increments to two
+  site-wide tallies — a visit count (on page load) and a download count — each just an integer. They
+  never carry any document content, IP address, or region.
 - Exported documents are **regular, non-executable file types** with nothing hidden inside; imported
   `.json` is parsed with `JSON.parse` (never `eval`) behind a prototype-pollution guard.
 
@@ -80,5 +81,7 @@ guidance).
 
 - Build command: `npm run build` · Output directory: `dist` · Root directory: `app`
 - `app/public/_headers` sets the production security headers (CSP, X-Frame-Options, HSTS, …).
-- `app/functions/api/count.js` is the anonymous download counter; it needs a Cloudflare KV namespace
-  bound as `COUNTER`.
+- `app/functions/api/count.js` (downloads) and `app/functions/api/visit.js` (page views) are the
+  anonymous counters; both store a single integer each in a Cloudflare KV namespace bound as
+  `COUNTER`. Their handlers take only the KV binding — they never read the request, so no IP or
+  region is ever seen.

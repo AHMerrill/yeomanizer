@@ -4,10 +4,10 @@ import { render, screen, fireEvent, cleanup, within } from '@testing-library/rea
 import App from './App';
 
 beforeEach(() => {
-  // App reads/writes an anonymous counter on mount/export; stub fetch so it resolves quietly.
+  // App records an anonymous visit on mount + a download on export; stub fetch so it resolves quietly.
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => ({ ok: true, json: async () => ({ count: 0 }) })),
+    vi.fn(async () => ({ ok: true, json: async () => ({ downloads: 0, visits: 0 }) })),
   );
 });
 afterEach(() => {
