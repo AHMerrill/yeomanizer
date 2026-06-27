@@ -36,14 +36,14 @@ export function ImportDropZone({ onImport }: { onImport: (s: LetterState) => voi
       >
         <h2>Continue editing a saved letter</h2>
         <p>
-          Drop a <strong>.docx</strong> you exported from the yeomanizer and it reopens with every
-          field filled in — pick up exactly where you left off.
+          Drop the editable copy (<strong>.yeomanizer.json</strong>) you saved and it reopens with
+          every field filled in — pick up exactly where you left off.
         </p>
         <label className="import-pick">
           Choose a file…
           <input
             type="file"
-            accept=".docx,.pdf"
+            accept=".json,application/json"
             hidden
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -55,8 +55,9 @@ export function ImportDropZone({ onImport }: { onImport: (s: LetterState) => voi
         {error && <p className="import-error">{error}</p>}
       </div>
       <p className="import-note">
-        Nothing is uploaded. The file is read inside your browser, and the editable data travels
-        inside the file you saved — never on any server.
+        Nothing is uploaded — the file is read inside your browser. The .docx/PDF you export stay
+        clean (nothing hidden inside them); the editable data lives only in this separate .json you
+        chose to save.
       </p>
     </div>
   );

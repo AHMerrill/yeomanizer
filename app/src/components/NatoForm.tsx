@@ -57,7 +57,13 @@ export function NatoForm({ state }: { state: LetterState }) {
   const n = state.nato;
   const rank = rankByGrade(n.rankGrade);
   const sealSrc =
-    lh.seal === 'dod' ? '/dod-seal-blue.png' : lh.seal === 'don' ? '/don-seal.svg' : null;
+    lh.seal === 'dod'
+      ? '/dod-seal.png'
+      : lh.seal === 'dod-color'
+        ? '/dod-seal.svg'
+        : lh.seal === 'don'
+          ? '/don-seal.svg'
+          : null;
   const showLh = lh.mode !== 'off';
 
   return (
@@ -190,7 +196,7 @@ export function NatoForm({ state }: { state: LetterState }) {
         )}
 
         <div className="nato-p">
-          <span className="nato-num">6.</span>
+          <span className="nato-num">{n.includeSofa ? '6.' : '5.'}</span>
           <div>
             This travel order is to be produced to civil and military authorities on request.
             <div className="nfr">

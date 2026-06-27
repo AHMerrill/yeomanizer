@@ -523,7 +523,7 @@ export function Editor({
             </select>
           </Field>
           <Field label="Full name">
-            <input value={state.nato.name} placeholder="Alexander H. Merrill" onChange={(e) => patchNato({ name: e.target.value })} />
+            <input value={state.nato.name} placeholder="Last, First MI" onChange={(e) => patchNato({ name: e.target.value })} />
           </Field>
           <Field label="DoD ID number">
             <input value={state.nato.dodId} onChange={(e) => patchNato({ dodId: e.target.value })} />

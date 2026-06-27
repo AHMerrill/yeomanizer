@@ -1,34 +1,17 @@
-// Round-trip: bundle the full editing state INTO an exported file, and pull it back out on import,
-// so a saved .docx/.pdf can be dropped back in to keep editing. The bundle is gzipped JSON that
-// rides ALONG INSIDE the user's own file — nothing is stored in the app, server, or browser.
+// "Editable copy" project file: a plain-text JSON snapshot of the editing state, saved as a
+// SEPARATE file (never embedded in the docx/PDF). Drop it back into the Editor tab to resume.
 //
-// docx: a .docx is a zip, so we add one file to it (yeomanizer/state.json.gz). Word ignores the
-// extra part; we read it back on import. (PDF embedding lives in signablePdf.ts — same bundle.)
-import JSZip from 'jszip';
+// Why separate + plaintext: the exported document stays exactly what it renders (no hidden or
+// compressed data inside a file you might send — which matters on gov/CUI systems for document
+// sanitization and DLP scanning). The project file is an obvious, fully-readable data file you
+// keep locally; open it in any text editor and see exactly what's there. Nothing is uploaded.
+import { defaultState } from '../defaultState';
 import type { LetterState } from '../types';
 
-export const STATE_PATH = 'yeomanizer/state.json.gz'; // path inside the docx zip
 const VERSION = 1;
-
-interface Bundle {
+interface Project {
   v: number;
   state: LetterState;
-}
-
-async function gzip(bytes: Uint8Array): Promise<Uint8Array> {
-  const cs = new CompressionStream('gzip');
-  const writer = cs.writable.getWriter();
-  void writer.write(bytes as BufferSource);
-  void writer.close();
-  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
-}
-
-async function gunzip(bytes: Uint8Array): Promise<Uint8Array> {
-  const ds = new DecompressionStream('gzip');
-  const writer = ds.writable.getWriter();
-  void writer.write(bytes as BufferSource);
-  void writer.close();
-  return new Uint8Array(await new Response(ds.readable).arrayBuffer());
 }
 
 // When enclosure files aren't included, keep their titles + flags but drop the (large) bytes.
@@ -37,40 +20,44 @@ function prepare(state: LetterState, includeEnclosureFiles: boolean): LetterStat
   return { ...state, encls: state.encls.map((e) => ({ ...e, file: undefined })) };
 }
 
-export async function serializeState(state: LetterState, includeEnclosureFiles = true): Promise<Uint8Array> {
-  const bundle: Bundle = { v: VERSION, state: prepare(state, includeEnclosureFiles) };
-  return gzip(new TextEncoder().encode(JSON.stringify(bundle)));
+export function serializeProject(state: LetterState, includeEnclosureFiles = true): string {
+  return JSON.stringify({ v: VERSION, state: prepare(state, includeEnclosureFiles) }, null, 2);
 }
 
-export async function deserializeState(bytes: Uint8Array): Promise<LetterState | null> {
+// Only let image/PDF data URLs back in — a project file is plain data, but this stops a hand-edited
+// or hostile file from slipping a non-media URL (e.g. data:text/html) into an <img>/embed.
+function sanitizeEnclosures(state: LetterState): LetterState {
+  return {
+    ...state,
+    encls: (state.encls ?? []).map((e) =>
+      e.file && !/^data:(image\/|application\/pdf)/i.test(e.file.dataUrl) ? { ...e, file: undefined } : e,
+    ),
+  };
+}
+
+export function parseProject(text: string): LetterState | null {
   try {
-    const bundle = JSON.parse(new TextDecoder().decode(await gunzip(bytes))) as Bundle;
-    if (!bundle || typeof bundle !== 'object' || !bundle.state || typeof bundle.state !== 'object') return null;
-    // It's our own format; future schema changes migrate off bundle.v here.
-    return bundle.state;
+    const obj = JSON.parse(text) as Project;
+    const s = obj?.state;
+    if (!s || typeof s !== 'object' || typeof s.type !== 'string' || !Array.isArray(s.body)) return null;
+    // Merge over defaults so a file from an older/partial schema still fills every field.
+    // (Future versions migrate off obj.v here.)
+    return sanitizeEnclosures({ ...defaultState, ...s });
   } catch {
     return null;
   }
 }
 
-// ---- docx (the file IS a zip) ----
-export async function embedStateInDocx(
-  docxBytes: Uint8Array,
-  state: LetterState,
-  includeEnclosureFiles = true,
-): Promise<Uint8Array> {
-  const zip = await JSZip.loadAsync(docxBytes);
-  zip.file(STATE_PATH, await serializeState(state, includeEnclosureFiles));
-  return zip.generateAsync({ type: 'uint8array' });
-}
-
-export async function extractStateFromDocx(bytes: Uint8Array): Promise<LetterState | null> {
-  try {
-    const zip = await JSZip.loadAsync(bytes);
-    const f = zip.file(STATE_PATH);
-    if (!f) return null;
-    return deserializeState(await f.async('uint8array'));
-  } catch {
-    return null;
-  }
+export function exportProjectFile(state: LetterState, includeEnclosureFiles = true): void {
+  const blob = new Blob([serializeProject(state, includeEnclosureFiles)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(state.subj || 'naval-letter')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)}.yeomanizer.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

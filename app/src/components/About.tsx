@@ -18,7 +18,7 @@ const AVAILABLE: [string, string][] = [
   ['Rank auto-translation', 'Pick a U.S. grade (E-1…O-10); the NATO OF/OR code is filled in.'],
   ['Multi-page handling', 'Continuation pages start at the 1-inch margin and number from page 2 (§7-2.17).'],
   ['CUI marking', 'Banner top & bottom of every page — enclosures included — plus the designation block and optional per-paragraph (CUI)/(U) marks. Per DoDI 5200.48 and DON PII guidance.'],
-  ['Private by design', 'Nothing is stored or transmitted — your draft is erased when you close the tab.'],
+  ['Private by design', 'The tool stores and transmits nothing — your draft lives only in this tab and is erased when you close it. You download and handle the files yourself.'],
 ];
 
 const PLANNED: [string, string][] = [
@@ -53,7 +53,8 @@ export function About() {
         <h1>the yeomanizer</h1>
         <p className="about-lede">
           A free, unofficial tool that formats U.S. Navy correspondence to SECNAV M-5216.5 —
-          entirely inside your browser. Nothing you type is ever saved or sent.
+          entirely inside your browser. The tool never sends or stores what you type; you download
+          the files and handle them yourself.
         </p>
         <div className="about-cols">
           <Column title="Available now" items={AVAILABLE} />

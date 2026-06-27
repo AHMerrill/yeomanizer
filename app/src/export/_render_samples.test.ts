@@ -94,16 +94,12 @@ const base: LetterState = {
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
   const { Packer } = await import('docx');
   const { buildDocxDocument } = await import('./docx');
-  const { embedStateInDocx } = await import('./roundtrip');
   const seal = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC',
     'base64',
   );
   const writeDocx = async (name: string, st: LetterState) =>
-    writeFileSync(
-      `${OUT}/${name}.docx`,
-      await embedStateInDocx(new Uint8Array(await Packer.toBuffer(buildDocxDocument(st, today, seal))), st),
-    );
+    writeFileSync(`${OUT}/${name}.docx`, await Packer.toBuffer(buildDocxDocument(st, today, seal)));
   await writeDocx('basic', base);
   await writeDocx('endorsement', endo);
   await writeDocx('cui', cui);

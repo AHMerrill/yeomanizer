@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Packer } from 'docx';
-import { buildDocxDocument } from './docx';
-import { embedStateInDocx, extractStateFromDocx, serializeState, deserializeState } from './roundtrip';
+import { serializeProject, parseProject } from './roundtrip';
 import { defaultState } from '../defaultState';
 import type { LetterState } from '../types';
 
@@ -14,36 +12,42 @@ const state: LetterState = {
   cui: { ...defaultState.cui, enabled: true },
 };
 
-describe('round-trip state bundle', () => {
-  it('serialize → deserialize preserves the full state', async () => {
-    const back = await deserializeState(await serializeState(state));
+describe('project-file round-trip (.yeomanizer.json)', () => {
+  it('serialize → parse preserves the full state', () => {
+    const back = parseProject(serializeProject(state));
     expect(back).toEqual(state);
   });
 
-  it('drops enclosure file bytes when not included, keeps titles/flags', async () => {
+  it('is plain, human-readable JSON (no code, no compression)', () => {
+    const text = serializeProject(state);
+    expect(() => JSON.parse(text)).not.toThrow();
+    expect(text).toContain('"v": 1');
+    expect(text).toContain('ROUND TRIP TEST');
+  });
+
+  it('drops enclosure file bytes when not included, keeps titles/flags', () => {
     const withEncl: LetterState = {
       ...state,
       encls: [
         { id: 'e', text: 'photo', inDocument: true, file: { name: 'p.png', type: 'image/png', dataUrl: 'data:image/png;base64,AAAA' } },
       ],
     };
-    const back = await deserializeState(await serializeState(withEncl, false));
+    const back = parseProject(serializeProject(withEncl, false));
     expect(back?.encls[0].text).toBe('photo');
-    expect(back?.encls[0].inDocument).toBe(true);
     expect(back?.encls[0].file).toBeUndefined();
   });
 
-  it('round-trips through a real .docx (and the doc still opens)', async () => {
-    const docx = new Uint8Array(await Packer.toBuffer(buildDocxDocument(state, new Date(2006, 8, 7))));
-    const embedded = await embedStateInDocx(docx, state);
-    const back = await extractStateFromDocx(embedded);
-    expect(back?.subj).toBe('ROUND TRIP TEST');
-    expect(back?.body[0].children[0].text).toBe('a child paragraph');
-    expect(back?.cui.enabled).toBe(true);
+  it('strips a non-image/pdf data URL on import (defense against a hand-edited file)', () => {
+    const obj = JSON.parse(serializeProject(state));
+    obj.state.encls = [
+      { id: 'x', text: 'x', inDocument: true, file: { name: 'x', type: 'text/html', dataUrl: 'data:text/html,<script>alert(1)</script>' } },
+    ];
+    const back = parseProject(JSON.stringify(obj));
+    expect(back?.encls[0].file).toBeUndefined(); // hostile URL refused
   });
 
-  it('returns null for a docx with no embedded state', async () => {
-    const docx = new Uint8Array(await Packer.toBuffer(buildDocxDocument(state, new Date(2006, 8, 7))));
-    expect(await extractStateFromDocx(docx)).toBeNull();
+  it('returns null for non-yeomanizer JSON or garbage', () => {
+    expect(parseProject('{"hello":"world"}')).toBeNull();
+    expect(parseProject('not json at all')).toBeNull();
   });
 });

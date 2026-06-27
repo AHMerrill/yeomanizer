@@ -89,6 +89,14 @@ export default function App() {
     void bump();
   };
 
+  const onProjectFile = async () => {
+    if (!editingState) return;
+    // A separate, plain-text editable copy (.json) — the exported document itself stays clean.
+    const { exportProjectFile } = await import('./export/roundtrip');
+    exportProjectFile(editingState);
+    void bump();
+  };
+
   const onPrint = () => {
     const after = () => {
       void bump();
@@ -101,10 +109,14 @@ export default function App() {
   return (
     <div className="app">
       <div className="disclaimer">
-        <strong>Unofficial tool</strong> — not affiliated with or endorsed by the U.S. Navy or
-        DoD, and not an official system of record. You are responsible for following CUI and all
-        other information-handling rules. Nothing you type is saved or transmitted — it lives only
-        in this browser tab and is erased when you close it.
+        <strong>Unofficial tool</strong> — not affiliated with or endorsed by the U.S. Navy or DoD,
+        and not an official system of record. <strong>The tool sends and stores nothing</strong> —
+        what you type stays in this browser tab and is erased when you close it (only an anonymous
+        download count ever leaves). <strong>CUI belongs only on authorized equipment</strong> —
+        Government-Furnished Equipment, or a system specifically approved for it, never a personal
+        device — so use this on such a system and follow your command&rsquo;s policy. The files you
+        download are yours to mark, store, transmit, and handle under the applicable CUI and
+        information-handling rules.
       </div>
 
       <header className="toolbar">
@@ -147,6 +159,14 @@ export default function App() {
         {editingState && editingState.type !== 'nato' && (
           <button onClick={() => void onDocx()}>Export .docx</button>
         )}
+        {editingState && (
+          <button
+            onClick={() => void onProjectFile()}
+            title="A small editable copy you can drop into the Editor tab later to keep working. The .docx/PDF you export stay clean — nothing is hidden inside them."
+          >
+            Export .json
+          </button>
+        )}
         {editingState && editingState.type === 'nato' && (
           <button className="primary" onClick={onPrint} title="Print or save the travel order as a PDF">
             Print / Save PDF
@@ -162,6 +182,31 @@ export default function App() {
           </button>
         )}
       </header>
+
+      {editingState && (
+        <div className="export-help">
+          {editingState.type !== 'nato' && (
+            <span>
+              <strong>.docx</strong> — editable Word version of the final letter; edit in Word or
+              share the document.
+            </span>
+          )}
+          <span>
+            <strong>.json</strong> — a small editable copy; drop it into the <em>Editor</em> tab
+            later to keep working. The .docx/PDF stay clean (nothing hidden inside them).
+          </span>
+          {editingState.type !== 'nato' ? (
+            <span>
+              <strong>PDF</strong> — pixel-accurate final letter with a CAC-signable field; print,
+              save, or sign.
+            </span>
+          ) : (
+            <span>
+              <strong>Print / Save PDF</strong> — print the travel order or save it as a PDF.
+            </span>
+          )}
+        </div>
+      )}
 
       {view === 'features' ? (
         <About />
@@ -192,8 +237,8 @@ export default function App() {
           Questions? <a href="mailto:info@yeomanizer.com">info@yeomanizer.com</a>
         </span>
         <span className="foot-mid">
-          Your draft never leaves this browser — only an anonymous, site-wide download tally (a
-          number, never any content) is recorded.
+          The tool sends nothing but an anonymous, site-wide download tally (a number — never your
+          content). Your draft stays in this browser until you download it yourself.
         </span>
         <span
           className="foot-count"

@@ -173,6 +173,31 @@
   line-height: 1.5;
 }
 
+/* Explanation strip under the toolbar — what each export is for */
+.export-help {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  padding: 9px 18px;
+  background: #16171b;
+  border-bottom: 1px solid #24262d;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #868d9c;
+}
+.export-help span {
+  flex: 1 1 240px;
+  max-width: 430px;
+}
+.export-help strong {
+  color: #cdd2db;
+  font-weight: 600;
+}
+.export-help em {
+  font-style: normal;
+  color: #cdd2db;
+}
+
 /* "Jump to a section" hover menu — sticky at the top of the editor pane */
 .jump {
   position: sticky;
