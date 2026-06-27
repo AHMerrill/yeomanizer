@@ -180,6 +180,7 @@ export function buildDocxDocument(
   const lh = state.letterhead;
   const cui = state.cui;
   const isMemo = state.type === 'memo-from-to';
+  const isMfr = state.type === 'mfr';
   const isEndorsement = state.type === 'endorsement';
   const children: Paragraph[] = [];
 
@@ -203,28 +204,27 @@ export function buildDocxDocument(
     for (let i = 0; i < 5; i++) children.push(new Paragraph({ children: [R('')], spacing: { after: 0 } }));
   }
 
-  // Identification: memo = date (flush right) + "MEMORANDUM"; letter = SSIC block.
+  // Identification block, right-aligned. Gated by includeSsic/includeCode so the PDF, preview, and
+  // .docx stay in parity (buildIdent.ssic is ungated, so we gate here). memo = date only + "MEMORANDUM";
+  // MFR = the OPTIONAL ssic/code/date block (date-only by default) + "MEMORANDUM FOR THE RECORD";
+  // letter = the ssic/code/date block.
+  const identLines = [
+    state.includeSsic ? ident.ssic : '',
+    state.includeCode ? ident.codeLine : '',
+    ident.date,
+  ].filter(Boolean);
+  const rightLine = (line: string) =>
+    new Paragraph({ alignment: AlignmentType.RIGHT, children: [R(line)], spacing: { after: 0 } });
   if (isMemo) {
-    if (ident.date)
-      children.push(
-        new Paragraph({ alignment: AlignmentType.RIGHT, children: [R(ident.date)], spacing: { after: 0 } }),
-      );
+    if (ident.date) children.push(rightLine(ident.date));
+    children.push(new Paragraph({ children: [R('MEMORANDUM')], spacing: { before: BLANK, after: BLANK } }));
+  } else if (isMfr) {
+    identLines.forEach((line) => children.push(rightLine(line)));
     children.push(
-      new Paragraph({ children: [R('MEMORANDUM')], spacing: { before: BLANK, after: BLANK } }),
+      new Paragraph({ children: [R('MEMORANDUM FOR THE RECORD')], spacing: { before: BLANK, after: BLANK } }),
     );
   } else {
-    // SSIC / code / date block sits at the top-right (matches the preview's right-aligned ident).
-    [ident.ssic, ident.codeLine, ident.date]
-      .filter(Boolean)
-      .forEach((line) =>
-        children.push(
-          new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            children: [R(line)],
-            spacing: { after: 0 },
-          }),
-        ),
-      );
+    identLines.forEach((line) => children.push(rightLine(line)));
     children.push(spacer());
   }
 
@@ -245,14 +245,17 @@ export function buildDocxDocument(
       }),
     );
   }
-  children.push(heading('From:', state.from));
-  children.push(heading('To:', state.to));
-  const via = state.via.filter((v) => v.text.trim());
-  if (via.length === 1) children.push(heading('Via:', via[0].text));
-  else if (via.length >= 2)
-    via.forEach((v, i) => children.push(heading(i === 0 ? 'Via:' : '', `(${i + 1}) ${v.text}`)));
+  // MFR is "for the record" — no addressee, so no From/To/Via.
+  if (!isMfr) {
+    children.push(heading('From:', state.from));
+    children.push(heading('To:', state.to));
+    const via = state.via.filter((v) => v.text.trim());
+    if (via.length === 1) children.push(heading('Via:', via[0].text));
+    else if (via.length >= 2)
+      via.forEach((v, i) => children.push(heading(i === 0 ? 'Via:' : '', `(${i + 1}) ${v.text}`)));
+  }
 
-  children.push(heading('Subj:', state.subj.toUpperCase(), true));
+  if (state.subj) children.push(heading('Subj:', state.subj.toUpperCase(), true));
 
   const refs = state.refs.filter((r) => r.text.trim());
   refs.forEach((r, i) =>

@@ -409,7 +409,7 @@ export function Editor({
         >
           <option value="standard-letter">Standard Naval Letter</option>
           <option value="memo-from-to">Memorandum (plain-paper / letterhead)</option>
-          <option value="mfr" disabled>Memorandum for the Record (MFR) — building</option>
+          <option value="mfr">Memorandum for the Record (MFR)</option>
           <option value="endorsement">Endorsement</option>
           <option value="nato">NATO Travel Order</option>
           <option value="business-letter" disabled>Business Letter — soon</option>
@@ -734,6 +734,8 @@ export function Editor({
         )}
       </Card>
 
+      {/* MFR is "for the record" — no addressee, so no From/To/Via routing card. */}
+      {state.type !== 'mfr' && (
       <Card title="Routing">
         <Field label="From">
           <input
@@ -762,6 +764,7 @@ export function Editor({
           </p>
         )}
       </Card>
+      )}
 
       <Card title="Subject" hint="Rendered in ALL CAPS, no punctuation (7-2.9).">
         <textarea

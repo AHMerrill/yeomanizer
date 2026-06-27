@@ -5,7 +5,7 @@
 import { it } from 'vitest';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { buildSignablePdf } from './signablePdf';
-import { defaultState } from '../defaultState';
+import { defaultState, defaultFor } from '../defaultState';
 import type { LetterState } from '../types';
 
 const RUN = process.env.GEN_PDF === '1';
@@ -134,6 +134,15 @@ const base: LetterState = {
   };
   writeFileSync(`${OUT}/enclosures.pdf`, await buildSignablePdf(encls, today));
 
+  // Memorandum for the Record (MFR): plain paper, date-only ident, "MEMORANDUM FOR THE RECORD" title,
+  // NO From/To/Via, signature = name + org code. Verifies the MFR branch (must match preview + docx + Fig 10-1).
+  const mfr: LetterState = {
+    ...defaultFor('mfr'),
+    subj: 'TELEPHONE CONVERSATION WITH NAVSEA REGARDING CONTRACT N00024',
+    signature: { name: 'E. S. HOWARD', title: 'N11', authority: 'none' },
+  };
+  writeFileSync(`${OUT}/mfr.pdf`, await buildSignablePdf(mfr, today));
+
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
   const { Packer } = await import('docx');
@@ -149,5 +158,6 @@ const base: LetterState = {
   await writeDocx('endorsement', endo);
   await writeDocx('cui', cui);
   await writeDocx('portions', portions);
+  await writeDocx('mfr', mfr);
   await writeDocx('enclosures', encls);
 });

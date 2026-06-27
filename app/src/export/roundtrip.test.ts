@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { serializeProject, parseProject } from './roundtrip';
-import { defaultState } from '../defaultState';
+import { defaultState, defaultFor } from '../defaultState';
 import type { LetterState } from '../types';
 
 const state: LetterState = {
@@ -16,6 +16,17 @@ describe('project-file round-trip (.yeomanizer.json)', () => {
   it('serialize → parse preserves the full state', () => {
     const back = parseProject(serializeProject(state));
     expect(back).toEqual(state);
+  });
+
+  it('round-trips an MFR losslessly (type + MFR defaults survive)', () => {
+    const mfr: LetterState = {
+      ...defaultFor('mfr'),
+      subj: 'TELEPHONE CONVERSATION WITH NAVSEA',
+      signature: { name: 'E. S. HOWARD', title: 'N11', authority: 'none' },
+    };
+    const back = parseProject(serializeProject(mfr));
+    expect(back).toEqual(mfr); // type='mfr', letterhead off, includeSsic/Code false, MFR body, signature
+    expect(back?.type).toBe('mfr');
   });
 
   it('is plain, human-readable JSON (no code, no compression)', () => {

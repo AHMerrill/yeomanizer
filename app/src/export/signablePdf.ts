@@ -134,8 +134,20 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     idLines.forEach((l) => put(l, idX));
   }
 
+  // ---- Memo / MFR title at the left margin, one blank line above + below (.memo-title) ----
+  const isMemo = state.type === 'memo-from-to';
+  const isMfr = state.type === 'mfr';
+  const memoTitle = isMfr ? 'MEMORANDUM FOR THE RECORD' : isMemo ? 'MEMORANDUM' : '';
+
   // ---- Heading block (From/To/Via/Subj/Ref/Encl) ----
-  gap(0.3 * PT - PARA_GAP < 0 ? 0.14 * PT : 0.3 * PT); // .headings margin-top (~0.3in from ident)
+  if (memoTitle) {
+    gap(PARA_GAP);
+    room(SIZE * BODY_LH);
+    put(memoTitle, LEFT);
+    gap(PARA_GAP);
+  } else {
+    gap(0.3 * PT - PARA_GAP < 0 ? 0.14 * PT : 0.3 * PT); // .headings margin-top (~0.3in from ident)
+  }
   // A long heading entry hangs its continuation under the entry's FIRST WORD (7-2.6–11): under the
   // content for From/To/Via/Subj, and under the text — past the marker — for the numbered Via/Ref/Encl
   // lists. The optional `marker` (e.g. "(a)  ") sits in the content column; the wrapped text and every
@@ -151,10 +163,13 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     put(lines[0] ?? '', textX);
     lines.slice(1).forEach((ln) => put(ln, textX));
   };
-  if (state.from) headRow('From:', state.from);
-  if (state.to) headRow('To:', state.to);
-  const vias = state.via.filter((v) => v.text.trim());
-  vias.forEach((v, i) => headRow(i === 0 ? 'Via:' : '', v.text, vias.length > 1 ? `(${i + 1}) ` : ''));
+  // MFR is "for the record" — no addressee, so no From/To/Via.
+  if (!isMfr) {
+    if (state.from) headRow('From:', state.from);
+    if (state.to) headRow('To:', state.to);
+    const vias = state.via.filter((v) => v.text.trim());
+    vias.forEach((v, i) => headRow(i === 0 ? 'Via:' : '', v.text, vias.length > 1 ? `(${i + 1}) ` : ''));
+  }
   if (state.subj) {
     gap(PARA_GAP);
     headRow('Subj:', state.subj.toUpperCase());
