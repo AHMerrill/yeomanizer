@@ -3,6 +3,11 @@
 Product + architecture: [README.md](README.md) and [app/README.md](app/README.md). Format rules:
 [SPEC.md](SPEC.md). This file is the working guide for Claude sessions in this repo.
 
+> **Before building or changing ANY document type, read [CHECKLIST.md](CHECKLIST.md) top-to-bottom —
+> then again before you commit.** It's the distilled memory of every bug Zan caught that "looked
+> plausible" but was wrong, plus the exact create → export → view → import → view + browser-print +
+> cross-browser + mobile pipeline. No shortcuts; emulation is not a real test; drive real browser engines.
+
 ## The two non-negotiables
 
 1. **Privacy / CUI.** Nothing persists or is transmitted — in-memory only; the sole network calls are
