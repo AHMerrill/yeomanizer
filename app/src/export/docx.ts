@@ -15,6 +15,7 @@ import {
 } from 'docx';
 import type { LetterState, Paragraph as P } from '../types';
 import type { RasterPage } from './rasterizePdf';
+import { embedStateInDocx } from './roundtrip';
 import {
   buildIdent,
   refLetter,
@@ -431,7 +432,12 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
       }
     }
   }
-  const blob = await Packer.toBlob(buildDocxDocument(state, today, sealBytes, enclImages));
+  const raw = await Packer.toBlob(buildDocxDocument(state, today, sealBytes, enclImages));
+  // Bundle the editing state inside the .docx so it can be dropped back in to keep editing.
+  const withState = await embedStateInDocx(new Uint8Array(await raw.arrayBuffer()), state);
+  const blob = new Blob([withState as BlobPart], {
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
