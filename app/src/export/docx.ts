@@ -328,44 +328,43 @@ export function buildDocxDocument(
   // can't carry vector PDF pages (matches the preview's note — the signable PDF copies them).
   state.encls.forEach((e, n) => {
     if (!e.inDocument || !e.file) return;
-    const mark = () =>
+    // "Enclosure (n)" lands at the lower-right (§7): right-aligned, with spacing-before sized so it
+    // sits near the bottom margin regardless of image height (a docx frame won't render reliably).
+    const CONTENT_TWIPS = Math.round(9.5 * IN); // 11in page − 0.5in top − 1in bottom
+    const mark = (imgTwips: number) =>
       children.push(
         new Paragraph({
           alignment: AlignmentType.RIGHT,
           children: [R(`Enclosure (${n + 1})`)],
-          spacing: { before: BLANK },
+          spacing: { before: Math.max(BLANK, CONTENT_TWIPS - imgTwips - 300) },
         }),
       );
     const pageImage = (data: Uint8Array, w: number, h: number, kind: 'png' | 'jpg' | 'gif' | 'bmp') => {
       const s = Math.min((6.5 * 96) / w, (8.7 * 96) / h); // fit within the 1-inch margins
+      const dispH = Math.round(h * s); // displayed height in px @ 96 DPI
       children.push(
         new Paragraph({
           pageBreakBefore: true,
           alignment: AlignmentType.CENTER,
-          children: [
-            new ImageRun({ type: kind, data, transformation: { width: Math.round(w * s), height: Math.round(h * s) } }),
-          ],
+          children: [new ImageRun({ type: kind, data, transformation: { width: Math.round(w * s), height: dispH } })],
           spacing: { after: 0 },
         }),
       );
+      return Math.round((dispH / 96) * IN); // displayed height in twips
     };
     if (e.file.type.startsWith('image/')) {
       const bytes = dataUrlToBytes(e.file.dataUrl);
       const sz = imageSize(bytes);
-      pageImage(bytes, sz.width, sz.height, imageKind(e.file.type));
-      mark();
+      mark(pageImage(bytes, sz.width, sz.height, imageKind(e.file.type)));
     } else if (enclImages[e.id]?.length) {
       // PDF rasterized to page images in-memory (export/rasterizePdf.ts) — one image per page
-      enclImages[e.id].forEach((pg) => {
-        pageImage(pg.bytes, pg.width, pg.height, 'png');
-        mark();
-      });
+      enclImages[e.id].forEach((pg) => mark(pageImage(pg.bytes, pg.width, pg.height, 'png')));
     } else {
       children.push(
         new Paragraph({ pageBreakBefore: true, children: [R(e.text || 'Enclosure')], spacing: { after: BLANK } }),
       );
       children.push(new Paragraph({ children: [R(`${e.file.name} — PDF attached separately.`)] }));
-      mark();
+      mark(0);
     }
   });
 

@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect } from 'react';
+import { useState, useLayoutEffect, useRef, useEffect } from 'react';
 import type { Dispatch, SetStateAction, ReactNode } from 'react';
 import type {
   LetterState,
@@ -38,7 +38,10 @@ function Card({ title, hint, children }: { title: string; hint?: string; childre
 // e.g. the correspondence type) so the list always matches what's on screen.
 function JumpNav({ dep }: { dep: unknown }) {
   const [sections, setSections] = useState<{ id: string; title: string }[]>([]);
-  const [open, setOpen] = useState(false);
+  const [hovering, setHovering] = useState(false); // pointer is over the button or the menu
+  const [locked, setLocked] = useState(false); // clicked open — persists until another click
+  const ref = useRef<HTMLDivElement>(null);
+  const open = hovering || locked;
   useLayoutEffect(() => {
     setSections(
       [...document.querySelectorAll<HTMLElement>('.editor .card')].map((c) => ({
@@ -47,9 +50,29 @@ function JumpNav({ dep }: { dep: unknown }) {
       })),
     );
   }, [dep]);
+  // While click-locked, a click anywhere outside the menu collapses it.
+  useEffect(() => {
+    if (!locked) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setLocked(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [locked]);
   return (
-    <div className="jump" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
-      <button type="button" className="jump-btn" aria-haspopup="menu" aria-expanded={open}>
+    <div
+      className="jump"
+      ref={ref}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
+      <button
+        type="button"
+        className="jump-btn"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setLocked((v) => !v)}
+      >
         Jump to a section ▾
       </button>
       {open && (
@@ -62,7 +85,8 @@ function JumpNav({ dep }: { dep: unknown }) {
               className="jump-item"
               onClick={() => {
                 document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                setOpen(false); // collapse on select; re-opens on hover
+                setLocked(false);
+                setHovering(false); // jump + collapse
               }}
             >
               {s.title}

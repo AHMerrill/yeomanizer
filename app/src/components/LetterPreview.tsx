@@ -273,10 +273,22 @@ function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): L
 // An "Add in document" enclosure rendered as its own appended sheet (after the letter +
 // endorsements). Images render full-page; PDFs show a placeholder for now (page-by-page
 // rasterizing is a follow-up — they still merge into the CAC-signable/print export).
-function EnclosurePage({ encl, index }: { encl: EnclosureEntry; index: number }) {
+function EnclosurePage({
+  encl,
+  index,
+  cuiOn,
+  banner,
+}: {
+  encl: EnclosureEntry;
+  index: number;
+  cuiOn: boolean;
+  banner: string;
+}) {
   const isImage = encl.file?.type.startsWith('image/');
   return (
     <div className="page enclosure-sheet">
+      {/* CUI banner repeats on every page of a CUI package, enclosures included */}
+      {cuiOn && <CuiBanner pos="top" text={banner} />}
       {isImage ? (
         <img className="encl-page-img" src={encl.file!.dataUrl} alt={encl.text} />
       ) : (
@@ -287,6 +299,7 @@ function EnclosurePage({ encl, index }: { encl: EnclosureEntry; index: number })
       )}
       {/* §7: enclosure marking, "Enclosure (n)", lower-right corner of each page. */}
       <div className="encl-mark">Enclosure ({index})</div>
+      {cuiOn && <CuiBanner pos="bottom" text={banner} />}
     </div>
   );
 }
@@ -302,7 +315,15 @@ export function LetterPreview({ state }: { state: LetterState }) {
         ))}
       {state.type !== 'endorsement' &&
         state.encls.map((e, i) =>
-          e.inDocument && e.file ? <EnclosurePage key={e.id} encl={e} index={i + 1} /> : null,
+          e.inDocument && e.file ? (
+            <EnclosurePage
+              key={e.id}
+              encl={e}
+              index={i + 1}
+              cuiOn={state.cui.enabled}
+              banner={state.cui.banner || 'CUI'}
+            />
+          ) : null,
         )}
     </>
   );
