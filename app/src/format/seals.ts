@@ -1,7 +1,5 @@
 import dow from '../assets/dow-seal.png';
 import dod from '../assets/dod-seal.png';
-import dodColor from '../assets/dod-seal.svg';
-import don from '../assets/don-seal.svg';
 import type { LetterState } from '../types';
 
 // Seal asset URLs. These are IMPORTED (not referenced as fixed /public paths) so Vite content-hashes
@@ -10,7 +8,5 @@ import type { LetterState } from '../types';
 export const SEAL_URL: Record<LetterState['letterhead']['seal'], string | null> = {
   dow,
   dod,
-  'dod-color': dodColor,
-  don,
   none: null,
 };

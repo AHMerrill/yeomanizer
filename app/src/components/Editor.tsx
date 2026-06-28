@@ -682,8 +682,6 @@ export function Editor({
               >
                 <option value="dow">Department of War seal (blue)</option>
                 <option value="dod">DoD seal (letterhead blue)</option>
-                <option value="dod-color">DoD seal (full color)</option>
-                <option value="don">DON seal</option>
                 <option value="none">None</option>
               </select>
             </Field>

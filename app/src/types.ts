@@ -46,9 +46,9 @@ export interface Letterhead {
   activityName: string; // one or more lines (newline-separated): "COMMANDER\nNAVAL SURFACE FORCE"
   addressLine: string; // e.g. "2000 NAVY PENTAGON"
   cityStateZip: string; // e.g. "WASHINGTON DC 20350-2000"
-  // dow = Department of War blue seal (current default); dod = legacy DoD letterhead blue; dod-color =
-  // full-color DoD vector; don = Navy seal. Official seals — used unmodified for authentic letterhead.
-  seal: 'dow' | 'dod' | 'dod-color' | 'don' | 'none';
+  // dow = Department of War blue seal (default); dod = DoD letterhead blue. Both rendered in the
+  // letterhead ink color (PMS 288) for authentic, on-spec letterhead.
+  seal: 'dow' | 'dod' | 'none';
   replyRefPrinted: boolean; // "in reply refer to" printed on the letterhead?
   // on = render letterhead; off = plain paper (content to top margin);
   // preprinted = don't print it but RESERVE its space (for pre-printed letterhead stock).

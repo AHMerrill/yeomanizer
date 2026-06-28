@@ -172,9 +172,7 @@ describe('Editor ↔ preview integration', () => {
       document.querySelector('.paper-backdrop img.seal')?.getAttribute('src') ?? null;
     expect(sealSrc()).toMatch(/dow-seal\.png/); // default: Department of War blue seal
     fireEvent.change(screen.getByLabelText('Seal'), { target: { value: 'dod' } });
-    expect(sealSrc()).toMatch(/dod-seal\.png/); // legacy DoD letterhead blue
-    fireEvent.change(screen.getByLabelText('Seal'), { target: { value: 'dod-color' } });
-    expect(sealSrc()).toMatch(/dod-seal\.svg/); // full-color vector
+    expect(sealSrc()).toMatch(/dod-seal\.png/); // DoD letterhead blue
     fireEvent.change(screen.getByLabelText('Seal'), { target: { value: 'none' } });
     expect(sealSrc()).toBeNull(); // no seal
   });

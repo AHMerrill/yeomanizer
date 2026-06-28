@@ -128,20 +128,8 @@ export async function loadSealBytes(state: LetterState): Promise<ArrayBuffer | u
   const src = SEAL_URL[lh.seal];
   if (!src) return undefined;
   try {
-    if (src.endsWith('.png')) return await (await fetch(src)).arrayBuffer();
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    await new Promise<void>((res, rej) => {
-      img.onload = () => res();
-      img.onerror = () => rej(new Error('seal load failed'));
-      img.src = src;
-    });
-    const c = document.createElement('canvas');
-    c.width = 300;
-    c.height = 300;
-    c.getContext('2d')?.drawImage(img, 0, 0, 300, 300);
-    const blob = await new Promise<Blob | null>((res) => c.toBlob(res, 'image/png'));
-    return blob ? await blob.arrayBuffer() : undefined;
+    // Both seals are PNG now — fetch the (content-hashed) asset bytes directly.
+    return await (await fetch(src)).arrayBuffer();
   } catch {
     return undefined;
   }
