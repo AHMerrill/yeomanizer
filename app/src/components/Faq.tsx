@@ -25,6 +25,10 @@ const SRC = {
   owaspXss: { label: 'OWASP — XSS prevention', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html' },
   adobeCac: { label: 'Adobe — certificate-based signatures', url: 'https://helpx.adobe.com/acrobat/using/certificate-based-signatures.html' },
   repo: { label: 'Source code (GitHub)', url: 'https://github.com/AHMerrill/yeomanizer' },
+  threatModel: {
+    label: 'Published threat model',
+    url: 'https://github.com/AHMerrill/yeomanizer/blob/main/THREAT_MODEL.md',
+  },
 } satisfies Record<string, Link>;
 
 function QA({ q, sources, children }: { q: string; sources?: Link[]; children: ReactNode }) {
@@ -86,6 +90,19 @@ export function Faq() {
           No. It&rsquo;s an unofficial aid — not affiliated with or endorsed by the U.S. Navy or DoD,
           not an official system of record, and it claims no Authority to Operate (ATO) or other
           authorization. Use it as a formatting aid, per your command&rsquo;s policy.
+        </QA>
+
+        <QA q="What’s the threat model — what does it protect, and how?" sources={[SRC.threatModel, SRC.repo]}>
+          The asset is your content, and the rule is that it never leaves this tab except as a file you
+          deliberately download. Everything runs in your browser — no server receives your letter,
+          nothing is stored (no cookies, <code>localStorage</code>, or telemetry), and the
+          Content-Security-Policy allows connections only to our own origin, so even an injected script
+          could not phone content out. Imported files are treated as hostile data: the{' '}
+          <code>.json</code> is parsed, never executed; prototype-polluting keys are stripped; the body
+          is size- and depth-capped against a render hang; and only image/PDF enclosures are accepted.
+          Exported files are scrubbed of hidden metadata. The full write-up — assets, trust boundary,
+          and a threat-by-threat table pointing at the actual code — is published as{' '}
+          <b>THREAT_MODEL.md</b>.
         </QA>
 
         <QA q="Can I use it with CUI?" sources={[SRC.dodi, SRC.telework, SRC.cfrSafeguard]}>

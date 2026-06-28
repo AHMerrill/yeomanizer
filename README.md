@@ -68,6 +68,9 @@ per-user storage.
 - Exported documents are **regular, non-executable file types** with nothing hidden inside; imported
   `.json` is parsed with `JSON.parse` (never `eval`) behind a prototype-pollution guard.
 
+The full security write-up — assets, trust boundary, and a threat-by-threat table that points at the
+code behind each claim — is published in [`THREAT_MODEL.md`](THREAT_MODEL.md).
+
 **CUI:** the tool makes **no authorization claim**. Controlled Unclassified Information belongs only
 on authorized Government-Furnished Equipment — or a system specifically approved for it — never a
 personal device, and you handle the files you download under the applicable CUI and
