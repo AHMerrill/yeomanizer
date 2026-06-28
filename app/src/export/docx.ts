@@ -15,6 +15,7 @@ import {
 } from 'docx';
 import type { LetterState, Paragraph as P } from '../types';
 import type { RasterPage } from './rasterizePdf';
+import { documentFilename } from '../format/filename';
 import {
   buildIdent,
   refLetter,
@@ -571,11 +572,7 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${(state.subj || 'naval-letter')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40)}.docx`;
+  a.download = documentFilename(state, 'docx');
   a.click();
   URL.revokeObjectURL(url);
 }

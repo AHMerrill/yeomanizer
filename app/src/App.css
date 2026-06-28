@@ -752,6 +752,23 @@
   color: #ff9b9b;
   text-decoration: underline;
 }
+.reset-all-btn {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #5a3a3f;
+  border-radius: 8px;
+  background: #2a1e22;
+  color: #ff9b9b;
+  cursor: pointer;
+}
+.reset-all-btn:hover {
+  border-color: #ff6b6b;
+  background: #3a2428;
+  color: #ffbcbc;
+}
 .card .hint {
   margin: 0 0 9px;
   font-size: 11.5px;

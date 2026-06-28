@@ -17,6 +17,7 @@ import {
 import { paragraphMarker, markerText, depthIndentIn } from '../format/paragraphs';
 import { parseInline } from '../format/inline';
 import { anyCui } from '../format/tree';
+import { documentFilename } from '../format/filename';
 import { loadSealBytes } from './docx';
 import { stripPdfMetadata } from './pdfMeta';
 
@@ -486,7 +487,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
 }
 
 export async function exportSignablePdf(state: LetterState, today: Date = new Date()): Promise<void> {
-  download(await buildSignablePdf(state, today), 'naval-letter-signable.pdf');
+  download(await buildSignablePdf(state, today), documentFilename(state, 'pdf'));
 }
 
 // Construct an AcroForm digital-signature field (/FT /Sig) + a borderless widget annotation, so

@@ -180,6 +180,33 @@ export function defaultFor(type: CorrespondenceType): LetterState {
   return base;
 }
 
+// A blank canvas for a type — keeps its STRUCTURAL defaults (letterhead mode, includeSsic/Code,
+// dateMode, seal) but empties every CONTENT field back to placeholders. Backs the "Reset all" card.
+export function blankFor(type: CorrespondenceType): LetterState {
+  const base = defaultFor(type);
+  return {
+    ...base,
+    ssic: '',
+    originatorCode: '',
+    serial: '',
+    letterhead: { ...base.letterhead, activityName: '', addressLine: '', cityStateZip: '' },
+    from: '',
+    to: '',
+    via: [],
+    subj: '',
+    refs: [],
+    encls: [],
+    body: [{ id: uid(), text: '', children: [] }],
+    signature: { name: '', title: '', authority: 'none' },
+    copyTo: [],
+    endorsementOf: '',
+    endorsements: [],
+    cui: { ...defaultState.cui },
+    business: { ...defaultState.business },
+    nato: { ...defaultState.nato },
+  };
+}
+
 // Keep one auto-endorsement per non-empty Via addressee (From = the via), preserving any
 // body/signature already entered, plus any manually-added (non-via) endorsements. This is why
 // adding a Via makes its endorsement page appear automatically. Only letters/memos get them.

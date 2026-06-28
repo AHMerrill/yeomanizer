@@ -12,7 +12,7 @@ import type {
   EnclosureEntry,
   AttachedFile,
 } from '../types';
-import { uid, syncViaEndorsements } from '../defaultState';
+import { uid, syncViaEndorsements, blankFor } from '../defaultState';
 import * as tree from '../format/tree';
 import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { ENDORSE_ORD } from '../format/identification';
@@ -470,6 +470,27 @@ export function Editor({
           <option value="nato">NATO Travel Order</option>
           <option value="business-letter">Business Letter (to firms/agencies outside DoD)</option>
         </select>
+      </Card>
+
+      <Card title="Start over">
+        <button
+          type="button"
+          className="reset-all-btn"
+          onClick={() => {
+            if (
+              window.confirm(
+                'Clear every field and start this correspondence over? The type stays selected; everything else resets to blank.',
+              )
+            )
+              setState(blankFor(state.type));
+          }}
+        >
+          Reset all fields
+        </button>
+        <p className="hint">
+          Zeroes out every card below back to blank placeholders for the selected type. (To clear
+          just one section, use its “Clear” link.)
+        </p>
       </Card>
 
       <Card

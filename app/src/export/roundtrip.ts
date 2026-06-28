@@ -6,6 +6,7 @@
 // sanitization and DLP scanning). The project file is an obvious, fully-readable data file you
 // keep locally; open it in any text editor and see exactly what's there. Nothing is uploaded.
 import { defaultState } from '../defaultState';
+import { documentFilename } from '../format/filename';
 import type { LetterState, Paragraph } from '../types';
 
 const VERSION = 1;
@@ -95,11 +96,7 @@ export function exportProjectFile(state: LetterState, includeEnclosureFiles = tr
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${(state.subj || 'naval-letter')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40)}.yeomanizer.json`;
+  a.download = documentFilename(state, 'yeomanizer.json');
   a.click();
   URL.revokeObjectURL(url);
 }
