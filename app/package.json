@@ -10,7 +10,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "ingest": "node scripts/ingest-manual.mjs"
   },
   "dependencies": {
     "docx": "^9.7.1",
