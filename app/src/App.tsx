@@ -77,6 +77,85 @@ export default function App() {
       ? setImportedState((prev) => (prev ? { ...prev, type: t } : prev))
       : setActiveType(t);
 
+  // ---- Undo / redo — in-memory history per editing context (each Builder draft, and the Editor
+  // import); nothing persists. Rapid edits within ~700ms coalesce into one step, so a typing burst
+  // undoes as a unit rather than character by character. ----
+  const [histories, setHistories] = useState<Record<string, { past: LetterState[]; future: LetterState[] }>>({});
+  const ctxKey = view === 'editor' ? 'editor' : 'builder:' + activeType;
+  const burstRef = useRef<{ key: string; t: number }>({ key: '', t: 0 });
+  const applyEditing = (s: LetterState) =>
+    view === 'editor' ? setImportedState(s) : setStatesByType((prev) => ({ ...prev, [activeType]: s }));
+
+  // setEditingState, wrapped to snapshot the prior state into history before each change.
+  const setEditingStateTracked: Dispatch<SetStateAction<LetterState>> = (update) => {
+    const prev = editingState;
+    if (prev) {
+      const now = Date.now();
+      const b = burstRef.current;
+      const sameBurst = b.key === ctxKey && now - b.t < 700;
+      burstRef.current = { key: ctxKey, t: now };
+      setHistories((h) => {
+        const cur = h[ctxKey] ?? { past: [], future: [] };
+        // start of a burst → push the prior snapshot; mid-burst → keep past, just clear redo
+        const past = sameBurst ? cur.past : [...cur.past, prev].slice(-100);
+        return { ...h, [ctxKey]: { past, future: [] } };
+      });
+    }
+    setEditingState(update);
+  };
+
+  const undo = () => {
+    const cur = histories[ctxKey];
+    if (!cur?.past.length || !editingState) return;
+    const prev = cur.past[cur.past.length - 1];
+    setHistories((h) => {
+      const c = h[ctxKey]!;
+      return { ...h, [ctxKey]: { past: c.past.slice(0, -1), future: [...c.future, editingState] } };
+    });
+    applyEditing(prev);
+    burstRef.current = { key: '', t: 0 };
+  };
+  const redo = () => {
+    const cur = histories[ctxKey];
+    if (!cur?.future.length || !editingState) return;
+    const next = cur.future[cur.future.length - 1];
+    setHistories((h) => {
+      const c = h[ctxKey]!;
+      return { ...h, [ctxKey]: { past: [...c.past, editingState], future: c.future.slice(0, -1) } };
+    });
+    applyEditing(next);
+    burstRef.current = { key: '', t: 0 };
+  };
+  const canUndo = !!editingState && !!histories[ctxKey]?.past.length;
+  const canRedo = !!editingState && !!histories[ctxKey]?.future.length;
+  // Importing a fresh file starts a new editing baseline — clear the Editor context's history.
+  const onImport = (s: LetterState) => {
+    setImportedState(s);
+    setHistories((h) => ({ ...h, editor: { past: [], future: [] } }));
+    burstRef.current = { key: '', t: 0 };
+  };
+
+  // Keyboard: Cmd/Ctrl+Z = undo, Cmd/Ctrl+Shift+Z or Ctrl+Y = redo — but defer to NATIVE undo inside a
+  // focused text field, so per-character text undo still works. Refs keep the handler's closures fresh.
+  const undoRef = useRef(undo);
+  undoRef.current = undo;
+  const redoRef = useRef(redo);
+  redoRef.current = redo;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const k = e.key.toLowerCase();
+      if (k !== 'z' && k !== 'y') return;
+      const el = document.activeElement as HTMLElement | null;
+      if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT' || el.isContentEditable)) return;
+      e.preventDefault();
+      if (k === 'y' || (k === 'z' && e.shiftKey)) redoRef.current();
+      else undoRef.current();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // Record one anonymous page view on load — a content-free POST (no body, no IP, no region; the
   // server stores only an integer) — and show both running totals. In local dev the endpoint isn't
   // present, so this fails silently and the counts simply stay hidden.
@@ -204,6 +283,16 @@ export default function App() {
           </button>
         </nav>
         <div className="grow" />
+        {editingState && (
+          <div className="undo-redo">
+            <button onClick={undo} disabled={!canUndo} title="Undo (⌘/Ctrl+Z)" aria-label="Undo">
+              ↶
+            </button>
+            <button onClick={redo} disabled={!canRedo} title="Redo (⌘/Ctrl+Shift+Z)" aria-label="Redo">
+              ↷
+            </button>
+          </div>
+        )}
         {editingState && editingState.type !== 'nato' && (
           <button onClick={() => void onDocx()}>Export .docx</button>
         )}
@@ -276,7 +365,7 @@ export default function App() {
             spellCheck={false}
             onSubmit={(e) => e.preventDefault()}
           >
-            <Editor state={editingState} setState={setEditingState} setType={setEditingType} />
+            <Editor state={editingState} setState={setEditingStateTracked} setType={setEditingType} />
           </form>
           {/* Drag to resize the editor vs. the preview; double-click to reset. Desktop only. */}
           <div
@@ -295,7 +384,7 @@ export default function App() {
           </div>
         </main>
       ) : (
-        <ImportDropZone onImport={setImportedState} />
+        <ImportDropZone onImport={onImport} />
       )}
 
       <footer className="footer">

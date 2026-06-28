@@ -54,6 +54,20 @@
 .toolbar button.primary:hover {
   background: #2a61d6;
 }
+.toolbar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.undo-redo {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 4px;
+}
+.undo-redo button {
+  padding: 7px 10px;
+  font-size: 15px;
+  line-height: 1;
+}
 
 /* Editor / Features — segmented pill slider toggle */
 .seg-toggle {

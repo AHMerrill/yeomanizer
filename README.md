@@ -26,6 +26,8 @@ Live: **https://yeomanizer.com**
   renders identically in the preview, the `.docx`, and the PDF.
 - **Reorder & auto-number** — drag a paragraph by its grip (or use ↑/↓) to reorder it; the numbering
   (1, 2…, then a, b…) and indentation update themselves.
+- **Undo / redo** — ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z (or toolbar buttons); each draft keeps its own
+  in-memory history (nothing persisted).
 - **CUI marking** — a banner top & bottom of every page (enclosures included), the designation
   block, optional per-paragraph (CUI)/(U) marks, and **per-enclosure banners** — give any
   in-document enclosure its own banner so a mixed-category package is marked correctly, each on its
