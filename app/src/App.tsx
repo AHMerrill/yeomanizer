@@ -59,6 +59,7 @@ export default function App() {
       thumb.style.transform = `translateX(${active.offsetLeft - thumb.offsetLeft}px)`;
     };
     place();
+    if (typeof ResizeObserver === 'undefined') return; // jsdom/SSR has no layout — skip the observer
     const ro = new ResizeObserver(place);
     ro.observe(nav);
     return () => ro.disconnect();
