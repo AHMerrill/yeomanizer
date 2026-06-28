@@ -11,6 +11,7 @@ import { defaultFor } from './defaultState';
 import type { LetterState, CorrespondenceType } from './types';
 import { Editor } from './components/Editor';
 import { Checklist } from './components/Checklist';
+import { TEMPLATES } from './data/templates';
 import { LetterPreview } from './components/LetterPreview';
 import { About } from './components/About';
 import { ImportDropZone } from './components/ImportDropZone';
@@ -136,6 +137,21 @@ export default function App() {
     setImportedState(s);
     setHistories((h) => ({ ...h, editor: { past: [], future: [] } }));
     burstRef.current = { key: '', t: 0 };
+  };
+
+  // Load a starter example into its type's Builder draft. Snapshots the prior draft into history first,
+  // so it's undoable (⌘/Ctrl+Z). A different-type example fills that type's own slot — it never
+  // destroys the draft you're looking at.
+  const loadTemplate = (build: () => LetterState) => {
+    const st = build();
+    const key = 'builder:' + st.type;
+    setHistories((h) => {
+      const cur = h[key] ?? { past: [], future: [] };
+      return { ...h, [key]: { past: [...cur.past, statesByType[st.type]].slice(-100), future: [] } };
+    });
+    burstRef.current = { key: '', t: 0 };
+    setActiveType(st.type);
+    setStatesByType((prev) => ({ ...prev, [st.type]: st }));
   };
 
   // Keyboard: Cmd/Ctrl+Z = undo, Cmd/Ctrl+Shift+Z or Ctrl+Y = redo — but defer to NATIVE undo inside a
@@ -378,6 +394,22 @@ export default function App() {
             spellCheck={false}
             onSubmit={(e) => e.preventDefault()}
           >
+            {view === 'builder' && (
+              <div className="tpl-bar">
+                <span className="tpl-label">Start from an example:</span>
+                {TEMPLATES.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className="tpl-btn"
+                    title={`${t.blurb} — loads into the editor (undo with ⌘/Ctrl+Z).`}
+                    onClick={() => loadTemplate(t.build)}
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            )}
             <Editor state={editingState} setState={setEditingStateTracked} setType={setEditingType} />
           </form>
           {/* Drag to resize the editor vs. the preview; double-click to reset. Desktop only. */}
