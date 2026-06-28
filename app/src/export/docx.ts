@@ -16,6 +16,7 @@ import {
 import type { LetterState, Paragraph as P } from '../types';
 import type { RasterPage } from './rasterizePdf';
 import { documentFilename } from '../format/filename';
+import { SEAL_URL } from '../format/seals';
 import {
   buildIdent,
   refLetter,
@@ -123,15 +124,9 @@ function sealRun(bytes: ArrayBuffer | Uint8Array): ImageRun {
 // Fetch the chosen seal as PNG bytes (rasterizing the SVG seals via canvas) for embedding.
 export async function loadSealBytes(state: LetterState): Promise<ArrayBuffer | undefined> {
   const lh = state.letterhead;
-  if (lh.mode !== 'on' || lh.seal === 'none') return undefined;
-  const src =
-    lh.seal === 'dow'
-      ? '/dow-seal.png'
-      : lh.seal === 'dod'
-        ? '/dod-seal.png'
-        : lh.seal === 'dod-color'
-          ? '/dod-seal.svg'
-          : '/don-seal.svg';
+  if (lh.mode !== 'on') return undefined;
+  const src = SEAL_URL[lh.seal];
+  if (!src) return undefined;
   try {
     if (src.endsWith('.png')) return await (await fetch(src)).arrayBuffer();
     const img = new Image();

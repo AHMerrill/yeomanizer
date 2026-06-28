@@ -3,6 +3,7 @@ import type { LetterState, Paragraph, EndorsementEntry, EnclosureEntry } from '.
 import { parseInline } from '../format/inline';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 import { anyCui } from '../format/tree';
+import { SEAL_URL } from '../format/seals';
 import {
   buildIdent,
   refLetter,
@@ -94,20 +95,9 @@ function ParaFlow({
   );
 }
 
-// Seal sources — all authentic, downloaded assets (never recolored/redrawn):
-//   dod       = the letterhead seal as printed in SECNAV M-5216.5 Fig 7-1 (DoD seal, blue)
-//   dod-color = the official full-color DoD seal vector (razor-sharp, full color)
-const SEAL_SRC: Record<LetterState['letterhead']['seal'], string | null> = {
-  dow: '/dow-seal.png',
-  dod: '/dod-seal.png',
-  'dod-color': '/dod-seal.svg',
-  don: '/don-seal.svg',
-  none: null,
-};
-
 function Letterhead({ state }: { state: LetterState }) {
   const lh = state.letterhead;
-  const sealSrc = SEAL_SRC[lh.seal];
+  const sealSrc = SEAL_URL[lh.seal];
   return (
     <>
       {sealSrc && <img className="seal" src={sealSrc} alt="" />}

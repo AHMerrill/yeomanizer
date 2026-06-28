@@ -1,5 +1,6 @@
 import type { LetterState } from '../types';
 import { rankByGrade } from '../data/ranks';
+import { SEAL_URL } from '../format/seals';
 
 // Underlined fill-in blank: shows the value, or a grey hint that is hidden on print
 // (so the printed form has an empty underlined blank to write on).
@@ -56,14 +57,7 @@ export function NatoForm({ state }: { state: LetterState }) {
   const lh = state.letterhead;
   const n = state.nato;
   const rank = rankByGrade(n.rankGrade);
-  const sealSrc =
-    lh.seal === 'dod'
-      ? '/dod-seal.png'
-      : lh.seal === 'dod-color'
-        ? '/dod-seal.svg'
-        : lh.seal === 'don'
-          ? '/don-seal.svg'
-          : null;
+  const sealSrc = SEAL_URL[lh.seal];
   const showLh = lh.mode !== 'off';
 
   return (
