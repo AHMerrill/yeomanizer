@@ -11,6 +11,7 @@ import { defaultFor } from './defaultState';
 import type { LetterState, CorrespondenceType } from './types';
 import { Editor } from './components/Editor';
 import { Checklist } from './components/Checklist';
+import { Credits } from './components/Credits';
 import { TEMPLATES } from './data/templates';
 import { proofread } from './format/proofread';
 import { detectPii } from './format/pii';
@@ -45,9 +46,9 @@ export default function App() {
     useState<Record<CorrespondenceType, LetterState>>(makeStates);
   const [activeType, setActiveType] = useState<CorrespondenceType>('standard-letter');
   const [counts, setCounts] = useState<Counts | null>(null);
-  const [view, setView] = useState<'editor' | 'builder' | 'checklist' | 'features' | 'faq' | 'guide'>(
-    'builder',
-  );
+  const [view, setView] = useState<
+    'editor' | 'builder' | 'checklist' | 'features' | 'faq' | 'guide' | 'credits'
+  >('builder');
   // The Editor tab edits a separately-imported letter, so importing never clobbers a Builder draft.
   const [importedState, setImportedState] = useState<LetterState | null>(null);
   // Draggable editor/preview split — session-only (no persistence). null = the CSS default width.
@@ -268,10 +269,27 @@ export default function App() {
 
       <header className="toolbar">
         <div className="brand">
-          the&nbsp;yeomanizer
+          <span className="brand-row">
+            the&nbsp;yeomanizer
+            <a
+              className="gh-link"
+              href="https://github.com/AHMerrill/yeomanizer"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View source on GitHub"
+              aria-label="View source on GitHub"
+            >
+              <svg viewBox="0 0 16 16" width="17" height="17" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                />
+              </svg>
+            </a>
+          </span>
           <span className="brand-sub">naval correspondence, formatted</span>
         </div>
-        <nav className="seg-toggle seg-6" role="tablist" aria-label="Page">
+        <nav className="seg-toggle seg-7" role="tablist" aria-label="Page">
           <button
             className={view === 'editor' ? 'seg on' : 'seg'}
             role="tab"
@@ -324,6 +342,14 @@ export default function App() {
             onClick={() => setView('faq')}
           >
             FAQ
+          </button>
+          <button
+            className={view === 'credits' ? 'seg on' : 'seg'}
+            role="tab"
+            aria-selected={view === 'credits'}
+            onClick={() => setView('credits')}
+          >
+            Credits
           </button>
         </nav>
         <div className="grow" />
@@ -393,6 +419,8 @@ export default function App() {
         <About />
       ) : view === 'faq' ? (
         <Faq />
+      ) : view === 'credits' ? (
+        <Credits />
       ) : view === 'guide' ? (
         <Guide />
       ) : view === 'checklist' ? (

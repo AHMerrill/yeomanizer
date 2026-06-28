@@ -29,10 +29,6 @@ const SRC = {
     label: 'Published threat model',
     url: 'https://github.com/AHMerrill/yeomanizer/blob/main/THREAT_MODEL.md',
   },
-  manualDoni: {
-    label: 'SECNAV M-5216.5 (DON issuances)',
-    url: 'https://www.secnav.navy.mil/doni/manuals-secnav.aspx',
-  },
 } satisfies Record<string, Link>;
 
 function QA({ q, sources, children }: { q: string; sources?: Link[]; children: ReactNode }) {
@@ -117,35 +113,18 @@ export function Faq() {
           counter. Specifics are in the threat model.
         </QA>
 
-        <QA q="What resources were used to build this site?" sources={[SRC.repo, SRC.manualDoni]}>
-          <p>
-            Everything here is built from public, open materials — and the tool itself is open source
-            (Apache-2.0; see the <code>LICENSE</code> and <code>NOTICE</code> in the repository).
-          </p>
-          <p>
-            <b>The rules it follows</b> are U.S. Government publications in the public domain:
-            SECNAV M-5216.5 (the Correspondence Manual), OPNAVINST 5400.45A (section titles),
-            SECNAV M-5210.2 (Standard Subject Identification Codes), and — for CUI — DoDI 5200.48 with
-            the ISOO CUI Marking Handbook and 32 CFR 2002.
-          </p>
-          <p>
-            <b>The code runs on</b> open-source libraries, each under a permissive license (the full
-            text ships inside every package): React &amp; React-DOM (MIT), pdf-lib (MIT — the
-            searchable-PDF engine), docx (MIT — the Word engine), pdf.js / pdfjs-dist (Apache-2.0), and
-            JSZip (MIT); built with Vite (MIT) and TypeScript (Apache-2.0).
-          </p>
-          <p>
-            <b>Ideas we learned from</b> other open-source naval-correspondence projects — dondocs (MIT),
-            SemperScribe (MIT), navalletterformat (MIT), and mildoc-lint (Apache-2.0). Their feature
-            ideas — an examples library, a proofread checklist, sensitive-data flagging, a published
-            threat model — informed ours. <b>No code was copied</b>; every feature here was written from
-            scratch.
-          </p>
-          <p>
-            <b>The seals</b> (Department of Defense and Department of War) are U.S. Government works in the
-            public domain, used only at their prescribed size and ink for official letterhead.
-          </p>
-          <p>If a credit is missing, open an issue and we&rsquo;ll fix it.</p>
+        <QA
+          q="How does the sensitive-data scan work — does it send my draft anywhere?"
+          sources={[SRC.threatModel]}
+        >
+          No. It runs <em>entirely in your browser</em>. To find patterns it reads (scans) the draft
+          you&rsquo;ve typed — the same in-memory text the live preview already uses — and matches a few
+          regular expressions (a Social Security Number, 9- and 10-digit IDs, a date-of-birth keyword)
+          locally. It <b>stores nothing and transmits nothing</b>: there is no network request (the
+          Content-Security-Policy would block one anyway), no logging, and no copy kept. The results live
+          in the tab and vanish when you close it. It is a reminder, not a verdict — deciding what is
+          PII/CUI, and how it is marked, stays your call. (Full attribution for what the tool is built on
+          is on the <b>Credits</b> tab.)
         </QA>
 
         <QA q="Can I use it with CUI?" sources={[SRC.dodi, SRC.telework, SRC.cfrSafeguard]}>

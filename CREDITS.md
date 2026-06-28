@@ -30,15 +30,17 @@ Each is under a permissive license; the full license text ships inside the publi
 | [Vite](https://vite.dev) | build tooling | MIT |
 | [TypeScript](https://www.typescriptlang.org) | language/types | Apache-2.0 |
 
-## Ideas learned from other open-source projects (no code copied)
+## Ideas learned from other open-source projects
 
 Several open-source naval-correspondence tools informed *feature ideas* here. **No source code was
-copied from any of them** — every feature in this app was written from scratch (clean-room). They are
-credited in good faith:
+copied or lifted directly from any of them** — every feature in this app was written from scratch
+(clean-room). They are credited in good faith, with the license each carried when we looked:
 
-- **dondocs** (marinecoders) — MIT app code. Examples, in-context learning, richer menus.
-- **SemperScribe** (SemperAdmin) — MIT. A proofread checklist tied to the manual; a published threat model.
-- **navalletterformat** (jeranaias) — MIT. Editor UX (reordering, templates), session-only PII handling.
-- **mildoc-lint** (cjchanh) — Apache-2.0. The model for deterministic pre-export checks + a threat model.
+| Project | License (when reviewed) | Code used directly? | What the idea informed |
+|---|---|---|---|
+| [dondocs](https://github.com/marinecoders/dondocs) | MIT (app) — its bundled LaTeX engine is AGPL-3.0 and is **not** used | **No** | Examples, in-context learning, richer menus |
+| [SemperScribe](https://github.com/SemperAdmin/SemperScribe) | MIT | **No** | A proofread checklist tied to the manual; a published threat model |
+| [navalletterformat](https://github.com/jeranaias/navalletterformat) | MIT | **No** | Editor UX (paragraph reordering, starter templates); session-only PII handling |
+| [mildoc-lint](https://github.com/cjchanh/mildoc-lint) | Apache-2.0 | **No** | Deterministic pre-export checks; a published threat model |
 
 If a credit is missing or wrong, please open an issue and we'll correct it.
