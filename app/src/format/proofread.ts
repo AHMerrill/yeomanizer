@@ -104,6 +104,22 @@ export function proofread(s: LetterState): Check[] {
       'With CUI on, fill in “Controlled by,” “CUI Category,” and the POC of the designation block.');
   }
 
+  // CUI transmittal / rollup (DoDI 5200.48, ISOO Marking Handbook): a cover that transmits CUI
+  // enclosures must itself carry the MOST RESTRICTIVE marking in the package. The tool makes NO
+  // classification determination — it only flags the inconsistency for the user to resolve.
+  const enclBanners = s.encls.filter((e) => e.inDocument && (e.cuiBanner ?? '').trim());
+  if (enclBanners.length) {
+    if (!s.cui.enabled) {
+      add('cui-cover', 'Cover marked for its CUI enclosures', false,
+        'An enclosure is marked CUI but the cover carries no marking. A transmittal must show the most restrictive CUI it transmits — turn on CUI, set the cumulative banner, and add a transmittal note.');
+    } else {
+      const letterBanner = (s.cui.banner || 'CUI').trim();
+      add('cui-rollup', 'Cover banner reflects the whole package',
+        enclBanners.every((e) => (e.cuiBanner ?? '').trim() === letterBanner),
+        'An enclosure carries a different CUI banner than the cover. The cover (first-page) banner must show the MOST RESTRICTIVE marking in the package — it rolls up to the highest.');
+    }
+  }
+
   // Enclosures listed must each have a title (¶19.b(7): enclosure markings correct).
   if (t !== 'nato' && s.encls.length) {
     add('encl-titles', 'Every listed enclosure has a title', s.encls.every((e) => e.text.trim().length > 0),

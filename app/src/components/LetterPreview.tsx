@@ -391,6 +391,7 @@ function Designation({ cui }: { cui: LetterState['cui'] }) {
       <div>CUI Category: {cui.category}</div>
       <div>Limited Dissemination Control: {cui.dissemination}</div>
       {cui.poc && <div>POC: {cui.poc}</div>}
+      {cui.transmittalNote.trim() && <div className="cui-transmittal">{cui.transmittalNote}</div>}
     </div>
   );
 }

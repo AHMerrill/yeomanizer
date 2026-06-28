@@ -72,6 +72,7 @@ export const defaultState: LetterState = {
     dissemination: 'FEDCON',
     poc: '',
     portionMarkings: false,
+    transmittalNote: '',
   },
   nato: {
     orderNumber: '',

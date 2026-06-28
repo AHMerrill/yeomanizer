@@ -501,6 +501,7 @@ export function buildDocxDocument(
       `CUI Category: ${cui.category}`,
       `Limited Dissemination Control: ${cui.dissemination}`,
       cui.poc ? `POC: ${cui.poc}` : '',
+      cui.transmittalNote.trim(), // transmittal-document status note (e.g. "…UNCONTROLLED when separated")
     ]
       .filter(Boolean)
       .map(

@@ -129,6 +129,13 @@ PII"** guidance (doncio.navy.mil) — both saved to `research/`.
   its own. Rendered identically across the preview (`EnclosurePage`), the PDF (a `pageBannerOverride`
   page→banner map), and the `.docx` (each in-document enclosure is its **own Word section** with its own
   header/footer; the letter section keeps the designation block in its first-page footer).
+- **Transmittal / rollup safeguard (impl):** a cover that transmits CUI enclosures must itself carry
+  the **most restrictive** marking in the package (DoDI 5200.48 / ISOO Marking Handbook). Two advisory
+  Proofread checks enforce this without making any determination: `cui-cover` warns when an in-document
+  enclosure is marked CUI but the letter's CUI is **off**; `cui-rollup` warns when CUI is on but an
+  enclosure banner **differs** from the cover banner (the cover must reflect the highest). An optional
+  free-text **transmittal note** (`CuiMarking.transmittalNote`, e.g. "…UNCONTROLLED when separated from
+  enclosures") renders as the last line of the designation block in the preview, PDF, and `.docx`.
 - **Implementation:** print/preview uses `position: fixed` banners (repeat every page); `.docx`
   uses Word's native first-page/default headers & footers (designation block in the first-page footer),
   one section per in-document enclosure. True multi-page *content* pagination still pending (see below).

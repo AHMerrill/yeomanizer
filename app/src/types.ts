@@ -114,6 +114,11 @@ export interface CuiMarking {
   dissemination: string; // distribution / limited-dissemination control, e.g. "FEDCON"
   poc: string; // name + email/phone (or originating office)
   portionMarkings: boolean; // optional (U)/(CUI) portion marks — DON discourages for PII
+  // Optional transmittal-document note (ISOO CUI Marking Handbook): when a cover letter transmits CUI
+  // enclosures, it carries the most restrictive marking it transmits PLUS a statement of its own status
+  // once separated — e.g. "This document, when separated from its enclosures, is UNCONTROLLED." Free
+  // text; the user supplies the exact wording. Rendered in the first-page designation block when set.
+  transmittalNote: string;
 }
 
 // An endorsement appended to a basic letter/memo (Ch 9). Rendered as extra page(s) after it.

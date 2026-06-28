@@ -474,6 +474,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
       `CUI Category: ${cui.category}`,
       `Limited Dissemination Control: ${cui.dissemination}`,
       cui.poc ? `POC: ${cui.poc}` : '',
+      cui.transmittalNote.trim(), // transmittal-document status note (e.g. "…UNCONTROLLED when separated")
     ].filter(Boolean);
     const dW = Math.max(...desig.map((l) => font.widthOfTextAtSize(l, 8)));
     desig.forEach((l, i) =>

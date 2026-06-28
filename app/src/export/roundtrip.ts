@@ -112,12 +112,19 @@ export function parseProject(text: string): LetterState | null {
       s.letterhead && typeof s.letterhead === 'object'
         ? { ...defaultState.letterhead, ...(s.letterhead as object) }
         : defaultState.letterhead;
+    // Deep-fill the CUI object so a file from before a newer field (e.g. transmittalNote) still
+    // carries every field a renderer reads — avoids an undefined slipping into a .trim() downstream.
+    const cui =
+      s.cui && typeof s.cui === 'object'
+        ? { ...defaultState.cui, ...(s.cui as object) }
+        : defaultState.cui;
     return sanitizeEnclosures({
       ...defaultState,
       ...s,
       body,
       business,
       letterhead,
+      cui,
       // Bound + coerce every list field so a hostile/corrupt file can't smuggle a giant array.
       toAddrs: sanitizeEntries(s.toAddrs),
       via: sanitizeEntries(s.via),

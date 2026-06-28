@@ -680,6 +680,17 @@ export function Editor({
                 onChange={(e) => patchCui({ poc: e.target.value })}
               />
             </Field>
+            <Field label="Transmittal note (optional)">
+              <input
+                value={state.cui.transmittalNote}
+                placeholder="This document, when separated from its enclosures, is UNCONTROLLED."
+                onChange={(e) => patchCui({ transmittalNote: e.target.value })}
+              />
+            </Field>
+            <p className="hint">
+              When the cover transmits CUI enclosures but isn’t itself CUI, add a note stating its
+              status once separated (ISOO CUI Marking Handbook). It prints in the designation block.
+            </p>
             <p className="hint">
               Portion markings are per paragraph — use the (CUI) toggle on any
               paragraph in the Body section. Marking one turns this on; once any portion is marked,

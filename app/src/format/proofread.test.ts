@@ -102,4 +102,21 @@ describe('proofread()', () => {
     expect(get(proofread(clean({ dateMode: 'manual', dateManual: 'next tuesday' })), 'date-fmt')?.status).toBe('warn');
     expect(get(proofread(clean({ dateMode: 'manual', dateManual: '7 Sep 26' })), 'date-fmt')?.status).toBe('pass');
   });
+
+  it('flags a CUI enclosure when the cover letter is unmarked (transmittal rule)', () => {
+    const s = clean({
+      cui: { ...defaultFor('standard-letter').cui, enabled: false },
+      encls: [{ id: 'e1', text: 'Doc', inDocument: true, cuiBanner: 'CUI//SP-PROPIN' }],
+    });
+    expect(get(proofread(s), 'cui-cover')?.status).toBe('warn');
+  });
+
+  it('rolls the cover banner up to the most restrictive enclosure marking', () => {
+    const base = defaultFor('standard-letter');
+    const fullCui = { ...base.cui, enabled: true, banner: 'CUI//PRVCY', controlledBy1: 'DON', category: 'PRVCY', poc: 'x' };
+    const diverges = clean({ cui: fullCui, encls: [{ id: 'e1', text: 'Doc', inDocument: true, cuiBanner: 'CUI//SP-PROPIN' }] });
+    expect(get(proofread(diverges), 'cui-rollup')?.status).toBe('warn');
+    const matches = clean({ cui: fullCui, encls: [{ id: 'e1', text: 'Doc', inDocument: true, cuiBanner: 'CUI//PRVCY' }] });
+    expect(get(proofread(matches), 'cui-rollup')?.status).toBe('pass');
+  });
 });
