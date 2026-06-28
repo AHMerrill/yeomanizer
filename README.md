@@ -28,6 +28,8 @@ Live: **https://yeomanizer.com**
   (1, 2…, then a, b…) and indentation update themselves.
 - **Undo / redo** — ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z (or toolbar buttons); each draft keeps its own
   in-memory history (nothing persisted).
+- **Proofread tab** — a pre-send review built on SECNAV M-5216.5 Ch 2 ¶19: live checks on your draft,
+  the format items the engine guarantees, and the substance items you confirm. Advisory only.
 - **CUI marking** — a banner top & bottom of every page (enclosures included), the designation
   block, optional per-paragraph (CUI)/(U) marks, and **per-enclosure banners** — give any
   in-document enclosure its own banner so a mixed-category package is marked correctly, each on its

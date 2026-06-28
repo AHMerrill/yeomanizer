@@ -10,6 +10,7 @@ import {
 import { defaultFor } from './defaultState';
 import type { LetterState, CorrespondenceType } from './types';
 import { Editor } from './components/Editor';
+import { Checklist } from './components/Checklist';
 import { LetterPreview } from './components/LetterPreview';
 import { About } from './components/About';
 import { ImportDropZone } from './components/ImportDropZone';
@@ -41,7 +42,9 @@ export default function App() {
     useState<Record<CorrespondenceType, LetterState>>(makeStates);
   const [activeType, setActiveType] = useState<CorrespondenceType>('standard-letter');
   const [counts, setCounts] = useState<Counts | null>(null);
-  const [view, setView] = useState<'editor' | 'builder' | 'features' | 'faq' | 'guide'>('builder');
+  const [view, setView] = useState<'editor' | 'builder' | 'checklist' | 'features' | 'faq' | 'guide'>(
+    'builder',
+  );
   // The Editor tab edits a separately-imported letter, so importing never clobbers a Builder draft.
   const [importedState, setImportedState] = useState<LetterState | null>(null);
   // Draggable editor/preview split — session-only (no persistence). null = the CSS default width.
@@ -240,7 +243,7 @@ export default function App() {
           the&nbsp;yeomanizer
           <span className="brand-sub">naval correspondence, formatted</span>
         </div>
-        <nav className="seg-toggle seg-5" role="tablist" aria-label="Page">
+        <nav className="seg-toggle seg-6" role="tablist" aria-label="Page">
           <button
             className={view === 'editor' ? 'seg on' : 'seg'}
             role="tab"
@@ -256,6 +259,14 @@ export default function App() {
             onClick={() => setView('builder')}
           >
             Builder
+          </button>
+          <button
+            className={view === 'checklist' ? 'seg on' : 'seg'}
+            role="tab"
+            aria-selected={view === 'checklist'}
+            onClick={() => setView('checklist')}
+          >
+            Proofread
           </button>
           <button
             className={view === 'guide' ? 'seg on' : 'seg'}
@@ -351,6 +362,8 @@ export default function App() {
         <Faq />
       ) : view === 'guide' ? (
         <Guide />
+      ) : view === 'checklist' ? (
+        <Checklist state={state} />
       ) : editingState ? (
         <main
           className="panes"

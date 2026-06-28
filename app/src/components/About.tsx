@@ -19,6 +19,7 @@ const AVAILABLE: [string, string][] = [
   ['References, enclosures, copy-to', 'Auto-lettered (a), (b)… and numbered (1), (2)…'],
   ['Reorder & auto-number', 'Drag a paragraph by its grip — or use ↑/↓ — to reorder it; numbering (1, 2…, then a, b…) and indentation update themselves.'],
   ['Undo / redo', 'Step back and forward through your edits — ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z, or the toolbar buttons. Each draft keeps its own history, in memory only.'],
+  ['Proofread tab', 'A pre-send review built on SECNAV M-5216.5 Ch 2 ¶19 — live checks on your draft (subject case, From/To, signature, lone subparagraphs…), the format items the engine guarantees for you, and the substance items you confirm. Advisory only; it never blocks an export.'],
   ['Section titles', 'An optional underlined lead-in per paragraph — “1. Purpose. …” — per OPNAVINST 5400.45A.'],
   ['Inline emphasis', 'Type **bold**, *italic*, or __underline__ anywhere; it renders the same in the preview, the .docx, and the PDF.'],
   ['Rank auto-translation', 'Pick a U.S. grade (E-1…O-10); the NATO OF/OR code is filled in.'],
