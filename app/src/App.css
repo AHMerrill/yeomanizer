@@ -500,6 +500,14 @@
   margin: 8px 0 0;
   text-align: center;
 }
+.tl-footnote {
+  max-width: 760px;
+  margin: 16px 0 0;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.5;
+  color: #7d8290;
+}
 .checks.manual li label {
   display: flex;
   gap: 9px;

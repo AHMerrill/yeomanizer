@@ -172,6 +172,11 @@ export function Timeline() {
         </button>
       </div>
       <p className="tl-hint">Scroll, drag, or swipe across a decade →</p>
+      <p className="tl-footnote">
+        It’s telling that some of these advertise “works on NMCI” at all — a tool built to help is often
+        the hardest thing to open from inside a DoD network. Built to help, occasionally blocked at the
+        gate; presumably no one meant to, which is somehow the more damning version.
+      </p>
     </section>
   );
 }
