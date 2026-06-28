@@ -120,6 +120,26 @@
   min-width: 44px;
   padding: 5px 8px;
 }
+/* non-blocking "to review" count on the Proofread tab */
+.seg-toggle .seg .tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e0a23a;
+  color: #1b1c21;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+.seg-toggle .seg.on .tab-badge {
+  background: #fff;
+  color: #2f6df0;
+}
 
 /* ---- Proofread checklist tab ---- */
 .checklist {

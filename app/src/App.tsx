@@ -12,6 +12,8 @@ import type { LetterState, CorrespondenceType } from './types';
 import { Editor } from './components/Editor';
 import { Checklist } from './components/Checklist';
 import { TEMPLATES } from './data/templates';
+import { proofread } from './format/proofread';
+import { detectPii } from './format/pii';
 import { LetterPreview } from './components/LetterPreview';
 import { About } from './components/About';
 import { ImportDropZone } from './components/ImportDropZone';
@@ -65,6 +67,8 @@ export default function App() {
   // Which state the cards, preview, and exports operate on, by tab: Builder → the per-type draft;
   // Editor → the imported letter (null until a file is dropped, which shows the drop zone instead).
   const editingState = view === 'editor' ? importedState : view === 'builder' ? state : null;
+  // Non-blocking nudge for the Proofread tab: how many draft warnings + sensitive-data hits to look at.
+  const reviewCount = proofread(state).filter((c) => c.status === 'warn').length + detectPii(state).length;
   const setEditingState: Dispatch<SetStateAction<LetterState>> =
     view === 'editor'
       ? (update) =>
@@ -283,6 +287,11 @@ export default function App() {
             onClick={() => setView('checklist')}
           >
             Proofread
+            {reviewCount > 0 && (
+              <span className="tab-badge" title={`${reviewCount} item(s) to review`}>
+                {reviewCount}
+              </span>
+            )}
           </button>
           <button
             className={view === 'guide' ? 'seg on' : 'seg'}
