@@ -141,6 +141,11 @@
   .ph {
     display: none;
   }
+  /* A kept-but-blank ident line (SSIC / code) reserves its blank line for an admin to fill in. */
+  .ph-line {
+    display: block;
+    visibility: hidden;
+  }
 }
 
 /* Heading block */

@@ -116,9 +116,10 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     top = Math.max(top, M_TOP + 0.86 * PT); // .letterhead min-height
     gap(0.16 * PT); // .ident margin-top
   } else if (lh.mode === 'preprinted') {
-    // Reserve the pre-printed letterhead's lines, but never less than a standard 4-line letterhead —
-    // a short letterhead leaves the ident at its normal spot; a tall one drops it (.lh-spacer).
-    top = M_TOP + Math.max(4, lh.preprintedLines) * 0.22 * PT;
+    // Reserve the same space a rendered N-line letterhead would (~0.11in/line) with the same 0.86in
+    // floor + 0.16in ident gap as 'on' mode, so both modes shift the ident at the same threshold —
+    // a short letterhead leaves the ident at its normal spot; only a tall one drops it (.lh-spacer).
+    top = M_TOP + (Math.max(0.86, lh.preprintedLines * 0.11) + 0.16) * PT;
   } else {
     top = M_TOP + 0.5 * PT; // plain paper: .ident.no-letterhead margin-top
   }
@@ -126,11 +127,13 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   // ---- Identification block: lines left-aligned within a right-positioned block ----
   const ident = buildIdent(state, today);
   const isBusiness = state.type === 'business-letter';
+  // A KEPT but blank SSIC / code line reserves a blank line (a space) so an admin can fill it in by
+  // hand later; an un-kept line is dropped entirely.
   const idLines = [
-    state.includeSsic ? state.ssic : '',
-    state.includeCode ? ident.codeLine : '',
-    ident.date,
-  ].filter(Boolean);
+    state.includeSsic ? state.ssic || ' ' : null,
+    state.includeCode ? ident.codeLine || ' ' : null,
+    ident.date || null,
+  ].filter((l): l is string => l !== null);
   if (idLines.length) {
     const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
     // Business letter: identification symbols at the upper LEFT (11-2.1); all else right-aligned (7-2.3).

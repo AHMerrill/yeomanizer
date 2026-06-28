@@ -147,17 +147,17 @@ function Head({ state }: { state: LetterState }) {
     <>
       {lh.mode === 'on' && <Letterhead state={state} />}
       {lh.mode === 'preprinted' && (
-        <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(4, lh.preprintedLines) * 0.22}in` }} />
+        <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(0.86, lh.preprintedLines * 0.11)}in` }} />
       )}
       {/* Memo: date only (flush right, ~6th line). Letter: SSIC block (lines optional).
           A kept-but-blank line shows a faint screen-only placeholder (hidden in print). */}
       <div className={lh.mode === 'off' ? 'ident no-letterhead' : 'ident'}>
         {!isMemo &&
           state.includeSsic &&
-          (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph">SSIC</div>)}
+          (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph ph-line">SSIC</div>)}
         {!isMemo &&
           state.includeCode &&
-          (ident.codeLine ? <div>{ident.codeLine}</div> : <div className="ph">Code</div>)}
+          (ident.codeLine ? <div>{ident.codeLine}</div> : <div className="ph ph-line">Code</div>)}
         {ident.date ? <div>{ident.date}</div> : <div className="ph">Date</div>}
       </div>
       {isMemo && <div className="memo-title">MEMORANDUM</div>}
@@ -266,12 +266,12 @@ function BusinessHead({ state, ident }: { state: LetterState; ident: IdentLines 
     <>
       {lh.mode === 'on' && <Letterhead state={state} />}
       {lh.mode === 'preprinted' && (
-        <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(4, lh.preprintedLines) * 0.22}in` }} />
+        <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(0.86, lh.preprintedLines * 0.11)}in` }} />
       )}
       <div className={`${lh.mode === 'off' ? 'ident no-letterhead' : 'ident'} biz-ident`}>
-        {state.includeSsic && (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph">SSIC</div>)}
+        {state.includeSsic && (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph ph-line">SSIC</div>)}
         {state.includeCode &&
-          (ident.codeLine ? <div>{ident.codeLine}</div> : <div className="ph">Code</div>)}
+          (ident.codeLine ? <div>{ident.codeLine}</div> : <div className="ph ph-line">Code</div>)}
         {ident.date ? <div>{ident.date}</div> : <div className="ph">Date</div>}
       </div>
       <div className="biz-address">

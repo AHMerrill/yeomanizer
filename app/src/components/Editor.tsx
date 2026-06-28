@@ -723,7 +723,11 @@ export function Editor({
                 Code / Ser line
               </Pill>
             </div>
-            <p className="hint">A kept line shows a grey placeholder until filled; toggle it off to drop the line entirely.</p>
+            <p className="hint">
+              A kept line reserves its space — leave it blank for an admin/yeoman to fill in by hand
+              later (it prints as a blank line), or type the value. Toggle it off to drop the line
+              entirely.
+            </p>
             {state.includeSsic && (
               <>
                 <Field label="SSIC (subject code)">

@@ -214,8 +214,9 @@ export function buildDocxDocument(
     if (lh.cityStateZip) children.push(center(lh.cityStateZip, 15));
     children.push(spacer());
   } else if (lh.mode === 'preprinted') {
-    // Reserve one blank line per pre-printed letterhead line (floor of 4 — a standard letterhead).
-    for (let i = 0; i < Math.max(4, lh.preprintedLines); i++)
+    // Reserve blank body lines ≈ the rendered N-line letterhead height (small lines ≈ 0.7 of a body
+    // line), floored to a standard letterhead — matching the preview/PDF shift threshold.
+    for (let i = 0; i < Math.max(5, Math.round(lh.preprintedLines * 0.7)); i++)
       children.push(new Paragraph({ children: [R('')], spacing: { after: 0 } }));
   }
 
@@ -223,11 +224,12 @@ export function buildDocxDocument(
   // .docx stay in parity (buildIdent.ssic is ungated, so we gate here). memo = date only + "MEMORANDUM";
   // MFR = the OPTIONAL ssic/code/date block (date-only by default) + "MEMORANDUM FOR THE RECORD";
   // letter = the ssic/code/date block.
+  // A kept-but-blank SSIC / code line reserves a blank line (for an admin to fill in); off = dropped.
   const identLines = [
-    state.includeSsic ? ident.ssic : '',
-    state.includeCode ? ident.codeLine : '',
-    ident.date,
-  ].filter(Boolean);
+    state.includeSsic ? ident.ssic || ' ' : null,
+    state.includeCode ? ident.codeLine || ' ' : null,
+    ident.date || null,
+  ].filter((l): l is string => l !== null);
   const rightLine = (line: string) =>
     new Paragraph({ alignment: AlignmentType.RIGHT, children: [R(line)], spacing: { after: 0 } });
   const leftLine = (line: string) =>
