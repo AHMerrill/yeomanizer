@@ -25,8 +25,12 @@ The **only** thing that ever leaves the browser is two **content-free integer co
 ping and a download-button ping). They carry no document content, no account, no cookie, and the
 server stores only running totals.
 
-Nothing is **persisted**: no `localStorage`, no `sessionStorage`, no cookies, no IndexedDB, no
-service-worker cache of your content. Your draft lives in memory and is gone when the tab closes.
+Nothing of yours is **persisted**: no `localStorage`, no `sessionStorage`, no cookies, no IndexedDB.
+Your draft lives in memory and is gone when the tab closes. An optional **service worker**
+(`public/sw.js`) caches only the app's *own* static files (HTML/JS/CSS/icons) so the tool runs offline
+and air-gapped after the first load — it never stores any document content, only ever sees same-origin
+GET requests for app assets, and passes the content-free counter (a POST) and all cross-origin requests
+straight through without caching.
 
 ## 3. Adversaries considered
 

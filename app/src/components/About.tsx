@@ -32,6 +32,7 @@ const AVAILABLE: [string, string][] = [
   ['Phone, tablet, desktop', 'The two-pane layout stacks and the sheet scales to fit — usable from a phone up to a wide monitor.'],
   ['Private by design', 'The tool stores and transmits nothing — your draft lives only in this tab and is erased when you close it. You download and handle the files yourself.'],
   ['NIST 800-171 minded', 'Designed to support the controls for protecting CUI on non-federal systems — local-only processing, nothing transmitted, nothing stored, air-gap capable. Not a formal accreditation; see the FAQ.'],
+  ['Works offline · installable', 'After the first load it runs with no network — install it like an app and use it air-gapped. A service worker caches only the app itself; your content never touches it.'],
 ];
 
 const PLANNED: [string, string][] = [

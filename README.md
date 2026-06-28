@@ -67,6 +67,8 @@ per-user storage.
   never carry any document content, cookie, IP address, or region.
 - Exported documents are **regular, non-executable file types** with nothing hidden inside; imported
   `.json` is parsed with `JSON.parse` (never `eval`) behind a prototype-pollution guard.
+- After the first load it works **offline / air-gapped** and is **installable** — a service worker
+  caches only the app's own files (never your content), so you can run it with no network.
 
 The full security write-up — assets, trust boundary, and a threat-by-threat table that points at the
 code behind each claim — is published in [`THREAT_MODEL.md`](THREAT_MODEL.md).

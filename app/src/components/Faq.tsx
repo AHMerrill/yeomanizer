@@ -105,6 +105,14 @@ export function Faq() {
           <b>THREAT_MODEL.md</b>.
         </QA>
 
+        <QA q="Can I install it, or use it offline / air-gapped?" sources={[SRC.threatModel]}>
+          Yes. After the first load a service worker caches the app&rsquo;s own files, so it runs with no
+          network — install it from your browser (&ldquo;Install app&rdquo; / &ldquo;Add to Home
+          Screen&rdquo;) and use it on an air-gapped machine. The worker caches only the app itself; it
+          never stores your draft or any document content, and it doesn&rsquo;t touch the content-free
+          counter. Specifics are in the threat model.
+        </QA>
+
         <QA q="Can I use it with CUI?" sources={[SRC.dodi, SRC.telework, SRC.cfrSafeguard]}>
           The rule is about the <em>computer</em>, not the tool. CUI is only authorized on systems
           approved for it — Government-Furnished Equipment (GFE) or a specifically-approved setup —
