@@ -3,7 +3,10 @@
 // CHOICES the writer makes (letterhead, section titles, CUI, emphasis, routing) and skips the
 // mechanical formatting the tool does automatically (paragraph numbering, margins, font, date).
 // Grounded in SECNAV M-5216.5 (June 2015). Pure static reference: it never reads what the user types
-// and makes no authorization claim. (Searchable full-manual render + keyword search land next.)
+// and makes no authorization claim. The "Browse the full manual" section (ManualBrowser) lazy-loads
+// the complete manual text and offers in-browser search + chapter/section reading.
+
+import { ManualBrowser } from './ManualBrowser';
 
 const PUB_TITLE = 'SECNAV M-5216.5';
 const PUB_DATE = 'June 2015';
@@ -251,6 +254,7 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
 const TOC = [
   { id: 'types', label: 'Which document do I write?' },
   ...SECTIONS.map((s) => ({ id: s.id, label: s.heading })),
+  { id: 'manual', label: 'Browse the full manual' },
 ];
 
 export default function Guide() {
@@ -315,6 +319,20 @@ export default function Guide() {
             ))}
           </section>
         ))}
+
+        <section id="manual" className="guide-section">
+          <h2>Browse the full manual</h2>
+          <p className="guide-section-intro">
+            The complete text of {PUB_TITLE} ({PUB_DATE}) — search it or read any chapter and section.
+            It’s bundled with the app and read entirely in your browser; nothing you search is sent
+            anywhere. For the authoritative, signed copy, always use the{' '}
+            <a href={PUB_URL} target="_blank" rel="noopener noreferrer">
+              DON Issuances site
+            </a>
+            .
+          </p>
+          <ManualBrowser />
+        </section>
       </div>
       <button type="button" className="guide-totop" onClick={backToTop} aria-label="Back to top">
         ↑ Top

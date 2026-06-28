@@ -18,6 +18,7 @@ const AVAILABLE: [string, string][] = [
   ['Letterhead control', 'Printed, plain paper, or pre-printed stock; the authentic DoD seal.'],
   ['Identification block', "SSIC, originator's code, serial, and date — each optional."],
   ['Searchable SSIC lookup', 'Find a Standard Subject Identification Code by number or keyword (e.g. “legal”, “awards”) — all 13 major groups plus the most-used codes, click to fill. The full catalog is SECNAV M-5210.2.'],
+  ['Browse the full manual', 'The complete SECNAV M-5216.5 text is bundled — search it or read any chapter and section right in the Guide tab. Loaded lazily (kept out of the initial page) and read entirely in your browser; nothing you search is sent anywhere.'],
   ['References, enclosures, copy-to', 'Auto-lettered (a), (b)… and numbered (1), (2)…'],
   ['Multiple-address letters', 'One letter to several action addressees (Ch 8): up to four stack on the To: line; five or more move to a Distribution: line after the signature, with copy counts if needed. A Proofread check nudges you past four.'],
   ['Reorder & auto-number', 'Drag a paragraph by its grip — or use ↑/↓ — to reorder it; numbering (1, 2…, then a, b…) and indentation update themselves.'],
