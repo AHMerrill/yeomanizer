@@ -1,5 +1,5 @@
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import type { LetterState, Paragraph, EndorsementEntry, EnclosureEntry } from '../types';
+import type { LetterState, Paragraph, EndorsementEntry, EnclosureEntry, ListEntry } from '../types';
 import { parseInline } from '../format/inline';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 import { anyCui } from '../format/tree';
@@ -131,6 +131,7 @@ function Head({ state }: { state: LetterState }) {
   const isMfr = state.type === 'mfr';
   const isEndorsement = state.type === 'endorsement';
   const via = state.via.filter((v) => v.text.trim());
+  const toAddrs = state.toAddrs.filter((a) => a.text.trim());
   const refs = state.refs.filter((r) => r.text.trim());
   const encls = state.encls.filter((e) => e.text.trim());
   if (state.type === 'business-letter') return <BusinessHead state={state} ident={ident} />;
@@ -177,6 +178,13 @@ function Head({ state }: { state: LetterState }) {
                 {state.to || 'Action addressee — e.g., Chief of Naval Operations (N1)'}
               </span>
             </div>
+            {/* Multiple-address letter (Ch 8): additional action addressees stack under the To: line. */}
+            {toAddrs.map((a) => (
+              <div className="hrow" key={a.id}>
+                <span className="label" />
+                <span className="content">{a.text}</span>
+              </div>
+            ))}
           </>
         )}
         {via.length === 1 && (
@@ -362,6 +370,19 @@ function CopyTo({ items }: { items: string[] }) {
   );
 }
 
+// Multiple-address letter (Ch 8-2): the "Distribution:" block of action addressees, printed after
+// the signature and above "Copy to:". Shares the copy-to styling.
+function Distribution({ items }: { items: ListEntry[] }) {
+  return (
+    <div className="copyto">
+      <div>Distribution:</div>
+      {items.map((d) => (
+        <div key={d.id}>{d.text}</div>
+      ))}
+    </div>
+  );
+}
+
 function Designation({ cui }: { cui: LetterState['cui'] }) {
   return (
     <div className="cui-designation">
@@ -399,10 +420,12 @@ function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): L
     includeSsic: true,
     includeCode: !!e.serial.trim(),
     via: remainingVias(basic, e.viaId),
+    toAddrs: [],
     refs: [],
     encls: [],
     body: e.body,
     signature: { name: e.sigName, title: e.sigTitle, authority: e.authority ?? 'none' },
+    distribution: [],
     copyTo: [],
     endorsements: [],
   };
@@ -530,6 +553,7 @@ function LetterDoc({ state }: { state: LetterState }) {
   const portionActive = cui.enabled && anyCui(state.body);
   const bannerText = cui.banner || 'CUI';
   const copyTo = state.copyTo.filter((c) => c.trim());
+  const distribution = state.distribution.filter((d) => d.text.trim());
 
   // Flatten the body into atomic flow blocks: paragraphs, then signature, then copy-to.
   const flat: FlatPara[] = [];
@@ -541,6 +565,7 @@ function LetterDoc({ state }: { state: LetterState }) {
       node: <ParaFlow fp={fp} portionActive={portionActive} business={isBusiness} />,
     })),
     { key: 'sig', node: isBusiness ? <BusinessClose state={state} /> : <Signature state={state} /> },
+    ...(distribution.length ? [{ key: 'dist', node: <Distribution items={distribution} /> }] : []),
     ...(copyTo.length ? [{ key: 'copy', node: <CopyTo items={copyTo} /> }] : []),
   ];
 

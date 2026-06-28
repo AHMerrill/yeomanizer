@@ -173,6 +173,40 @@ const base: LetterState = {
   };
   writeFileSync(`${OUT}/business.pdf`, await buildSignablePdf(business, today));
 
+  // Multiple-address letter (Ch 8): To: line with three addressees (Fig 8-1) and, separately, a
+  // Distribution: block with copy counts and no To: line (Fig 8-2). Verifies stacked To: addressees
+  // and the Distribution: block (after the signature, above Copy to:) across PDF + docx + preview.
+  const multiTo: LetterState = {
+    ...base,
+    from: 'Commander, Submarine Group TWO',
+    to: 'Commander, Submarine Squadron TWO',
+    toAddrs: [
+      { id: 'ta1', text: 'Commander, Submarine Squadron FOUR' },
+      { id: 'ta2', text: 'Commander, Submarine Squadron TWELVE' },
+    ],
+    via: [],
+    subj: 'MULTIPLE-ADDRESS LETTER USING A TO: LINE',
+    copyTo: ['COMNAVSEASYSCOM (SEA-06)'],
+  };
+  writeFileSync(`${OUT}/multi-address-to.pdf`, await buildSignablePdf(multiTo, today));
+
+  const multiDist: LetterState = {
+    ...base,
+    from: 'Commander, Submarine Group TWO',
+    to: '',
+    toAddrs: [],
+    via: [],
+    subj: 'MULTIPLE-ADDRESS LETTER USING A DISTRIBUTION: LINE',
+    distribution: [
+      { id: 'd1', text: 'COMSUBFOR NORFOLK (4 copies)' },
+      { id: 'd2', text: 'USS ENTERPRISE' },
+      { id: 'd3', text: 'USS SCRANTON' },
+      { id: 'd4', text: 'USS FRANK CABLE' },
+    ],
+    copyTo: ['COMNAVSEASYSCOM (SEA-06)'],
+  };
+  writeFileSync(`${OUT}/multi-address-dist.pdf`, await buildSignablePdf(multiDist, today));
+
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
   const { Packer } = await import('docx');
@@ -191,4 +225,6 @@ const base: LetterState = {
   await writeDocx('mfr', mfr);
   await writeDocx('enclosures', encls);
   await writeDocx('business', business);
+  await writeDocx('multi-address-to', multiTo);
+  await writeDocx('multi-address-dist', multiDist);
 });

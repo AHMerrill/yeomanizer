@@ -47,6 +47,12 @@ export function proofread(s: LetterState): Check[] {
   if (t === 'standard-letter' || t === 'memo-from-to') {
     add('from', 'From line filled in', s.from.trim().length > 0, 'Name the originator (From:).');
     add('to', 'To line filled in', s.to.trim().length > 0, 'Name the action addressee (To:).');
+    // Multiple-address letter (Ch 8-2): four or fewer addressees use the To: line; more than four
+    // should move to a Distribution: line. Only flag when the To: block itself exceeds four.
+    const toCount = (s.to.trim() ? 1 : 0) + s.toAddrs.filter((a) => a.text.trim()).length;
+    if (toCount > 4)
+      add('addr-dist', 'Four or fewer addressees on the To: line', s.distribution.some((d) => d.text.trim()),
+        'More than four action addressees: list them in a Distribution: line instead (8-2).');
   }
   if (t === 'endorsement') {
     add('from', 'From line filled in', s.from.trim().length > 0, 'Name the endorsing command (From:).');

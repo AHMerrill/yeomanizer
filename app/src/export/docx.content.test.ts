@@ -29,6 +29,36 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('unique body sentence here');
   });
 
+  it('stacks additional To: addressees and prints a Distribution block (multiple-address, Ch 8)', async () => {
+    const xml = await docxText({
+      from: 'Commander, Submarine Group TWO',
+      to: 'Commander, Submarine Squadron TWO',
+      toAddrs: [
+        { id: 'ta1', text: 'Commander, Submarine Squadron FOUR' },
+        { id: 'ta2', text: 'Commander, Submarine Squadron TWELVE' },
+      ],
+      distribution: [{ id: 'd1', text: 'COMSUBFOR NORFOLK (4 copies)' }],
+    });
+    expect(xml).toContain('Commander, Submarine Squadron FOUR');
+    expect(xml).toContain('Commander, Submarine Squadron TWELVE');
+    expect(xml).toContain('Distribution:');
+    expect(xml).toContain('COMSUBFOR NORFOLK (4 copies)');
+  });
+
+  it('omits the To: line entirely in Distribution-only mode (Fig 8-2)', async () => {
+    const xml = await docxText({
+      from: 'Commander, Submarine Group TWO',
+      to: '',
+      subj: 'DISTRIBUTION ONLY',
+      body: [{ id: 'b1', text: 'A single body paragraph.', children: [] }],
+      distribution: [{ id: 'd1', text: 'USS ENTERPRISE' }],
+    });
+    expect(xml).toContain('From:');
+    expect(xml).not.toContain('To:'); // no empty To: line when addressing via Distribution
+    expect(xml).toContain('Distribution:');
+    expect(xml).toContain('USS ENTERPRISE');
+  });
+
   it('embeds the seal as a media image when seal bytes are provided', async () => {
     // a 1x1 PNG stands in for the seal
     const png =

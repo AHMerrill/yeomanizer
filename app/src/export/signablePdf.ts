@@ -196,6 +196,8 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   if (!isMfr) {
     if (state.from) headRow('From:', state.from);
     if (state.to) headRow('To:', state.to);
+    // Multiple-address letter (Ch 8): additional action addressees stack under the To: line.
+    state.toAddrs.filter((a) => a.text.trim()).forEach((a) => headRow('', a.text));
     const vias = state.via.filter((v) => v.text.trim());
     vias.forEach((v, i) => headRow(i === 0 ? 'Via:' : '', v.text, vias.length > 1 ? `(${i + 1}) ` : ''));
   }
@@ -368,6 +370,14 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     drawBizClose();
   } else {
     signatureBlock(state.signature.name, state.signature.title, state.signature.authority, 'Signature1');
+  }
+
+  // ---- Distribution (Ch 8-2): action addressees, after the signature and above Copy to ----
+  const distribution = state.distribution.filter((d) => d.text.trim());
+  if (distribution.length) {
+    gap(PARA_GAP);
+    put('Distribution:', LEFT);
+    distribution.forEach((d) => wrap(d.text, font, SIZE, RIGHT - LEFT).forEach((ln) => put(ln, LEFT)));
   }
 
   // ---- Copy to ----

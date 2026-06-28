@@ -19,6 +19,7 @@ const AVAILABLE: [string, string][] = [
   ['Identification block', "SSIC, originator's code, serial, and date — each optional."],
   ['Searchable SSIC lookup', 'Find a Standard Subject Identification Code by number or keyword (e.g. “legal”, “awards”) — all 13 major groups plus the most-used codes, click to fill. The full catalog is SECNAV M-5210.2.'],
   ['References, enclosures, copy-to', 'Auto-lettered (a), (b)… and numbered (1), (2)…'],
+  ['Multiple-address letters', 'One letter to several action addressees (Ch 8): up to four stack on the To: line; five or more move to a Distribution: line after the signature, with copy counts if needed. A Proofread check nudges you past four.'],
   ['Reorder & auto-number', 'Drag a paragraph by its grip — or use ↑/↓ — to reorder it; numbering (1, 2…, then a, b…) and indentation update themselves.'],
   ['Undo / redo', 'Step back and forward through your edits — ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z, or the toolbar buttons. Each draft keeps its own history, in memory only.'],
   ['Proofread tab', 'A pre-send review built on SECNAV M-5216.5 Ch 2 ¶19 — live checks on your draft (subject case, From/To, signature, lone subparagraphs…), the format items the engine guarantees for you, and the substance items you confirm. Advisory only; it never blocks an export.'],
@@ -38,7 +39,7 @@ const AVAILABLE: [string, string][] = [
 
 const PLANNED: [string, string][] = [
   ['PDF pages inside Word', 'Render attached PDF pages into the .docx as images (today they embed as real pages in the PDF and are referenced by name in Word).'],
-  ['More letter types', 'Multiple-address and multiple-reply letters.'],
+  ['More document types', 'Multiple-reply letters, MOA/MOU, information/decision papers, and naval messages.'],
 ];
 
 function Column({ title, items, planned }: { title: string; items: [string, string][]; planned?: boolean }) {

@@ -66,7 +66,7 @@ describe('Editor ↔ preview integration', () => {
 
     // add a Via addressee — its endorsement page must appear automatically (no extra step)
     const routingCard = screen.getByRole('heading', { name: 'Routing' }).closest('.card')!;
-    fireEvent.click(within(routingCard as HTMLElement).getByText('+ Add'));
+    fireEvent.click(within(routingCard as HTMLElement).getByLabelText('Add Via addressee'));
     fireEvent.change(screen.getByLabelText('Via addressee 1'), {
       target: { value: 'Commander, Carrier Strike Group ONE' },
     });
@@ -115,9 +115,9 @@ describe('Editor ↔ preview integration', () => {
   it('two Via addressees auto-create FIRST and SECOND endorsements', () => {
     render(<App />);
     const routingCard = screen.getByRole('heading', { name: 'Routing' }).closest('.card')!;
-    fireEvent.click(within(routingCard as HTMLElement).getByText('+ Add'));
+    fireEvent.click(within(routingCard as HTMLElement).getByLabelText('Add Via addressee'));
     fireEvent.change(screen.getByLabelText('Via addressee 1'), { target: { value: 'Commander, CSG ONE' } });
-    fireEvent.click(within(routingCard as HTMLElement).getByText('+ Add'));
+    fireEvent.click(within(routingCard as HTMLElement).getByLabelText('Add Via addressee'));
     fireEvent.change(screen.getByLabelText('Via addressee 2'), {
       target: { value: 'Commander, Pacific Fleet' },
     });
@@ -195,9 +195,9 @@ describe('Editor ↔ preview integration', () => {
   it('a Via endorsement forwards the REMAINING Vias in its own Via line (§9-2.2)', () => {
     render(<App />);
     const routingCard = screen.getByRole('heading', { name: 'Routing' }).closest('.card')!;
-    fireEvent.click(within(routingCard as HTMLElement).getByText('+ Add'));
+    fireEvent.click(within(routingCard as HTMLElement).getByLabelText('Add Via addressee'));
     fireEvent.change(screen.getByLabelText('Via addressee 1'), { target: { value: 'Commander Alpha' } });
-    fireEvent.click(within(routingCard as HTMLElement).getByText('+ Add'));
+    fireEvent.click(within(routingCard as HTMLElement).getByLabelText('Add Via addressee'));
     fireEvent.change(screen.getByLabelText('Via addressee 2'), { target: { value: 'Commander Bravo' } });
     // the FIRST endorsement (by Alpha) must carry "Via: Commander Bravo"
     const firstEndoText =

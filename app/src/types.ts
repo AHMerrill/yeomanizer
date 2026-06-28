@@ -144,6 +144,10 @@ export interface LetterState {
   // Heading block
   from: string;
   to: string;
+  // Multiple-address letter (Ch 8): additional action addressees stacked under the "To:" line.
+  // Use when there are four or fewer addressees total. When `to` holds a group/collective title,
+  // leave these empty and list the members in `distribution` instead.
+  toAddrs: ListEntry[];
   via: ListEntry[];
   subj: string;
   refs: ListEntry[];
@@ -154,6 +158,10 @@ export interface LetterState {
 
   // Closing
   signature: SignatureBlock;
+  // Multiple-address letter (Ch 8-2): the "Distribution:" block, printed after the signature and
+  // above "Copy to:". Used when there are more than four action addressees, or to vary copy counts
+  // (e.g. "COMSUBFOR NORFOLK (4 copies)"). Entries here are ACTION addressees, not info copies.
+  distribution: ListEntry[];
   copyTo: string[];
 
   // Standalone endorsement type fields ("FIRST ENDORSEMENT on <basic letter>")

@@ -47,6 +47,37 @@ describe('project-file round-trip (.yeomanizer.json)', () => {
     expect(back?.business.insideAddress).toContain('Example Company');
   });
 
+  it('round-trips a multiple-address letter (To: addressees + Distribution survive)', () => {
+    const multi: LetterState = {
+      ...defaultState,
+      from: 'Commander, Submarine Group TWO',
+      to: 'Commander, Submarine Squadron TWO',
+      toAddrs: [
+        { id: 'ta1', text: 'Commander, Submarine Squadron FOUR' },
+        { id: 'ta2', text: 'Commander, Submarine Squadron TWELVE' },
+      ],
+      distribution: [{ id: 'd1', text: 'COMSUBFOR NORFOLK (4 copies)' }],
+    };
+    const back = parseProject(serializeProject(multi));
+    expect(back).toEqual(multi);
+    expect(back?.toAddrs).toHaveLength(2);
+    expect(back?.distribution[0].text).toBe('COMSUBFOR NORFOLK (4 copies)');
+  });
+
+  it('bounds a hostile list field on import (no giant arrays survive)', () => {
+    const hostile = JSON.stringify({
+      v: 1,
+      state: {
+        ...defaultState,
+        toAddrs: Array.from({ length: 5000 }, (_, i) => ({ id: `x${i}`, text: 'A' })),
+        copyTo: Array.from({ length: 5000 }, () => 'X'),
+      },
+    });
+    const back = parseProject(hostile);
+    expect(back?.toAddrs.length).toBeLessThanOrEqual(100);
+    expect(back?.copyTo.length).toBeLessThanOrEqual(100);
+  });
+
   it('is plain, human-readable JSON (no code, no compression)', () => {
     const text = serializeProject(state);
     expect(() => JSON.parse(text)).not.toThrow();

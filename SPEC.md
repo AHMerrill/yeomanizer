@@ -155,6 +155,20 @@ in for the salutation. Main paragraphs are **not numbered** (the subparagraph la
 deeper); a centered **"Sincerely,"** + signature; **Enclosures:** / **Separate Mailing:** notations at
 the left margin. Same engine + exports (PDF / .docx / print / .json round-trip) as the standard letter.
 
+## Multiple-address letter (Ch 8) — done
+"The same as the standard letter, except in handling addresses" (8-1). A standard letter or memo
+gains two optional list fields (`toAddrs`, `distribution`), so the three listing methods of 8-2 all work:
+- **To: line only** (≤4 addressees, Fig 8-1): the primary `to` plus any **additional addressees**
+  (`toAddrs`) stack one beneath the other, aligned under the To: content column.
+- **Distribution: line only** (>4 addressees, or to vary copy counts, Fig 8-2): leave `to` empty —
+  the To: line is **omitted entirely** (PDF and `.docx`) — and list action addressees in the
+  **`Distribution:`** block, printed after the signature and **above** `Copy to:`. Copy counts are
+  free text, e.g. `COMSUBFOR NORFOLK (4 copies)`.
+- **Both** (group title in To:, members in Distribution:, Fig 8-3): put the collective title in `to`
+  and the members in `distribution`.
+A Proofread check (`addr-dist`) nudges past four To:-line addressees. Same engine + all exports;
+endorsement pages do not inherit the extra addressees. Verified vs Figs 8-1/8-2 in PDF + `.docx`.
+
 ## Endorsement (Ch 9) — done (auto-on-Via or standalone)
 Adding a Via addressee **automatically creates its endorsement** (one per non-empty Via, via
 `syncViaEndorsements`), appended as extra page(s) after the basic letter/memo — never replacing
@@ -221,5 +235,5 @@ A non-blocking "to review" count (warnings + sensitive-data hits) shows as a bad
   loose enclosure files) does **not** yet re-mark "Enclosure (n)" on the merged pages — that's still TODO.
 - Mid-paragraph page splitting (currently breaks only at paragraph boundaries; the "≥2 lines each side"
   rule, 7-2.13).
-- Other types: multiple-address (Ch 8); decision memos and MOA/MOU sub-variants.
+- Other types: decision memos and MOA/MOU sub-variants; naval messages (GENADMIN/MARADMIN/ALMAR).
 - A deeper advisor / style-suggestion layer beyond the Ch 2 ¶19 proofread checklist (done).

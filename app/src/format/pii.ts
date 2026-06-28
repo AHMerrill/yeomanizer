@@ -28,10 +28,12 @@ function areas(s: LetterState): { where: string; text: string }[] {
   push('subject', s.subj);
   push('the From line', s.from);
   push('the To line', s.to);
+  push('an additional addressee', s.toAddrs.map((a) => a.text).join(' '));
   push('a Via line', s.via.map((v) => v.text).join(' '));
   push('the body', text(s.body));
   push('the references', s.refs.map((r) => r.text).join(' '));
   push('an enclosure title', s.encls.map((e) => e.text).join(' '));
+  push('the distribution list', s.distribution.map((d) => d.text).join(' '));
   push('the copy-to list', s.copyTo.join(' '));
   push('the signature block', `${s.signature.name} ${s.signature.title}`);
   push('the inside address', s.business.insideAddress);

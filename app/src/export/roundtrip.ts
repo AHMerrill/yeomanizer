@@ -7,7 +7,7 @@
 // keep locally; open it in any text editor and see exactly what's there. Nothing is uploaded.
 import { defaultState } from '../defaultState';
 import { documentFilename } from '../format/filename';
-import type { LetterState, Paragraph, EnclosureEntry } from '../types';
+import type { LetterState, Paragraph, EnclosureEntry, ListEntry } from '../types';
 
 const VERSION = 1;
 interface Project {
@@ -42,6 +42,25 @@ function sanitizeEnclosures(state: LetterState): LetterState {
         file: e.file && !/^data:(image\/|application\/pdf)/i.test(e.file.dataUrl) ? undefined : e.file,
       })),
   };
+}
+
+// Bound + coerce a ListEntry[] field (Via / Ref / To: addressees / Distribution) from a hostile or
+// corrupt file — cap the count and each field's length, and drop non-object entries.
+function sanitizeEntries(v: unknown): ListEntry[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .slice(0, 100) // a real letter has a handful
+    .filter((e): e is { id?: unknown; text?: unknown } => !!e && typeof e === 'object')
+    .map((e, i) => ({
+      id: typeof e.id === 'string' && e.id ? e.id.slice(0, 100) : `e${i}`,
+      text: typeof e.text === 'string' ? e.text.slice(0, 2_000) : '',
+    }));
+}
+
+// Bound + coerce a string[] field (Copy to) from a hostile or corrupt file.
+function sanitizeStrings(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.slice(0, 100).map((c) => (typeof c === 'string' ? c.slice(0, 2_000) : ''));
 }
 
 // Keys that could pollute Object.prototype if they survived into a later spread/merge.
@@ -93,7 +112,19 @@ export function parseProject(text: string): LetterState | null {
       s.letterhead && typeof s.letterhead === 'object'
         ? { ...defaultState.letterhead, ...(s.letterhead as object) }
         : defaultState.letterhead;
-    return sanitizeEnclosures({ ...defaultState, ...s, body, business, letterhead });
+    return sanitizeEnclosures({
+      ...defaultState,
+      ...s,
+      body,
+      business,
+      letterhead,
+      // Bound + coerce every list field so a hostile/corrupt file can't smuggle a giant array.
+      toAddrs: sanitizeEntries(s.toAddrs),
+      via: sanitizeEntries(s.via),
+      refs: sanitizeEntries(s.refs),
+      distribution: sanitizeEntries(s.distribution),
+      copyTo: sanitizeStrings(s.copyTo),
+    });
   } catch {
     return null;
   }

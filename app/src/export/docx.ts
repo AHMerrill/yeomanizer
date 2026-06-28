@@ -297,8 +297,12 @@ export function buildDocxDocument(
   }
   // MFR is "for the record" — no addressee, so no From/To/Via.
   if (!isMfr) {
-    children.push(heading('From:', state.from));
-    children.push(heading('To:', state.to));
+    // Omit an empty From:/To: line (matches the PDF) — a Distribution-only multiple-address letter
+    // (Ch 8-2, Fig 8-2) drops the To: line entirely and lists addressees after the signature.
+    if (state.from) children.push(heading('From:', state.from));
+    if (state.to) children.push(heading('To:', state.to));
+    // Multiple-address letter (Ch 8): additional action addressees stack under the To: line.
+    state.toAddrs.filter((a) => a.text.trim()).forEach((a) => children.push(heading('', a.text)));
     const via = state.via.filter((v) => v.text.trim());
     if (via.length === 1) children.push(heading('Via:', via[0].text));
     else if (via.length >= 2)
@@ -370,6 +374,13 @@ export function buildDocxDocument(
           spacing: { before: BLANK, after: 0 },
         }),
       );
+  }
+
+  // Distribution (Ch 8-2): action addressees, after the signature and above Copy to.
+  const distribution = state.distribution.filter((d) => d.text.trim());
+  if (distribution.length) {
+    children.push(new Paragraph({ children: [R('Distribution:')], spacing: { before: BLANK, after: 0 } }));
+    distribution.forEach((d) => children.push(new Paragraph({ children: [R(d.text)], spacing: { after: 0 } })));
   }
 
   const copyTo = state.copyTo.filter((c) => c.trim());

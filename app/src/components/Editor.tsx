@@ -226,10 +226,12 @@ function EntryList({
   items,
   onChange,
   placeholder,
+  addLabel,
 }: {
   items: ListEntry[];
   onChange: (items: ListEntry[]) => void;
   placeholder: string;
+  addLabel?: string; // accessible label for the add button (distinguishes multiple lists in one card)
 }) {
   const swap = (i: number, j: number) => {
     if (j < 0 || j >= items.length) return;
@@ -255,7 +257,11 @@ function EntryList({
           <button title="Remove" onClick={() => onChange(items.filter((x) => x.id !== it.id))}>✕</button>
         </div>
       ))}
-      <button className="add-btn" onClick={() => onChange([...items, { id: uid(), text: '' }])}>
+      <button
+        className="add-btn"
+        aria-label={addLabel}
+        onClick={() => onChange([...items, { id: uid(), text: '' }])}
+      >
         + Add
       </button>
     </div>
@@ -1010,7 +1016,9 @@ export function Editor({
       {state.type !== 'mfr' && state.type !== 'business-letter' && (
       <Card
         title="Routing"
-        onReset={() => setState((s) => syncViaEndorsements({ ...s, from: '', to: '', via: [] }))}
+        onReset={() =>
+          setState((s) => syncViaEndorsements({ ...s, from: '', to: '', toAddrs: [], via: [], distribution: [] }))
+        }
       >
         <Field label="From">
           <input
@@ -1026,10 +1034,24 @@ export function Editor({
             onChange={(e) => patch({ to: e.target.value })}
           />
         </Field>
+        {/* Multiple-address letter (Ch 8): more than one action addressee. ≤4 stack on the To: line. */}
+        <div className="sub-label">Additional addressees (multiple-address letter, Ch 8)</div>
+        <EntryList
+          items={state.toAddrs}
+          placeholder="Another action addressee"
+          addLabel="Add another addressee"
+          onChange={(toAddrs) => patch({ toAddrs })}
+        />
+        {(state.to.trim() ? 1 : 0) + state.toAddrs.filter((a) => a.text.trim()).length > 4 && (
+          <p className="hint">
+            More than four addressees — list them in the Distribution block below instead (8-2).
+          </p>
+        )}
         <div className="sub-label">Via (numbered automatically when 2+)</div>
         <EntryList
           items={state.via}
           placeholder="Via addressee"
+          addLabel="Add Via addressee"
           onChange={(via) => setState((s) => syncViaEndorsements({ ...s, via }))}
         />
         {state.via.some((v) => v.text.trim()) && (
@@ -1038,6 +1060,18 @@ export function Editor({
             its text in the Endorsements section.
           </p>
         )}
+        {/* Distribution block (Ch 8-2): prints after the signature, above Copy to. */}
+        <div className="sub-label">Distribution (prints after the signature)</div>
+        <EntryList
+          items={state.distribution}
+          placeholder="e.g., COMSUBFOR NORFOLK (4 copies)"
+          addLabel="Add distribution addressee"
+          onChange={(distribution) => patch({ distribution })}
+        />
+        <p className="hint">
+          Use a Distribution: line for more than four action addressees, or to vary copy counts (8-2).
+          These are action addressees, not info copies.
+        </p>
       </Card>
       )}
 
@@ -1065,6 +1099,7 @@ export function Editor({
           <EntryList
             items={state.refs}
             placeholder="e.g. SECNAV M-5216.5 of June 2015"
+            addLabel="Add reference"
             onChange={(refs) => patch({ refs })}
           />
         </Card>
