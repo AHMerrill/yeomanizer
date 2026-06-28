@@ -51,6 +51,10 @@ export interface Letterhead {
   // on = render letterhead; off = plain paper (content to top margin);
   // preprinted = don't print it but RESERVE its space (for pre-printed letterhead stock).
   mode: 'on' | 'off' | 'preprinted';
+  // How many lines the pre-printed letterhead occupies (line 1 "Department of the Navy" through the
+  // last address line) — used in 'preprinted' mode to reserve that much top space so the ident /
+  // body start cleanly below it. A tall multi-line command name needs more.
+  preprintedLines: number;
 }
 
 export interface ListEntry {

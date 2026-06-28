@@ -13,6 +13,7 @@ export const defaultState: LetterState = {
     seal: 'dod',
     replyRefPrinted: false,
     mode: 'on',
+    preprintedLines: 4, // DEPT OF THE NAVY + activity + street + city/state/zip — bump for a taller letterhead
   },
   ssic: '',
   originatorCode: '',

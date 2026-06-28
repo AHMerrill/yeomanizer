@@ -156,6 +156,7 @@ const base: LetterState = {
       seal: 'dod',
       replyRefPrinted: false,
       mode: 'on',
+      preprintedLines: 4,
     },
     signature: { name: 'E. SCOTT HOWARD', title: 'Executive Officer', authority: 'by-direction' },
     encls: [

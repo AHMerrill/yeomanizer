@@ -116,6 +116,38 @@ function Pill({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   );
 }
 
+// A small number stepper: −  [n]  + — type a value or click to nudge it.
+function Stepper({
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (n: number) => void;
+}) {
+  const clamp = (n: number) => Math.max(min, Math.min(max, n));
+  return (
+    <div className="stepper">
+      <button type="button" aria-label="Fewer" disabled={value <= min} onClick={() => onChange(clamp(value - 1))}>
+        −
+      </button>
+      <input
+        type="number"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(clamp(Number(e.target.value) || min))}
+      />
+      <button type="button" aria-label="More" disabled={value >= max} onClick={() => onChange(clamp(value + 1))}>
+        +
+      </button>
+    </div>
+  );
+}
+
 function EntryList({
   items,
   onChange,
@@ -533,10 +565,26 @@ export function Editor({
           </Pill>
         </div>
         {state.letterhead.mode === 'preprinted' && (
-          <p className="hint">
-            Leaves the top of the page blank so your pre-printed letterhead shows through — the
-            date and body start below where the letterhead sits.
-          </p>
+          <>
+            <p className="hint">
+              Leaves the top of the page blank so your pre-printed letterhead shows through — the
+              date and body start below it.
+            </p>
+            <Field label="Lines on your pre-printed letterhead">
+              <Stepper
+                value={state.letterhead.preprintedLines}
+                min={1}
+                max={12}
+                onChange={(n) => patchLH({ preprintedLines: n })}
+              />
+            </Field>
+            <p className="hint">
+              Count every line on your stationery — from &ldquo;Department of the Navy&rdquo; down
+              through the last address line (&ldquo;City, State&nbsp;ZIP+4&rdquo;). Up to a normal
+              4-line letterhead nothing moves; a taller command name pushes the date and body down to
+              clear it.
+            </p>
+          </>
         )}
         {state.letterhead.mode === 'on' && (
           <>

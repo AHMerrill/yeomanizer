@@ -116,7 +116,9 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     top = Math.max(top, M_TOP + 0.86 * PT); // .letterhead min-height
     gap(0.16 * PT); // .ident margin-top
   } else if (lh.mode === 'preprinted') {
-    top = M_TOP + 0.9 * PT; // reserve the physical letterhead's space (.lh-spacer)
+    // Reserve the pre-printed letterhead's lines, but never less than a standard 4-line letterhead —
+    // a short letterhead leaves the ident at its normal spot; a tall one drops it (.lh-spacer).
+    top = M_TOP + Math.max(4, lh.preprintedLines) * 0.22 * PT;
   } else {
     top = M_TOP + 0.5 * PT; // plain paper: .ident.no-letterhead margin-top
   }

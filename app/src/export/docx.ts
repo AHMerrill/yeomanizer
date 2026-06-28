@@ -214,7 +214,9 @@ export function buildDocxDocument(
     if (lh.cityStateZip) children.push(center(lh.cityStateZip, 15));
     children.push(spacer());
   } else if (lh.mode === 'preprinted') {
-    for (let i = 0; i < 5; i++) children.push(new Paragraph({ children: [R('')], spacing: { after: 0 } }));
+    // Reserve one blank line per pre-printed letterhead line (floor of 4 — a standard letterhead).
+    for (let i = 0; i < Math.max(4, lh.preprintedLines); i++)
+      children.push(new Paragraph({ children: [R('')], spacing: { after: 0 } }));
   }
 
   // Identification block, right-aligned. Gated by includeSsic/includeCode so the PDF, preview, and

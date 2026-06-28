@@ -79,7 +79,12 @@ export function parseProject(text: string): LetterState | null {
       s.business && typeof s.business === 'object'
         ? { ...defaultState.business, ...(s.business as object) }
         : defaultState.business;
-    return sanitizeEnclosures({ ...defaultState, ...s, body, business });
+    // Deep-fill letterhead too, so a pre-business/pre-preprintedLines file keeps every field.
+    const letterhead =
+      s.letterhead && typeof s.letterhead === 'object'
+        ? { ...defaultState.letterhead, ...(s.letterhead as object) }
+        : defaultState.letterhead;
+    return sanitizeEnclosures({ ...defaultState, ...s, body, business, letterhead });
   } catch {
     return null;
   }

@@ -146,7 +146,9 @@ function Head({ state }: { state: LetterState }) {
   return (
     <>
       {lh.mode === 'on' && <Letterhead state={state} />}
-      {lh.mode === 'preprinted' && <div className="lh-spacer" aria-hidden />}
+      {lh.mode === 'preprinted' && (
+        <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(4, lh.preprintedLines) * 0.22}in` }} />
+      )}
       {/* Memo: date only (flush right, ~6th line). Letter: SSIC block (lines optional).
           A kept-but-blank line shows a faint screen-only placeholder (hidden in print). */}
       <div className={lh.mode === 'off' ? 'ident no-letterhead' : 'ident'}>
@@ -263,7 +265,9 @@ function BusinessHead({ state, ident }: { state: LetterState; ident: IdentLines 
   return (
     <>
       {lh.mode === 'on' && <Letterhead state={state} />}
-      {lh.mode === 'preprinted' && <div className="lh-spacer" aria-hidden />}
+      {lh.mode === 'preprinted' && (
+        <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(4, lh.preprintedLines) * 0.22}in` }} />
+      )}
       <div className={`${lh.mode === 'off' ? 'ident no-letterhead' : 'ident'} biz-ident`}>
         {state.includeSsic && (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph">SSIC</div>)}
         {state.includeCode &&

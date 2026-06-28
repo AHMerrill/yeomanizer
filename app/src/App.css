@@ -805,6 +805,49 @@
   color: #fff;
 }
 
+/* Number stepper: −  [n]  + */
+.stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid #3a3d47;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #15161a;
+}
+.stepper button {
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  width: 34px;
+  border: none;
+  background: #20222b;
+  color: #cfd3dc;
+  cursor: pointer;
+}
+.stepper button:hover:not(:disabled) {
+  background: #2a2d38;
+  color: #fff;
+}
+.stepper button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.stepper input {
+  width: 48px;
+  text-align: center;
+  border: none !important;
+  border-left: 1px solid #2c2e36 !important;
+  border-right: 1px solid #2c2e36 !important;
+  border-radius: 0 !important;
+  background: #15161a !important;
+  -moz-appearance: textfield;
+}
+.stepper input::-webkit-outer-spin-button,
+.stepper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Endorsement blocks */
 .endo-block {
   border: 1px solid #2f323b;
