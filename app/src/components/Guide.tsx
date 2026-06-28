@@ -1,46 +1,234 @@
-// Plain-language guide to U.S. Navy correspondence, written for NON-yeomen — people who have never
-// written a naval letter and don't yet know which questions to ask. Every answer is grounded in
-// SECNAV M-5216.5 (the Department of the Navy Correspondence Manual). This is reference content only;
-// it never touches what the user types and makes no authorization claim. The full searchable manual
-// + keyword search land in a later pass.
+// Plain-language guide to U.S. Navy correspondence, written for NON-yeomen — as if an experienced
+// yeoman were teaching a layman who has never written one of these. It deliberately focuses on the
+// CHOICES the writer makes (letterhead, section titles, CUI, emphasis, routing) and skips the
+// mechanical formatting the tool does automatically (paragraph numbering, margins, font, date).
+// Grounded in SECNAV M-5216.5 (June 2015). Pure static reference: it never reads what the user types
+// and makes no authorization claim. (Searchable full-manual render + keyword search land next.)
+
+const PUB_TITLE = 'SECNAV M-5216.5';
+const PUB_DATE = 'June 2015';
+// Canonical source — the DON Issuances "SECNAV Manuals" index (the page bots can't fetch but humans can).
+const PUB_URL = 'https://www.secnav.navy.mil/doni/manuals-secnav.aspx';
+
+interface TypeInfo {
+  name: string;
+  blurb: React.ReactNode;
+  inApp?: boolean;
+}
+
+const TYPES: TypeInfo[] = [
+  {
+    name: 'Standard Naval Letter',
+    inApp: true,
+    blurb: 'The formal default. Official business that goes up your chain of command or outside your command — requests, reports, recommendations. Printed on letterhead, with the From / To / Via block and numbered paragraphs.',
+  },
+  {
+    name: 'Memorandum',
+    inApp: true,
+    blurb: 'Informal, for routine business within your own command. Plain bond paper, less ceremony. Same From / To idea, headed “MEMORANDUM.”',
+  },
+  {
+    name: 'Memorandum for the Record (MFR)',
+    inApp: true,
+    blurb: 'Documents something for the file — the result of a meeting, an important phone call, an oral agreement. It isn’t addressed or sent to anyone; you write it, sign it, and file it.',
+  },
+  {
+    name: 'Endorsement',
+    inApp: true,
+    blurb: 'A short forwarding note someone adds when a letter routes “Via” them — usually passing it up the chain with a recommendation (“Forwarded, recommending approval”). The tool adds one automatically for each Via addressee.',
+  },
+  {
+    name: 'Business Letter',
+    blurb: 'For writing to civilians or organizations outside the DoD who wouldn’t recognize the standard naval format. Uses a normal salutation (“Dear Ms. Smith:”) and closing (“Sincerely,”).',
+  },
+  {
+    name: 'Multiple-Address Letter',
+    blurb: 'One letter sent to several action addressees at once (rather than the same letter retyped for each).',
+  },
+  {
+    name: 'NATO Travel Order',
+    inApp: true,
+    blurb: 'The bilingual travel-order form used for official travel in NATO / SOFA countries. A form, not a letter — different rules entirely.',
+  },
+];
 
 interface QA {
   q: string;
   a: React.ReactNode;
 }
 
-const SECTIONS: { heading: string; items: QA[] }[] = [
+const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: QA[] }[] = [
   {
-    heading: 'Start here',
+    id: 'choices',
+    heading: 'The choices you make',
+    intro: (
+      <>
+        The tool handles the mechanics — paragraph numbering, indentation, margins, the 12-point Times
+        font, the date, capitalizing the subject. What it <em>can’t</em> decide for you is below. This is
+        where a yeoman’s judgment actually lives.
+      </>
+    ),
     items: [
       {
-        q: 'I’ve never written a Navy letter. Where do I begin?',
+        q: 'When do I use letterhead?',
         a: (
           <>
-            In the <strong>Builder</strong> tab, pick a correspondence type, fill in the From / To /
-            Subject, and type your paragraphs on the left — the formatted document appears on the
-            right. The tool handles every mechanical rule (margins, font, spacing, paragraph
-            numbering) for you. The questions below explain what each piece is and when to use it.
+            Letterhead is your command’s printed header (DEPARTMENT OF THE NAVY plus your activity’s name
+            and address). The rule of thumb: <strong>letters get letterhead, memos stay plain.</strong> A{' '}
+            <strong>standard naval letter</strong> — anything formal going outside your command or up the
+            chain — uses letterhead. A <strong>memorandum</strong> is internal and informal, so it’s on
+            plain bond. The one exception is the “letterhead memorandum,” used only for routine matters
+            with people <em>outside</em> your activity when direct liaison is authorized. (“Pre-printed”
+            is for paper that already has the letterhead printed on it — the tool just reserves the space
+            so your text lines up.)
           </>
         ),
       },
       {
-        q: 'There are several types. Which one do I pick?',
+        q: 'When do I need section titles?',
         a: (
           <>
-            <strong>Standard Naval Letter</strong> — the formal default for official business,
-            especially going <em>up</em> your chain of command or <em>outside</em> your command.
-            <br />
-            <strong>Memorandum</strong> — informal, for routine business <em>within</em> your own
-            command.
-            <br />
-            <strong>Memorandum for the Record (MFR)</strong> — documents something for the file (a
-            phone call, a meeting, an oral agreement); it isn’t addressed or sent to anyone.
-            <br />
-            <strong>Endorsement</strong> — a short forwarding note added when a letter passes “Via”
-            someone (see below).
-            <br />
-            When in doubt, a Standard Naval Letter is the safe choice.
+            Section titles are short underlined labels at the start of a paragraph — <u>Purpose</u>.,{' '}
+            <u>Background</u>., <u>Recommendation</u>. — that tell the reader what the paragraph covers.
+            Use them when a document is <strong>long or structured</strong> enough that labeled sections
+            help the reader (a multi-page letter, an instruction, a point paper). For a{' '}
+            <strong>short, routine letter you usually don’t need them</strong> — plain numbered paragraphs
+            are cleaner. On a one-pager, when in doubt, skip them.
+          </>
+        ),
+      },
+      {
+        q: 'How should I think about breaking up paragraphs?',
+        a: (
+          <>
+            One idea per paragraph, and <strong>lead with your bottom line</strong> — naval writing puts
+            the main point first (the ask, the decision, the recommendation), then the supporting detail.
+            Reach for <strong>sub-paragraphs</strong> (a, b, c) when a single paragraph carries several
+            related sub-points — a list of conditions, steps, or reasons. Keep it tight; brevity is a
+            virtue here. You just decide where one idea ends and the next begins, and when a point is
+            really a sub-point — the tool numbers and indents the rest.
+          </>
+        ),
+      },
+      {
+        q: 'Do I ever use bold, italics, or underline in the body — and when?',
+        a: (
+          <>
+            Rarely. Traditional naval correspondence is <strong>plain</strong> — the format carries the
+            emphasis, not the typography. <strong>Underline</strong> has one real job: section titles
+            (above). Beyond that, use emphasis only for a genuinely critical word — a “NOT,” a hard
+            deadline — and even then, sparingly. <strong>Bold and italics</strong> are uncommon in a
+            standard letter; they show up more in instructions and briefs. The tool supports all three
+            (type <code>**bold**</code>, <code>*italic*</code>, <code>__underline__</code>) for when you
+            need them — but the default, and usually the right call, is to leave the body plain.
+          </>
+        ),
+      },
+      {
+        q: 'When do I add an SSIC or a serial number?',
+        a: (
+          <>
+            The <strong>SSIC</strong> (Standard Subject Identification Code) is a filing number that
+            classifies the letter’s subject; the <strong>serial</strong> is a sequential control number.
+            On a formal letter your command’s files office — the yeoman — normally assigns these. If
+            you’re drafting and don’t have them, <strong>leave them off</strong> (toggle them out); the
+            yeoman adds them before it goes out. Memos and MFRs usually just carry the date.
+          </>
+        ),
+      },
+      {
+        q: 'When do I add a “Via” addressee (and get an endorsement)?',
+        a: (
+          <>
+            Add a <strong>Via</strong> when your letter must <em>pass through</em> someone on its way to
+            the action addressee — almost always your chain of command. Each Via addressee reviews it and
+            forwards it with an <strong>endorsement</strong> (their recommendation). Example: a request
+            from you to higher headquarters routes “Via” your Commanding Officer. The tool builds the
+            endorsement page automatically for every Via you add.
+          </>
+        ),
+      },
+      {
+        q: 'When do I sign “By direction” or “Acting”?',
+        a: (
+          <>
+            These appear under the signature. <strong>“By direction”</strong> means you’re signing{' '}
+            <em>for</em> the commanding officer under standing authority to sign certain correspondence on
+            their behalf. <strong>“Acting”</strong> means you’re temporarily filling the billet (e.g., the
+            XO acting as CO). If you <em>are</em> the official named in the “From” line, you use neither.
+            If you’re not sure you have “by direction” authority, you probably don’t — ask.
+          </>
+        ),
+      },
+      {
+        q: 'When do I mark something CUI?',
+        a: (
+          <>
+            <strong>Controlled Unclassified Information</strong> is sensitive-but-unclassified material the
+            government requires you to safeguard — most often <strong>privacy data / PII</strong> (SSNs,
+            medical, personnel records). If your document contains it, check the CUI box: the tool adds the
+            required banner at the top and bottom of every page plus the designation block. And remember —
+            CUI may only be handled on <strong>authorized government equipment</strong>, never a personal
+            device.
+          </>
+        ),
+      },
+      {
+        q: 'When do I attach an enclosure versus just cite a reference?',
+        a: (
+          <>
+            A <strong>reference</strong> points to an existing document the reader can look up on their own
+            — an instruction, a prior letter — listed as (a), (b). An <strong>enclosure</strong> is
+            something you’re <em>physically attaching</em> because the reader needs it in hand — a form, a
+            chart, supporting paperwork — listed as (1), (2). The rule of thumb: if they can find it
+            themselves, it’s a reference; if you have to hand it to them, it’s an enclosure.
+          </>
+        ),
+      },
+      {
+        q: 'When do I use “Copy to”?',
+        a: (
+          <>
+            Add a <strong>Copy to</strong> for commands or offices that <em>need to know</em> about the
+            letter but aren’t the action addressee and aren’t in the routing chain — for awareness or
+            coordination. It’s the naval-letter version of a CC.
+          </>
+        ),
+      },
+    ],
+  },
+  {
+    id: 'basics',
+    heading: 'First-timer basics',
+    items: [
+      {
+        q: 'I’ve never written one. Where do I start?',
+        a: (
+          <>
+            In the <strong>Builder</strong> tab, pick a type below, fill in the From / To / Subject, and
+            type your paragraphs on the left — the formatted letter appears on the right. You only supply
+            the words and the choices above; the tool does the rest.
+          </>
+        ),
+      },
+      {
+        q: 'What goes in the “From” and “To” lines?',
+        a: (
+          <>
+            <strong>From</strong> is the official <em>title</em> of the originator — “Commanding Officer,
+            USS Example (DDG&nbsp;100)” — not a personal name. <strong>To</strong> is the action
+            addressee: the command or office that has to act on the letter.
+          </>
+        ),
+      },
+      {
+        q: 'What does the tool handle for me automatically?',
+        a: (
+          <>
+            All the mechanical formatting you’d otherwise look up: paragraph and sub-paragraph numbering
+            and indentation, one-inch margins, 12-point Times New Roman, the date (Day&nbsp;Mon&nbsp;Year),
+            capitalizing the subject line, page numbering, and the signature block placement. You focus on
+            content and the choices above.
           </>
         ),
       },
@@ -48,156 +236,20 @@ const SECTIONS: { heading: string; items: QA[] }[] = [
         q: 'Is this official? Can I use it for real correspondence?',
         a: (
           <>
-            It’s an <strong>unofficial</strong> formatting aid — not affiliated with or endorsed by
-            the Navy or DoD, and it makes <strong>no authorization claim</strong>. Use it on
-            authorized government equipment, follow your command’s policy, and treat your command’s
-            yeoman / admin office as the final word on format. Controlled Unclassified Information
-            (CUI) belongs only on authorized equipment.
+            It’s an <strong>unofficial</strong> formatting aid — not affiliated with or endorsed by the
+            Navy or DoD, and it makes <strong>no authorization claim</strong>. Use it on authorized
+            government equipment, follow your command’s policy, and treat your yeoman / admin office as the
+            final word on format.
           </>
         ),
       },
     ],
   },
-  {
-    heading: 'The pieces of a letter',
-    items: [
-      {
-        q: 'What goes in the “From” and “To” lines?',
-        a: (
-          <>
-            <strong>From</strong> is the official <em>title</em> of the originator — e.g.,
-            “Commanding Officer, USS Example (DDG&nbsp;100)” — not a person’s name. <strong>To</strong>{' '}
-            is the action addressee: the command or office that has to act on the letter.
-          </>
-        ),
-      },
-      {
-        q: 'What is the “Via” line, and how does routing work?',
-        a: (
-          <>
-            “Via” addressees are the people your letter passes <em>through</em> on the way to the
-            action addressee — usually your chain of command. Each Via addressee forwards the letter
-            with an <strong>endorsement</strong> (a short note, often recommending approval or
-            disapproval). In the Builder, adding a Via automatically creates its endorsement page.
-          </>
-        ),
-      },
-      {
-        q: 'What exactly is an endorsement?',
-        a: (
-          <>
-            When a letter routes “Via” someone, that person forwards it with an endorsement — labeled
-            “FIRST ENDORSEMENT,” “SECOND ENDORSEMENT,” and so on — typically passing it up the chain
-            with a recommendation. The tool builds one automatically for each Via addressee.
-          </>
-        ),
-      },
-      {
-        q: 'How is the subject line supposed to look?',
-        a: (
-          <>
-            <strong>ALL CAPS, no punctuation</strong>, stated concisely — e.g., “REQUEST FOR ANNUAL
-            LEAVE.” The tool capitalizes it for you; you just type the words.
-          </>
-        ),
-      },
-      {
-        q: 'How do I number paragraphs and sub-paragraphs?',
-        a: (
-          <>
-            Main paragraphs are <strong>1, 2, 3</strong>; sub-paragraphs are <strong>a, b, c</strong>;
-            then <strong>(1), (2)</strong>; then <strong>(a), (b)</strong>. You don’t type the
-            numbers — the tool adds them automatically as you indent a paragraph.
-          </>
-        ),
-      },
-      {
-        q: 'How do I cite references and enclosures?',
-        a: (
-          <>
-            <strong>References</strong> are lettered (a), (b), (c) and listed in the “Ref:” line.
-            <strong> Enclosures</strong> are numbered (1), (2) in the “Encl:” line. Mention each one in
-            your text — e.g., “as required by reference (a)” or “(see enclosure (1)).”
-          </>
-        ),
-      },
-      {
-        q: 'Where does the signature go, and what’s in it?',
-        a: (
-          <>
-            Last name in CAPS, with <strong>no rank and no “Sincerely”</strong> — it sits on the right
-            half of the page. A standard letter is signed by the official named in the “From” line. On
-            an MFR, it’s just the signer’s name and organizational code (e.g., “N11”).
-          </>
-        ),
-      },
-    ],
-  },
-  {
-    heading: 'Common questions',
-    items: [
-      {
-        q: 'When do I put letterhead on a memo — or do I ever?',
-        a: (
-          <>
-            Almost never. A memorandum is internal and informal, so <strong>plain bond paper</strong>{' '}
-            is the default. The “letterhead memorandum” is reserved for routine matters with people{' '}
-            <em>outside</em> your activity when direct liaison is authorized. Within your own command:
-            plain paper.
-          </>
-        ),
-      },
-      {
-        q: 'What’s the SSIC, and do I need one?',
-        a: (
-          <>
-            The <strong>SSIC</strong> (Standard Subject Identification Code) is a numeric filing code.
-            A yeoman normally assigns it. If you don’t know it, leave it blank — you can toggle it off
-            in the Builder. Memos and MFRs often just use the date.
-          </>
-        ),
-      },
-      {
-        q: 'What’s the date format?',
-        a: (
-          <>
-            Day&nbsp;Month&nbsp;Year, abbreviated, no punctuation — e.g., <strong>“7 Sep 06.”</strong>{' '}
-            The tool fills in today’s date automatically (you can override it).
-          </>
-        ),
-      },
-      {
-        q: 'What is CUI, and how do I mark it?',
-        a: (
-          <>
-            <strong>Controlled Unclassified Information</strong> — sensitive but unclassified material
-            (for example, privacy / PII). If your document contains it, check the CUI box in the
-            Builder and the tool adds the required banners (top and bottom of every page) and the
-            designation block. CUI may only be handled on authorized government equipment.
-          </>
-        ),
-      },
-      {
-        q: 'What’s a “business letter”?',
-        a: (
-          <>
-            The format you use to write to <strong>civilians or organizations outside the DoD</strong>{' '}
-            who wouldn’t recognize the standard naval letter. It uses a normal salutation (“Dear
-            Ms.&nbsp;Smith:”) and closing (“Sincerely,”).
-          </>
-        ),
-      },
-      {
-        q: 'What paper, font, and margins does the Navy use?',
-        a: (
-          <>
-            8½ × 11 paper, <strong>Times New Roman 12-point</strong>, one-inch margins. The tool sets
-            all of this for you — you never have to think about it.
-          </>
-        ),
-      },
-    ],
-  },
+];
+
+const TOC = [
+  { id: 'types', label: 'Which document do I write?' },
+  ...SECTIONS.map((s) => ({ id: s.id, label: s.heading })),
 ];
 
 export default function Guide() {
@@ -207,13 +259,51 @@ export default function Guide() {
         <h1>Guide to naval correspondence</h1>
         <p className="faq-lede">
           A plain-language guide for anyone who hasn’t written Navy correspondence before — no yeoman
-          experience assumed. Every answer follows <strong>SECNAV M-5216.5</strong>, the Department of
-          the Navy Correspondence Manual. (A searchable copy of the full manual is on the way.) This is
-          reference only: it never reads what you type, and the tool makes no authorization claim.
+          experience assumed. It follows the Department of the Navy Correspondence Manual (
+          <strong>
+            {PUB_TITLE}, {PUB_DATE}
+          </strong>
+          ); you can{' '}
+          <a href={PUB_URL} target="_blank" rel="noopener noreferrer">
+            read the official manual
+          </a>{' '}
+          at the DON Issuances site. This guide focuses on the <em>choices you make</em> — the tool
+          handles the mechanical formatting. Reference only: it never reads what you type, and the tool
+          makes no authorization claim.
         </p>
+
+        <nav className="guide-toc" aria-label="Jump to a section">
+          <span className="guide-toc-label">Jump to</span>
+          {TOC.map((t) => (
+            <a key={t.id} href={`#${t.id}`}>
+              {t.label}
+            </a>
+          ))}
+        </nav>
+
+        <section id="types" className="guide-section">
+          <h2>Which document do I write?</h2>
+          <p className="guide-section-intro">
+            The yeomanizer builds these. Pick the one that fits — when in doubt, a Standard Naval Letter is
+            the safe choice.
+          </p>
+          <dl className="guide-types">
+            {TYPES.map((t) => (
+              <div key={t.name} className="guide-type">
+                <dt>
+                  {t.name}
+                  {t.inApp ? <span className="guide-type-tag">in the tool</span> : null}
+                </dt>
+                <dd>{t.blurb}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
         {SECTIONS.map((sec) => (
-          <section key={sec.heading} className="guide-section">
+          <section key={sec.id} id={sec.id} className="guide-section">
             <h2>{sec.heading}</h2>
+            {sec.intro ? <p className="guide-section-intro">{sec.intro}</p> : null}
             {sec.items.map((it) => (
               <details key={it.q} className="guide-qa">
                 <summary>{it.q}</summary>
