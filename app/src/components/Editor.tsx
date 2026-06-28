@@ -16,7 +16,7 @@ import { uid, syncViaEndorsements, blankFor } from '../defaultState';
 import * as tree from '../format/tree';
 import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { ENDORSE_ORD } from '../format/identification';
-import { COMMON_SSIC } from '../data/ssic';
+import { COMMON_SSIC, type SsicOption } from '../data/ssic';
 import { CUI_CATEGORIES } from '../data/cui';
 import { NAVY_RANKS } from '../data/ranks';
 
@@ -140,26 +140,58 @@ function Pill({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   );
 }
 
-// Searchable SSIC picker: filter the common-code list by number OR keyword, click to fill the field.
-// Covers all 13 major groups + the most-used second-level codes; the full catalog is SECNAV M-5210.2.
+// Searchable SSIC picker. Focused (no query) shows the curated common codes (friendly labels + the 13
+// major-group tags) for instant quick-picks. Typing searches the FULL ~2,240-code catalog from SECNAV
+// M-5210.2 (Aug 2018), lazy-loaded on first interaction so it stays out of the initial bundle. Curated
+// matches rank first; the rest of the authoritative catalog follows (deduped). No code is invented.
+const SSIC_CAP = 60;
 function SsicLookup({ onPick }: { onPick: (code: string) => void }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
+  const [full, setFull] = useState<SsicOption[] | null>(null);
   const needle = q.trim().toLowerCase();
-  const matches = needle
-    ? COMMON_SSIC.filter((s) => s.code.includes(needle) || s.label.toLowerCase().includes(needle))
-    : COMMON_SSIC;
+
+  const loadFull = () => {
+    if (full) return;
+    import('../data/ssic-full.json')
+      .then((m) => {
+        const data = ((m as { default?: { codes: SsicOption[] } }).default ?? (m as unknown)) as {
+          codes: SsicOption[];
+        };
+        setFull(data.codes);
+      })
+      .catch(() => setFull([]));
+  };
+
+  const test = (s: SsicOption) => s.code.includes(needle) || s.label.toLowerCase().includes(needle);
+  let matches: SsicOption[];
+  let truncated = false;
+  if (!needle) {
+    matches = COMMON_SSIC; // default quick-picks
+  } else {
+    const curated = COMMON_SSIC.filter(test);
+    const seen = new Set(curated.map((s) => s.code));
+    const extra = (full ?? []).filter((s) => !seen.has(s.code) && test(s));
+    const all = [...curated, ...extra];
+    truncated = all.length > SSIC_CAP;
+    matches = all.slice(0, SSIC_CAP);
+  }
+
   return (
     <div className="ssic-lookup">
       <input
         value={q}
         placeholder="search by number or keyword — e.g. 5216, legal, awards"
-        aria-label="Search common SSICs"
+        aria-label="Search SSICs"
         onChange={(e) => {
           setQ(e.target.value);
           setOpen(true);
+          loadFull();
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          setOpen(true);
+          loadFull();
+        }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
       {open && (
@@ -186,6 +218,7 @@ function SsicLookup({ onPick }: { onPick: (code: string) => void }) {
               </li>
             ))
           )}
+          {truncated && <li className="ssic-none">Showing the first {SSIC_CAP} — narrow your search.</li>}
         </ul>
       )}
     </div>

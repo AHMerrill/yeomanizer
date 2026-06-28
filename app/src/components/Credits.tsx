@@ -35,7 +35,8 @@ const IDEAS: { name: string; url: string; license: string; learned: string }[] =
     name: 'navalletterformat',
     url: 'https://github.com/jeranaias/navalletterformat',
     license: 'MIT',
-    learned: 'Editor UX — paragraph reordering and starter templates; session-only PII handling.',
+    learned:
+      'Editor UX — paragraph reordering, starter templates, session-only PII handling. We also adapted their compiled SSIC catalog (2,240 codes from the public-domain SECNAV M-5210.2) as our full code lookup — data, with attribution; no code copied.',
   },
   {
     name: 'mildoc-lint',
@@ -118,6 +119,9 @@ export function Credits() {
           <p className="credits-note">
             Open-source naval-correspondence projects whose <b>feature ideas</b> informed ours. Every
             feature here was written from scratch — <b>no source code was copied</b> from any of them.
+            One <i>data</i> file is reused with attribution: jeranaias&rsquo;s compiled SSIC catalog
+            (itself drawn from the public-domain {ext('https://www.secnav.navy.mil/doni/manuals-secnav.aspx', 'SECNAV M-5210.2')}),
+            which backs our full SSIC search.
           </p>
           <table className="credits-table">
             <thead>
