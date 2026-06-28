@@ -619,12 +619,26 @@
   min-height: 0;
 }
 .editor-pane {
-  flex: 0 0 440px;
-  max-width: 440px;
+  flex: 0 0 var(--editor-w, 440px);
+  max-width: var(--editor-w, 440px);
   overflow-y: auto;
   background: #1b1c21;
   border-right: 1px solid #2c2e36;
   padding: 14px;
+}
+/* Draggable split between the editor and the preview (desktop only; see the mobile + print overrides). */
+.pane-divider {
+  flex: 0 0 6px;
+  align-self: stretch;
+  cursor: col-resize;
+  background: #2c2e36;
+  border-left: 1px solid #14151a;
+  border-right: 1px solid #14151a;
+  touch-action: none;
+}
+.pane-divider:hover,
+.pane-divider:active {
+  background: #3a6df0;
 }
 
 /* ---- Responsive: stack the panes on tablet/phone; let the page scroll instead of two inner
@@ -657,6 +671,10 @@
   .paper-backdrop {
     flex: none;
     overflow: visible;
+  }
+  /* Stacked layout has no side-by-side split, so the drag handle is meaningless. */
+  .pane-divider {
+    display: none;
   }
 }
 
@@ -1083,6 +1101,7 @@
 @media print {
   .toolbar,
   .editor-pane,
+  .pane-divider,
   .disclaimer,
   .export-help,
   .about,

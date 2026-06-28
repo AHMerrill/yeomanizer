@@ -1,4 +1,12 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type Dispatch,
+  type PointerEvent as ReactPointerEvent,
+  type SetStateAction,
+} from 'react';
 import { defaultFor } from './defaultState';
 import type { LetterState, CorrespondenceType } from './types';
 import { Editor } from './components/Editor';
@@ -36,6 +44,9 @@ export default function App() {
   const [view, setView] = useState<'editor' | 'builder' | 'features' | 'faq' | 'guide'>('builder');
   // The Editor tab edits a separately-imported letter, so importing never clobbers a Builder draft.
   const [importedState, setImportedState] = useState<LetterState | null>(null);
+  // Draggable editor/preview split — session-only (no persistence). null = the CSS default width.
+  const [editorWidth, setEditorWidth] = useState<number | null>(null);
+  const panesRef = useRef<HTMLElement>(null);
 
   const state = statesByType[activeType];
   const setState: Dispatch<SetStateAction<LetterState>> = (update) =>
@@ -107,6 +118,28 @@ export default function App() {
     };
     window.addEventListener('afterprint', after);
     printLetter();
+  };
+
+  // Drag the divider to resize the editor pane; the preview takes the rest. Clamped so neither pane
+  // collapses. Print is unaffected — the editor + divider are display:none under @media print.
+  const onDividerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const panes = panesRef.current;
+    if (!panes) return;
+    const rect = panes.getBoundingClientRect();
+    const move = (ev: PointerEvent) => {
+      setEditorWidth(Math.max(320, Math.min(rect.width - 480, ev.clientX - rect.left)));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
   };
 
   return (
@@ -230,7 +263,11 @@ export default function App() {
       ) : view === 'guide' ? (
         <Guide />
       ) : editingState ? (
-        <main className="panes">
+        <main
+          className="panes"
+          ref={panesRef}
+          style={editorWidth != null ? ({ '--editor-w': `${editorWidth}px` } as CSSProperties) : undefined}
+        >
           {/* autoComplete + spellCheck off so the browser never stores or transmits entries
               (e.g. autofill history, Chrome Enhanced Spellcheck). */}
           <form
@@ -241,6 +278,16 @@ export default function App() {
           >
             <Editor state={editingState} setState={setEditingState} setType={setEditingType} />
           </form>
+          {/* Drag to resize the editor vs. the preview; double-click to reset. Desktop only. */}
+          <div
+            className="pane-divider"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Drag to resize the editor"
+            title="Drag to resize · double-click to reset"
+            onPointerDown={onDividerDown}
+            onDoubleClick={() => setEditorWidth(null)}
+          />
           <div className="paper-backdrop">
             <PreviewErrorBoundary>
               <LetterPreview state={editingState} />
