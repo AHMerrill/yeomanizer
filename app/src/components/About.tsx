@@ -25,6 +25,7 @@ const AVAILABLE: [string, string][] = [
   ['CUI marking', 'Banner top & bottom of every page — enclosures included — plus the designation block and optional per-paragraph (CUI)/(U) marks. Per DoDI 5200.48 and DON PII guidance.'],
   ['Phone, tablet, desktop', 'The two-pane layout stacks and the sheet scales to fit — usable from a phone up to a wide monitor.'],
   ['Private by design', 'The tool stores and transmits nothing — your draft lives only in this tab and is erased when you close it. You download and handle the files yourself.'],
+  ['NIST 800-171 minded', 'Designed to support the controls for protecting CUI on non-federal systems — local-only processing, nothing transmitted, nothing stored, air-gap capable. Not a formal accreditation; see the FAQ.'],
 ];
 
 const PLANNED: [string, string][] = [

@@ -17,6 +17,7 @@ const SRC = {
   cfr: { label: '32 CFR Part 2002', url: 'https://www.ecfr.gov/current/title-32/subtitle-B/chapter-XX/part-2002' },
   cfrSafeguard: { label: '32 CFR 2002.14 — Safeguarding', url: 'https://www.ecfr.gov/current/title-32/subtitle-B/chapter-XX/part-2002/subpart-B/section-2002.14' },
   nara: { label: 'NARA CUI Registry', url: 'https://www.archives.gov/cui' },
+  nist: { label: 'NIST SP 800-171 (Rev 3)', url: 'https://csrc.nist.gov/pubs/sp/800/171/r3/final' },
   jsonParse: { label: 'MDN — JSON.parse', url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse' },
   jsonOrg: { label: 'json.org', url: 'https://www.json.org/' },
   ecma404: { label: 'ECMA-404 (JSON standard)', url: 'https://ecma-international.org/publications-and-standards/standards/ecma-404/' },
@@ -104,6 +105,22 @@ export function Faq() {
           transmits your content; there is no cloud step. Note that a .json (or .docx/.pdf) that
           contains CUI is <strong>itself CUI</strong> — store it and send it only on, and through,
           authorized systems and channels, like any other CUI file.
+        </QA>
+
+        <QA
+          q="Is it NIST SP 800-171 compliant? Can I use it on a government network?"
+          sources={[SRC.nist]}
+        >
+          NIST SP 800-171 sets the controls for protecting CUI on non-federal (and many DoD) systems.
+          This tool is <strong>designed to stay on the right side of those controls</strong> rather than
+          to claim a formal accreditation or ATO: every bit of processing happens in your browser (no
+          server ever receives or transmits your content), nothing is stored or persisted (your draft
+          lives only in the tab and is erased when you close it), there are no accounts, cookies,
+          telemetry, or analytics, and it runs fully <strong>offline / air-gapped</strong> once loaded.
+          The only thing that ever leaves the browser is two content-free integer counters (page loads
+          and download-button clicks). It makes no authorization claim and certifies nothing — you and
+          your command remain responsible for handling CUI per policy on authorized equipment. Run it on
+          an approved system and follow your command&rsquo;s guidance.
         </QA>
 
         <QA q="Are the downloads safe, regular file types?" sources={[SRC.jsonOrg, SRC.ecma404]}>
