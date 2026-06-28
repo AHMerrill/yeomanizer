@@ -69,8 +69,7 @@
 .seg-toggle .seg {
   position: relative;
   z-index: 1;
-  flex: 1 1 0;
-  min-width: 82px;
+  flex: 0 0 auto; /* hug each label — equal-width (flex:1) clipped longer labels like "Features" */
   text-align: center;
   font: inherit;
   font-size: 13px;
@@ -80,28 +79,18 @@
   color: #9aa0ad;
   border-radius: 999px;
   cursor: pointer;
-  transition: color 0.18s ease;
+  transition: color 0.18s ease, background-color 0.18s ease;
 }
 .seg-toggle .seg:hover {
   color: #cfd3dc;
-  background: transparent;
 }
-.seg-toggle .seg.on {
+/* The active tab IS the pill — it carries its own background, so it's always sized exactly to its
+   own label. (A separate JS-measured sliding thumb fought variable-width tabs and a stuck width
+   transition; the tab-as-pill is bulletproof. Smooth cross-fade via the background-color transition.) */
+.seg-toggle .seg.on,
+.seg-toggle .seg.on:hover {
   color: #fff;
-}
-/* The thumb's width + translateX are set in JS (measured to the active tab) so it fits each
-   variable-width label EXACTLY in every browser; CSS only styles + animates it. width:0 is a safe
-   pre-measure fallback (invisible, not a wrong-size blob). */
-.seg-thumb {
-  position: absolute;
-  z-index: 0;
-  top: 3px;
-  bottom: 3px;
-  left: 3px;
-  width: 0;
   background: #2f6df0;
-  border-radius: 999px;
-  transition: transform 0.18s ease, width 0.18s ease;
 }
 .seg-toggle.seg-4 .seg {
   min-width: 62px;
