@@ -67,3 +67,20 @@ export function move(list: Tree, id: string, dir: -1 | 1): Tree {
   }
   return list.map((p) => ({ ...p, children: move(p.children, id, dir) }));
 }
+
+// Drag-reorder: move `dragId` to just before/after `targetId` when they share a parent list.
+// Sibling-only (cross-level moves aren't supported here — use "Add subparagraph"), matching ↑/↓.
+// A no-op if the two ids live at different levels, so a stray cross-level drop changes nothing.
+export function reorder(list: Tree, dragId: string, targetId: string, place: 'before' | 'after'): Tree {
+  if (dragId === targetId) return list;
+  const di = list.findIndex((p) => p.id === dragId);
+  const ti = list.findIndex((p) => p.id === targetId);
+  if (di >= 0 && ti >= 0) {
+    const copy = [...list];
+    const [moved] = copy.splice(di, 1);
+    const t = copy.findIndex((p) => p.id === targetId); // recompute after the removal
+    copy.splice(place === 'before' ? t : t + 1, 0, moved);
+    return copy;
+  }
+  return list.map((p) => ({ ...p, children: reorder(p.children, dragId, targetId, place) }));
+}

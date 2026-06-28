@@ -224,11 +224,51 @@ function ParaEditor({
   onCuiToggle?: (id: string, on: boolean) => void;
 }) {
   const mut = (fn: (r: Paragraph[]) => Paragraph[]) => onChange(fn(root));
+  // Drag-to-reorder state, local to this level (siblings). The ↑/↓ buttons remain for keyboard/touch.
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [drop, setDrop] = useState<{ id: string; place: 'before' | 'after' } | null>(null);
   return (
     <div className="para-tree" style={{ marginLeft: depth ? 14 : 0 }}>
       {list.map((p, i) => (
-        <div className="para-node" key={p.id}>
+        <div
+          className="para-node"
+          key={p.id}
+          data-drop={drop && drop.id === p.id ? drop.place : undefined}
+          onDragOver={(e) => {
+            if (!dragId || dragId === p.id) return; // only react while dragging another sibling
+            e.preventDefault();
+            e.stopPropagation();
+            const r = e.currentTarget.getBoundingClientRect();
+            setDrop({ id: p.id, place: e.clientY < r.top + r.height / 2 ? 'before' : 'after' });
+          }}
+          onDrop={(e) => {
+            if (!dragId) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const place = drop && drop.id === p.id ? drop.place : 'before';
+            mut((r) => tree.reorder(r, dragId, p.id, place));
+            setDragId(null);
+            setDrop(null);
+          }}
+        >
           <div className="para-head">
+            <span
+              className="para-grip"
+              title="Drag to reorder"
+              aria-hidden="true"
+              draggable
+              onDragStart={(e) => {
+                setDragId(p.id);
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', p.id);
+              }}
+              onDragEnd={() => {
+                setDragId(null);
+                setDrop(null);
+              }}
+            >
+              ⠿
+            </span>
             <span className="para-marker">{markerText(paragraphMarker(depth, i))}</span>
             <div className="para-btns">
               <button

@@ -24,6 +24,8 @@ Live: **https://yeomanizer.com**
   OPNAVINST 5400.45A.
 - **Inline emphasis** — type `**bold**`, `*italic*`, or `__underline__` for occasional emphasis; it
   renders identically in the preview, the `.docx`, and the PDF.
+- **Reorder & auto-number** — drag a paragraph by its grip (or use ↑/↓) to reorder it; the numbering
+  (1, 2…, then a, b…) and indentation update themselves.
 - **CUI marking** — a banner top & bottom of every page (enclosures included), the designation
   block, optional per-paragraph (CUI)/(U) marks, and **per-enclosure banners** — give any
   in-document enclosure its own banner so a mixed-category package is marked correctly, each on its
