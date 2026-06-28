@@ -25,10 +25,32 @@ type SetState = Dispatch<SetStateAction<LetterState>>;
 const sectionId = (title: string): string =>
   'sec-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-function Card({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+function Card({
+  title,
+  hint,
+  onReset,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  onReset?: () => void;
+  children: ReactNode;
+}) {
   return (
     <section className="card" id={sectionId(title)}>
-      <h2>{title}</h2>
+      <div className="card-head">
+        <h2>{title}</h2>
+        {onReset && (
+          <button
+            type="button"
+            className="card-clear"
+            title={`Clear everything in “${title}”`}
+            onClick={onReset}
+          >
+            Clear
+          </button>
+        )}
+      </div>
       {hint && <p className="hint">{hint}</p>}
       {children}
     </section>
@@ -453,6 +475,16 @@ export function Editor({
       <Card
         title="CUI Marking"
         hint="Controlled Unclassified Information. The banner prints at the very top (and bottom) of every page, so it lives here near the top. Per DON guidance, PII uses a plain 'CUI' banner. Sourced from DoDI 5200.48 + the ISOO handbook + DON PII guidance."
+        onReset={() =>
+          patchCui({
+            enabled: false,
+            banner: 'CUI',
+            controlledBy2: '',
+            category: 'PRVCY',
+            dissemination: 'FEDCON',
+            poc: '',
+          })
+        }
       >
         <label className="check">
           <input
@@ -712,6 +744,7 @@ export function Editor({
             ? "A memo's only identification symbol is the date (10-2)."
             : 'Usually added by a yeoman. Not sure? Leave blank — most people only set the date.'
         }
+        onReset={() => patch({ ssic: '', originatorCode: '', serial: '' })}
       >
         {state.type !== 'memo-from-to' && (
           <>
@@ -794,6 +827,16 @@ export function Editor({
         <Card
           title="Recipient & greeting"
           hint="A business letter is addressed with an inside address and a salutation (Ch 11), not From/To/Via."
+          onReset={() =>
+            patchBiz({
+              insideAddress: '',
+              attention: '',
+              salutation: '',
+              subjectReplacesSalutation: false,
+              complimentaryClose: 'Sincerely,',
+              separateMailing: '',
+            })
+          }
         >
           <Field label="Inside address (recipient)">
             <textarea
@@ -837,7 +880,10 @@ export function Editor({
 
       {/* MFR is "for the record"; the business letter uses an inside address — neither has From/To/Via. */}
       {state.type !== 'mfr' && state.type !== 'business-letter' && (
-      <Card title="Routing">
+      <Card
+        title="Routing"
+        onReset={() => setState((s) => syncViaEndorsements({ ...s, from: '', to: '', via: [] }))}
+      >
         <Field label="From">
           <input
             value={state.from}
@@ -867,7 +913,11 @@ export function Editor({
       </Card>
       )}
 
-      <Card title="Subject" hint="Rendered in ALL CAPS, no punctuation (7-2.9).">
+      <Card
+        title="Subject"
+        hint="Rendered in ALL CAPS, no punctuation (7-2.9)."
+        onReset={() => patch({ subj: '' })}
+      >
         <textarea
           value={state.subj}
           rows={2}
@@ -879,7 +929,11 @@ export function Editor({
 
       {/* Business letters cite prior communications/enclosures in the body only (11-2.7) — no Ref: line. */}
       {state.type !== 'business-letter' && (
-        <Card title="References" hint="Lettered (a), (b)… — cite each in the text.">
+        <Card
+          title="References"
+          hint="Lettered (a), (b)… — cite each in the text."
+          onReset={() => patch({ refs: [] })}
+        >
           <EntryList
             items={state.refs}
             placeholder="e.g. SECNAV M-5216.5 of June 2015"
@@ -891,6 +945,7 @@ export function Editor({
       <Card
         title="Enclosures"
         hint="Numbered (1), (2)… Name one, choose to embed its file in the document or attach it separately, then drag an image or PDF onto it."
+        onReset={() => patch({ encls: [] })}
       >
         <EnclosureCards encls={state.encls} onChange={(encls) => patch({ encls })} />
         {state.type === 'business-letter' && (
@@ -907,6 +962,7 @@ export function Editor({
       <Card
         title="Body"
         hint="Add paragraphs and subparagraphs; numbering is automatic. For emphasis, type **bold**, *italic*, or __underline__."
+        onReset={() => patch({ body: [{ id: uid(), text: '', children: [] }] })}
       >
         <ParaEditor
           root={state.body}
@@ -937,6 +993,10 @@ export function Editor({
             ? 'Centered under the complimentary close; last name in CAPS, grade spelled out, then title and authority (11-2.9).'
             : 'Last name in CAPS; no rank or complimentary close (7-2.14).'
         }
+        onReset={() => {
+          patchSig({ name: '', title: '', authority: 'none' });
+          patchBiz({ complimentaryClose: 'Sincerely,' });
+        }}
       >
         {state.type === 'business-letter' && (
           <Field label="Complimentary close">
@@ -975,7 +1035,11 @@ export function Editor({
         </p>
       </Card>
 
-      <Card title="Copy to" hint="One addressee per line.">
+      <Card
+        title="Copy to"
+        hint="One addressee per line."
+        onReset={() => patch({ copyTo: [] })}
+      >
         <textarea
           value={state.copyTo.join('\n')}
           rows={3}

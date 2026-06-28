@@ -730,6 +730,28 @@
   letter-spacing: 0.6px;
   color: #aab0bd;
 }
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.card-clear {
+  font: inherit;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+  background: none;
+  border: none;
+  padding: 0 0 6px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.card-clear:hover {
+  color: #ff9b9b;
+  text-decoration: underline;
+}
 .card .hint {
   margin: 0 0 9px;
   font-size: 11.5px;
