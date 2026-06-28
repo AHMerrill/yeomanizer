@@ -1,4 +1,11 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { defaultFor } from './defaultState';
 import type { LetterState, CorrespondenceType } from './types';
 import { Editor } from './components/Editor';
@@ -36,6 +43,26 @@ export default function App() {
   const [view, setView] = useState<'editor' | 'builder' | 'features' | 'faq' | 'guide'>('builder');
   // The Editor tab edits a separately-imported letter, so importing never clobbers a Builder draft.
   const [importedState, setImportedState] = useState<LetterState | null>(null);
+
+  // Slide the tab "thumb" by MEASURING the active tab — the pill hugs its content, so the tabs are
+  // variable-width per label; a fixed 1/N thumb drifts on the wider/narrower ones (the FAQ/Features
+  // jank). Measuring fits it exactly, in every browser, at any tab count.
+  const navRef = useRef<HTMLElement>(null);
+  const thumbRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const thumb = thumbRef.current;
+    const active = nav?.querySelector<HTMLElement>('.seg.on');
+    if (!nav || !thumb || !active) return;
+    const place = () => {
+      thumb.style.width = `${active.offsetWidth}px`;
+      thumb.style.transform = `translateX(${active.offsetLeft - thumb.offsetLeft}px)`;
+    };
+    place();
+    const ro = new ResizeObserver(place);
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, [view]);
 
   const state = statesByType[activeType];
   const setState: Dispatch<SetStateAction<LetterState>> = (update) =>
@@ -129,11 +156,12 @@ export default function App() {
           <span className="brand-sub">naval correspondence, formatted</span>
         </div>
         <nav
-          className={`seg-toggle seg-5 ${view === 'editor' ? 'pos-0' : view === 'builder' ? 'pos-1' : view === 'guide' ? 'pos-2' : view === 'features' ? 'pos-3' : 'pos-4'}`}
+          ref={navRef}
+          className="seg-toggle seg-5"
           role="tablist"
           aria-label="Page"
         >
-          <span className="seg-thumb" aria-hidden="true" />
+          <span ref={thumbRef} className="seg-thumb" aria-hidden="true" />
           <button
             className={view === 'editor' ? 'seg on' : 'seg'}
             role="tab"
