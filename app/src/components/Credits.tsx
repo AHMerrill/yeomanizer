@@ -1,5 +1,6 @@
 // Credits / attribution — its own top-level tab. Everything the tool is built on, with links and
 // licenses, plus an explicit statement that no competitor code was copied (clean-room). Static.
+import { Timeline } from './Timeline';
 
 const REPO = 'https://github.com/AHMerrill/yeomanizer';
 
@@ -142,6 +143,8 @@ export function Credits() {
           If a credit is missing or wrong, {ext(`${REPO}/issues`, 'open an issue')} and we&rsquo;ll
           correct it.
         </p>
+
+        <Timeline />
       </div>
     </div>
   );
