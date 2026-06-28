@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import type { LetterState } from '../types';
 import { proofread } from '../format/proofread';
+import { detectPii } from '../format/pii';
 
 // ¶19.b framework items the engine renders to spec automatically (verified across preview/PDF/.docx).
 const ENGINE = [
@@ -59,6 +60,7 @@ export function Checklist({ state }: { state: LetterState | null }) {
   const isForm = state.type === 'nato';
   const checks = isForm ? [] : proofread(state);
   const warnings = checks.filter((c) => c.status === 'warn');
+  const pii = detectPii(state);
 
   return (
     <div className="checklist">
@@ -104,6 +106,45 @@ export function Checklist({ state }: { state: LetterState | null }) {
             memos. Use the review list below before signing.
           </p>
         )}
+
+        <section className="check-group">
+          <h2>
+            Possible sensitive data{' '}
+            {pii.length === 0 ? (
+              <span className="grp-ok">none detected</span>
+            ) : (
+              <span className="grp-warn">{pii.length} to review</span>
+            )}
+          </h2>
+          {pii.length === 0 ? (
+            <p className="check-note">
+              No obvious SSN, DoD ID, or date-of-birth patterns found. This is a quick local scan, not a
+              guarantee — deciding what is PII/CUI, and marking it, is still your call.
+            </p>
+          ) : (
+            <>
+              <ul className="checks">
+                {pii.map((h) => (
+                  <li key={h.kind + h.where} className="warn">
+                    <span className="check-icon" aria-hidden="true">
+                      !
+                    </span>
+                    <span className="check-body">
+                      <span className="check-label">
+                        {h.kind}
+                        {h.count > 1 ? ` ×${h.count}` : ''} — in {h.where}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="check-note">
+                If this is PII/CUI, make sure the document is marked accordingly and handled only on
+                authorized equipment. The scan runs locally — nothing here is logged or sent anywhere.
+              </p>
+            </>
+          )}
+        </section>
 
         {!isForm && (
           <section className="check-group">
