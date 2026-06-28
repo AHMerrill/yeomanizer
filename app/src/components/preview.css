@@ -345,18 +345,19 @@
   margin-left: 0;
   text-align: left;
 }
-/* Inside address: blocked flush left, a few lines below the date (11-2.2). */
-.biz-address {
-  margin-top: calc(var(--para-gap) * 2.4);
+/* With a printed letterhead the identification symbols must clear the seal — start "just below the
+   seal" (11-2.13) rather than jammed against it. (No seal in plain-paper/pre-printed mode.) */
+.biz-ident:not(.no-letterhead) {
+  margin-top: 0.34in;
 }
-.biz-attention {
-  margin-top: calc(var(--para-gap) * 1.6);
-}
-.biz-salutation {
-  margin-top: calc(var(--para-gap) * 1.6);
+/* Inside address, attention, salutation, subject — consistent ~2-line gaps (11-2.2 through 2.5). */
+.biz-address,
+.biz-attention,
+.biz-salutation,
+.biz-subject {
+  margin-top: calc(var(--para-gap) * 2);
 }
 .biz-subject {
-  margin-top: calc(var(--para-gap) * 1.6);
   text-transform: uppercase;
 }
 /* "Sincerely," + signature: left edge at the page center (11-2.8/2.9). */

@@ -110,8 +110,8 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   // headings start at the right spot regardless of how many letterhead/ident lines there are. ----
   if (lh.mode === 'on') {
     putCenter(lh.line1 || 'DEPARTMENT OF THE NAVY', bold, 11, 1.04, navy);
-    [lh.activityName, lh.addressLine, lh.cityStateZip]
-      .filter(Boolean)
+    [...lh.activityName.split('\n'), lh.addressLine, lh.cityStateZip]
+      .filter((l) => l.trim())
       .forEach((l) => putCenter(l.toUpperCase(), bold, 7.5, 1.04, navy));
     top = Math.max(top, M_TOP + 0.86 * PT); // .letterhead min-height
     gap(0.16 * PT); // .ident margin-top

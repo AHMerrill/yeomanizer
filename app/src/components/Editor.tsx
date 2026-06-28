@@ -551,10 +551,12 @@ export function Editor({
               </a>{' '}
               <strong>(CAC required)</strong>.
             </p>
-            <Field label="Activity name">
-              <input
+            <Field label="Activity name (one line each)">
+              <textarea
                 value={state.letterhead.activityName}
-                placeholder="NAME OF ACTIVITY"
+                rows={2}
+                placeholder={'NAME OF ACTIVITY\n(add a line for each — some commands run several)'}
+                aria-label="Activity name"
                 onChange={(e) => patchLH({ activityName: e.target.value.toUpperCase() })}
               />
             </Field>

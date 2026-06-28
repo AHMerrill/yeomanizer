@@ -205,7 +205,11 @@ export function buildDocxDocument(
         spacing: { after: 0 },
       }),
     );
-    if (lh.activityName) children.push(center(lh.activityName, 15));
+    if (lh.activityName)
+      lh.activityName
+        .split('\n')
+        .filter((l) => l.trim())
+        .forEach((l) => children.push(center(l, 15)));
     if (lh.addressLine) children.push(center(lh.addressLine, 15));
     if (lh.cityStateZip) children.push(center(lh.cityStateZip, 15));
     children.push(spacer());

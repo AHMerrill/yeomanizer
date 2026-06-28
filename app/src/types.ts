@@ -43,7 +43,7 @@ export interface NatoOrder {
 
 export interface Letterhead {
   line1: string; // "DEPARTMENT OF THE NAVY" (fixed by default)
-  activityName: string; // e.g. "CHIEF OF NAVAL OPERATIONS"
+  activityName: string; // one or more lines (newline-separated): "COMMANDER\nNAVAL SURFACE FORCE"
   addressLine: string; // e.g. "2000 NAVY PENTAGON"
   cityStateZip: string; // e.g. "WASHINGTON DC 20350-2000"
   seal: 'dod' | 'dod-color' | 'don' | 'none'; // dod = manual letterhead blue; dod-color = full-color vector

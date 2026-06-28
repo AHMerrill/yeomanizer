@@ -74,9 +74,15 @@ export function NatoForm({ state }: { state: LetterState }) {
         {showLh && (
           <div className="letterhead">
             <div className="lh-dept">{lh.line1}</div>
-            <div className={lh.activityName ? 'lh-sub' : 'lh-sub ph'}>
-              {lh.activityName || 'NAME OF ACTIVITY'}
-            </div>
+            {lh.activityName ? (
+              lh.activityName.split('\n').map((l, i) => (
+                <div key={i} className="lh-sub">
+                  {l || ' '}
+                </div>
+              ))
+            ) : (
+              <div className="lh-sub ph">NAME OF ACTIVITY</div>
+            )}
             <div className={lh.addressLine ? 'lh-sub' : 'lh-sub ph'}>
               {lh.addressLine || 'STREET ADDRESS'}
             </div>
