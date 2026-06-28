@@ -98,6 +98,7 @@ function ParaFlow({
 //   dod       = the letterhead seal as printed in SECNAV M-5216.5 Fig 7-1 (DoD seal, blue)
 //   dod-color = the official full-color DoD seal vector (razor-sharp, full color)
 const SEAL_SRC: Record<LetterState['letterhead']['seal'], string | null> = {
+  dow: '/dow-seal.png',
   dod: '/dod-seal.png',
   'dod-color': '/dod-seal.svg',
   don: '/don-seal.svg',

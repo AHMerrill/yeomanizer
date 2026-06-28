@@ -170,7 +170,9 @@ describe('Editor ↔ preview integration', () => {
     render(<App />);
     const sealSrc = () =>
       document.querySelector('.paper-backdrop img.seal')?.getAttribute('src') ?? null;
-    expect(sealSrc()).toBe('/dod-seal.png'); // default: manual letterhead blue
+    expect(sealSrc()).toBe('/dow-seal.png'); // default: Department of War blue seal
+    fireEvent.change(screen.getByLabelText('Seal'), { target: { value: 'dod' } });
+    expect(sealSrc()).toBe('/dod-seal.png'); // legacy DoD letterhead blue
     fireEvent.change(screen.getByLabelText('Seal'), { target: { value: 'dod-color' } });
     expect(sealSrc()).toBe('/dod-seal.svg'); // full-color vector
     fireEvent.change(screen.getByLabelText('Seal'), { target: { value: 'none' } });

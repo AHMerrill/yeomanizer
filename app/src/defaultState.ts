@@ -10,7 +10,7 @@ export const defaultState: LetterState = {
     activityName: '',
     addressLine: '',
     cityStateZip: '',
-    seal: 'dod',
+    seal: 'dow', // Department of War blue seal — the current default
     replyRefPrinted: false,
     mode: 'on',
     preprintedLines: 4, // DEPT OF THE NAVY + activity + street + city/state/zip — bump for a taller letterhead

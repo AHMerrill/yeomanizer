@@ -125,7 +125,13 @@ export async function loadSealBytes(state: LetterState): Promise<ArrayBuffer | u
   const lh = state.letterhead;
   if (lh.mode !== 'on' || lh.seal === 'none') return undefined;
   const src =
-    lh.seal === 'dod' ? '/dod-seal.png' : lh.seal === 'dod-color' ? '/dod-seal.svg' : '/don-seal.svg';
+    lh.seal === 'dow'
+      ? '/dow-seal.png'
+      : lh.seal === 'dod'
+        ? '/dod-seal.png'
+        : lh.seal === 'dod-color'
+          ? '/dod-seal.svg'
+          : '/don-seal.svg';
   try {
     if (src.endsWith('.png')) return await (await fetch(src)).arrayBuffer();
     const img = new Image();

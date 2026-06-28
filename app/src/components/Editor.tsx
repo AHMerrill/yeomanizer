@@ -680,12 +680,18 @@ export function Editor({
                 value={state.letterhead.seal}
                 onChange={(e) => patchLH({ seal: e.target.value as Letterhead['seal'] })}
               >
+                <option value="dow">Department of War seal (blue)</option>
                 <option value="dod">DoD seal (letterhead blue)</option>
                 <option value="dod-color">DoD seal (full color)</option>
                 <option value="don">DON seal</option>
                 <option value="none">None</option>
               </select>
             </Field>
+            <p className="hint">
+              Official seals are rendered unmodified for authentic letterhead. They’re for official
+              correspondence on authorized systems; their presence here doesn’t imply DoD/DoW
+              endorsement of this tool (cf. DoD 5535.09).
+            </p>
           </>
         )}
       </Card>
@@ -1049,10 +1055,10 @@ export function Editor({
           </select>
         </Field>
         <p className="hint">
-          The export leaves the signature space blank so you can sign for real: print and
-          wet-sign, or open the PDF in Adobe Acrobat/Reader and use{' '}
-          <em>Tools → Certificates → Digitally Sign</em> to draw a box over the signature space
-          and CAC-sign. A pre-placed click-to-sign field is in progress — see Features.
+          The export leaves the signature space blank so you can sign for real. The PDF already
+          places a <strong>CAC-signable signature field</strong> over that space — open it in Adobe
+          Acrobat/Reader and click to sign with your CAC (no <em>Prepare a Form</em> step), or just
+          print and wet-sign.
         </p>
       </Card>
 
