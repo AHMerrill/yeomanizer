@@ -6,20 +6,20 @@
     <link rel="icon" sizes="any" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="The yeomanizer — a fast, unofficial tool for drafting U.S. Navy correspondence (standard naval letters and memos) in SECNAV M-5216.5 format. Live preview, PDF/Word export. Nothing you type is saved or sent." />
-    <meta name="robots" content="index,follow" />
-    <meta name="keywords" content="Navy correspondence, naval letter format, standard naval letter, SECNAV M-5216.5, naval letter generator, Navy memo format, naval memorandum, yeoman, Navy writing, naval letter template" />
+    <meta name="description" content="A free, fast, unofficial naval correspondence document generator — draft U.S. Navy standard letters, memos, memoranda for the record, business letters, endorsements, and NATO travel orders in exact SECNAV M-5216.5 format. Live preview, instant PDF & Word (.docx) export. Nothing you type is saved or sent." />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="keywords" content="naval correspondence document generator, naval correspondence generator, Navy correspondence, naval letter generator, naval letter format, standard naval letter, SECNAV M-5216.5, Navy memo format, naval memorandum, memorandum for the record, business letter, endorsement, NATO travel order, yeoman, Navy writing, naval letter template" />
     <meta name="author" content="the yeomanizer" />
     <meta name="theme-color" content="#002c77" />
     <link rel="canonical" href="https://yeomanizer.com/" />
     <link rel="manifest" href="/site.webmanifest" />
-    <title>the yeomanizer — naval correspondence formatter (SECNAV M-5216.5)</title>
+    <title>Naval Correspondence Document Generator — the yeomanizer (SECNAV M-5216.5)</title>
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="the yeomanizer" />
-    <meta property="og:title" content="the yeomanizer — naval correspondence, formatted" />
-    <meta property="og:description" content="Draft standard naval letters and memos in exact SECNAV M-5216.5 format. Free, private (nothing is saved), instant PDF/Word export." />
+    <meta property="og:title" content="Naval Correspondence Document Generator — the yeomanizer" />
+    <meta property="og:description" content="Draft U.S. Navy letters, memos, business letters, endorsements, and NATO travel orders in exact SECNAV M-5216.5 format. Free, private (nothing is saved), instant PDF & Word export." />
     <meta property="og:url" content="https://yeomanizer.com/" />
     <meta property="og:image" content="https://yeomanizer.com/og.png" />
     <meta property="og:image:width" content="1200" />
@@ -27,8 +27,8 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="the yeomanizer — naval correspondence, formatted" />
-    <meta name="twitter:description" content="Draft standard naval letters and memos in exact SECNAV M-5216.5 format. Free, private, instant PDF/Word export." />
+    <meta name="twitter:title" content="Naval Correspondence Document Generator — the yeomanizer" />
+    <meta name="twitter:description" content="Draft U.S. Navy letters, memos, business letters, endorsements, and NATO travel orders in exact SECNAV M-5216.5 format. Free, private, instant PDF & Word export." />
     <meta name="twitter:image" content="https://yeomanizer.com/og.png" />
 
     <!-- Structured data (data block; not executed) -->
@@ -37,16 +37,43 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "the yeomanizer",
+        "alternateName": "Naval Correspondence Document Generator",
         "url": "https://yeomanizer.com/",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Any (web browser)",
-        "description": "A free, unofficial tool for drafting U.S. Navy correspondence (standard naval letters and memoranda) in SECNAV M-5216.5 format, with live preview and PDF/Word export. Nothing typed is stored or transmitted.",
+        "browserRequirements": "Requires JavaScript. Runs entirely in the browser.",
+        "isAccessibleForFree": true,
+        "description": "A free, unofficial naval correspondence document generator for U.S. Navy letters, memoranda, memoranda for the record, business letters, endorsements, and NATO travel orders in SECNAV M-5216.5 format, with live preview and PDF/Word export. Nothing typed is stored or transmitted.",
+        "keywords": "naval correspondence document generator, naval letter, SECNAV M-5216.5, Navy memo, business letter, endorsement, NATO travel order",
+        "featureList": [
+          "Standard naval letter (SECNAV M-5216.5)",
+          "Memorandum (From-To) and Memorandum for the Record",
+          "Business letter (Chapter 11)",
+          "Endorsements (auto on a Via addressee)",
+          "NATO travel order",
+          "Live pixel-accurate preview",
+          "CAC-signable PDF export",
+          "Editable Word (.docx) export",
+          "CUI marking",
+          "Runs entirely in your browser — nothing saved or sent"
+        ],
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
       }
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <noscript>
+        <h1>Naval Correspondence Document Generator</h1>
+        <p>
+          The yeomanizer is a free, unofficial tool for drafting U.S. Navy correspondence — standard
+          naval letters, memoranda, memoranda for the record, business letters, endorsements, and NATO
+          travel orders — in the exact format prescribed by SECNAV M-5216.5, with a live preview and
+          instant PDF and Word (.docx) export. It runs entirely in your browser; nothing you type is
+          saved or sent. Please enable JavaScript to use it.
+        </p>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
