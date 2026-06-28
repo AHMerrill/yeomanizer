@@ -253,10 +253,12 @@ const TOC = [
 ];
 
 export default function Guide() {
+  // Floating "Back to top" — scrolls the Guide's scroll container (.faq) back to the top.
+  const backToTop = () => document.querySelector('.faq')?.scrollTo({ top: 0, behavior: 'smooth' });
   return (
     <div className="faq">
       <div className="faq-inner">
-        <h1>Guide to naval correspondence</h1>
+        <h1 id="guide-top">Guide to naval correspondence</h1>
         <p className="faq-lede">
           A plain-language guide for anyone who hasn’t written Navy correspondence before — no yeoman
           experience assumed. It follows the Department of the Navy Correspondence Manual (
@@ -313,6 +315,9 @@ export default function Guide() {
           </section>
         ))}
       </div>
+      <button type="button" className="guide-totop" onClick={backToTop} aria-label="Back to top">
+        ↑ Top
+      </button>
     </div>
   );
 }
