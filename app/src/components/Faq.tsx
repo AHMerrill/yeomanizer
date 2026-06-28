@@ -127,6 +127,18 @@ export function Faq() {
           is on the <b>Credits</b> tab.)
         </QA>
 
+        <QA q="Does the spell-check send my text anywhere?" sources={[SRC.threatModel]}>
+          No — it is fully <em>offline</em>. A dictionary (en_US Hunspell) is bundled into the app and
+          downloaded once from our own site; the checker then runs <em>in your browser</em>, comparing the
+          words in your subject and body against that local dictionary. <b>Your draft is never sent,
+          logged, or stored</b> — the only thing downloaded is our dictionary, not anything you typed. (We
+          verified it: with the network recorded, the draft text appears in zero requests, and the
+          Content-Security-Policy blocks any external connection regardless.) Note it is a deliberate
+          choice that the browser&rsquo;s own spell-check is left off — some browsers&rsquo; “enhanced”
+          spell-check ships what you type to a server, so we replaced it with this offline one rather than
+          give an option that could quietly transmit your text.
+        </QA>
+
         <QA q="Can I use it with CUI?" sources={[SRC.dodi, SRC.telework, SRC.cfrSafeguard]}>
           The rule is about the <em>computer</em>, not the tool. CUI is only authorized on systems
           approved for it — Government-Furnished Equipment (GFE) or a specifically-approved setup —

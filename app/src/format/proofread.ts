@@ -17,6 +17,15 @@ const anyText = (list: Paragraph[]): boolean =>
   list.some((p) => p.text.trim().length > 0 || anyText(p.children));
 const hasLoneChild = (list: Paragraph[]): boolean =>
   list.some((p) => p.children.length === 1 || hasLoneChild(p.children));
+const bodyText = (list: Paragraph[]): string =>
+  list.map((p) => `${p.title ?? ''} ${p.text} ${bodyText(p.children)}`).join(' ');
+// Highest index cited in the text for a "reference (x)" / "enclosure (n)" pattern (0 if none cited).
+function maxCited(text: string, re: RegExp, toNum: (m: string) => number): number {
+  let max = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) max = Math.max(max, toNum(m[1]));
+  return max;
+}
 
 export function proofread(s: LetterState): Check[] {
   const out: Check[] = [];
@@ -52,6 +61,41 @@ export function proofread(s: LetterState): Check[] {
       'Add the signer’s last name (in caps) to the signature block.');
     const hasDate = s.dateMode === 'auto' || (s.dateMode === 'manual' && s.dateManual.trim().length > 0);
     add('date', 'Date set', hasDate, 'Set the date — automatic, or type it.');
+  }
+
+  // A typed (manual) date should look like the naval DD MMM YY form.
+  if (t !== 'nato' && s.dateMode === 'manual' && s.dateManual.trim()) {
+    add('date-fmt', 'Date is in DD MMM YY form',
+      /^\s*\d{1,2}\s+[A-Za-z]{3,}\s+\d{2,4}\s*$/.test(s.dateManual.trim()),
+      'Naval dates use day, abbreviated month, year — e.g., 7 Sep 26.');
+  }
+
+  // References / enclosures cited in the body must actually exist in the lists.
+  if (t !== 'nato') {
+    const body = bodyText(s.body);
+    const refMax = maxCited(body, /\bref(?:erence)?s?\s*\(\s*([a-z])\s*\)/gi, (m) => m.toLowerCase().charCodeAt(0) - 96);
+    if (refMax > 0) {
+      add('ref-cite', 'Cited references are all listed', refMax <= s.refs.length,
+        `The body cites reference (${String.fromCharCode(96 + refMax)}) but only ${s.refs.length} ${s.refs.length === 1 ? 'reference is' : 'references are'} listed.`);
+    }
+    const enclMax = maxCited(body, /\bencl(?:osure)?s?\s*\(\s*(\d+)\s*\)/gi, (m) => parseInt(m, 10));
+    if (enclMax > 0) {
+      add('encl-cite', 'Cited enclosures are all listed', enclMax <= s.encls.length,
+        `The body cites enclosure (${enclMax}) but only ${s.encls.length} ${s.encls.length === 1 ? 'enclosure is' : 'enclosures are'} listed.`);
+    }
+    // Endorsements (auto-created from a Via) need a forwarding statement.
+    if (s.endorsements.length) {
+      const emptyEndo = s.endorsements.filter((e) => !anyText(e.body)).length;
+      add('endo-body', 'Each endorsement has content', emptyEndo === 0,
+        `${emptyEndo} endorsement${emptyEndo === 1 ? '' : 's'} ${emptyEndo === 1 ? 'has' : 'have'} no body text yet.`);
+    }
+  }
+
+  // CUI designation indicator block must be complete when CUI is on (DoDI 5200.48).
+  if (s.cui.enabled) {
+    add('cui-block', 'CUI designation block is complete',
+      s.cui.controlledBy1.trim().length > 0 && s.cui.category.trim().length > 0 && s.cui.poc.trim().length > 0,
+      'With CUI on, fill in “Controlled by,” “CUI Category,” and the POC of the designation block.');
   }
 
   // Enclosures listed must each have a title (¶19.b(7): enclosure markings correct).

@@ -11,6 +11,8 @@ const LIBS: [string, string, string, string][] = [
   ['docx', 'https://github.com/dolanmiu/docx', 'Microsoft Word (.docx) generation', 'MIT'],
   ['pdf.js', 'https://github.com/mozilla/pdf.js', 'Rasterizing PDF enclosure pages into the .docx', 'Apache-2.0'],
   ['JSZip', 'https://github.com/Stuk/jszip', 'Re-packing the .docx to strip metadata', 'MIT'],
+  ['nspell', 'https://github.com/wooorm/nspell', 'Offline spell-check engine (runs in the browser)', 'MIT'],
+  ['en_US Hunspell dictionary (SCOWL)', 'https://github.com/wooorm/dictionaries', 'Bundled offline spelling dictionary', 'MIT AND BSD'],
   ['Vite', 'https://vite.dev', 'Build tooling', 'MIT'],
   ['TypeScript', 'https://www.typescriptlang.org', 'Language & types', 'Apache-2.0'],
 ];

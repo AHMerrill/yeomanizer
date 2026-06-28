@@ -27,6 +27,8 @@ Each is under a permissive license; the full license text ships inside the publi
 | [docx](https://github.com/dolanmiu/docx) | Word `.docx` generation | MIT |
 | [pdf.js](https://github.com/mozilla/pdf.js) (`pdfjs-dist`) | rasterizing PDF enclosure pages for the `.docx` | Apache-2.0 |
 | [JSZip](https://github.com/Stuk/jszip) | re-packing the `.docx` to strip metadata | MIT |
+| [nspell](https://github.com/wooorm/nspell) | offline spell-check engine (runs in the browser) | MIT |
+| [en_US Hunspell dictionary (SCOWL)](https://github.com/wooorm/dictionaries) | bundled offline spelling dictionary (vendored at `app/public/spell/`) | MIT AND BSD |
 | [Vite](https://vite.dev) | build tooling | MIT |
 | [TypeScript](https://www.typescriptlang.org) | language/types | Apache-2.0 |
 

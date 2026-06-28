@@ -5,6 +5,15 @@ import type { LetterState } from '../types';
 
 const get = (checks: Check[], id: string) => checks.find((c) => c.id === id);
 
+const clean = (over: Partial<LetterState> = {}): LetterState => ({
+  ...defaultFor('standard-letter'),
+  subj: 'ROUTINE MATTER',
+  refs: [],
+  encls: [],
+  body: [{ id: 'b', text: 'A paragraph.', children: [] }],
+  ...over,
+});
+
 describe('proofread()', () => {
   it('warns on an empty standard letter and clears once each field is filled', () => {
     const empty: LetterState = {
@@ -62,5 +71,35 @@ describe('proofread()', () => {
 
   it('the NATO form yields no draft checks (it is a fixed form)', () => {
     expect(proofread(defaultFor('nato'))).toHaveLength(0);
+  });
+
+  it('flags a reference cited in the body that is not listed', () => {
+    const cited = clean({ refs: [], body: [{ id: 'b', text: 'In accordance with reference (a).', children: [] }] });
+    expect(get(proofread(cited), 'ref-cite')?.status).toBe('warn');
+    const ok = clean({
+      refs: [{ id: 'r', text: 'SECNAV M-5216.5' }],
+      body: [{ id: 'b', text: 'Per reference (a).', children: [] }],
+    });
+    expect(get(proofread(ok), 'ref-cite')?.status).toBe('pass');
+  });
+
+  it('flags an enclosure cited in the body that is not listed', () => {
+    const cited = clean({ encls: [], body: [{ id: 'b', text: 'See enclosure (2).', children: [] }] });
+    expect(get(proofread(cited), 'encl-cite')?.status).toBe('warn');
+  });
+
+  it('flags an incomplete CUI designation block when CUI is on', () => {
+    const base = defaultFor('standard-letter');
+    const incomplete = clean({ cui: { ...base.cui, enabled: true, controlledBy1: '', category: '', poc: '' } });
+    expect(get(proofread(incomplete), 'cui-block')?.status).toBe('warn');
+    const complete = clean({
+      cui: { ...base.cui, enabled: true, controlledBy1: 'Department of the Navy', category: 'PRVCY', poc: 'POC, 703-555-5555' },
+    });
+    expect(get(proofread(complete), 'cui-block')?.status).toBe('pass');
+  });
+
+  it('warns on a non-standard manual date', () => {
+    expect(get(proofread(clean({ dateMode: 'manual', dateManual: 'next tuesday' })), 'date-fmt')?.status).toBe('warn');
+    expect(get(proofread(clean({ dateMode: 'manual', dateManual: '7 Sep 26' })), 'date-fmt')?.status).toBe('pass');
   });
 });
