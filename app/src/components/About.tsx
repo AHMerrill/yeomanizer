@@ -4,6 +4,8 @@
 const AVAILABLE: [string, string][] = [
   ['Standard naval letter', 'Exact SECNAV M-5216.5 layout, formatted live as you type.'],
   ['Memorandum (From-To)', 'The MEMORANDUM heading and From/To/Subj block, same engine.'],
+  ['Memorandum for the Record (MFR)', 'Plain bond, date-only identification, “MEMORANDUM FOR THE RECORD” — to capture a meeting, call, or oral agreement (Ch 10).'],
+  ['Business letter', 'For firms, agencies, or people outside the DoD (Ch 11): an inside address and salutation, a civilian-style date, unnumbered paragraphs, and a centered “Sincerely,” over the signature.'],
   ['Endorsements', 'Add a Via and the endorsement appends as its own page — with its own signature block, and its own CAC-signable field in the PDF.'],
   ['NATO travel order', 'The bilingual two-page form, with U.S. → NATO rank codes filled in.'],
   ['Live preview', 'Overleaf-style: the formatted page updates with every keystroke.'],
@@ -28,7 +30,7 @@ const AVAILABLE: [string, string][] = [
 const PLANNED: [string, string][] = [
   ['Per-enclosure CUI', 'Mark individual enclosures as CUI or not — each enclosure is its own document under the marking rules.'],
   ['PDF pages inside Word', 'Render attached PDF pages into the .docx as images (today they embed as real pages in the PDF and are referenced by name in Word).'],
-  ['More letter types', 'Business letter, multiple-address, and multiple-reply letters.'],
+  ['More letter types', 'Multiple-address and multiple-reply letters.'],
   ['Expanded SSIC lookup', 'Search the full Standard Subject Identification Code list.'],
 ];
 

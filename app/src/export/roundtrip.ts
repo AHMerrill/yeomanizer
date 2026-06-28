@@ -73,8 +73,13 @@ export function parseProject(text: string): LetterState | null {
     // Replace the body with a bounded, well-typed copy before it can reach any renderer.
     const body = sanitizeBody(s.body, 0, { n: 0 });
     // Merge over defaults so a file from an older/partial schema still fills every field.
-    // (Future versions migrate off obj.v here.)
-    return sanitizeEnclosures({ ...defaultState, ...s, body });
+    // (Future versions migrate off obj.v here.) Deep-fill the business sub-object too, so a partial
+    // or pre-business-letter file still carries every field a renderer reads.
+    const business =
+      s.business && typeof s.business === 'object'
+        ? { ...defaultState.business, ...(s.business as object) }
+        : defaultState.business;
+    return sanitizeEnclosures({ ...defaultState, ...s, body, business });
   } catch {
     return null;
   }

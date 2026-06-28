@@ -379,6 +379,8 @@ export function Editor({
     setState((s) => ({ ...s, cui: { ...s.cui, ...p } }));
   const patchNato = (p: Partial<LetterState['nato']>) =>
     setState((s) => ({ ...s, nato: { ...s.nato, ...p } }));
+  const patchBiz = (p: Partial<LetterState['business']>) =>
+    setState((s) => ({ ...s, business: { ...s.business, ...p } }));
 
   // Each Via addressee auto-creates its endorsement (see syncViaEndorsements). This button adds
   // an EXTRA endorsement not tied to a Via (e.g. an additional endorser). Both append as pages.
@@ -412,7 +414,7 @@ export function Editor({
           <option value="mfr">Memorandum for the Record (MFR)</option>
           <option value="endorsement">Endorsement</option>
           <option value="nato">NATO Travel Order</option>
-          <option value="business-letter" disabled>Business Letter — soon</option>
+          <option value="business-letter">Business Letter (to firms/agencies outside DoD)</option>
         </select>
       </Card>
 
@@ -734,8 +736,53 @@ export function Editor({
         )}
       </Card>
 
-      {/* MFR is "for the record" — no addressee, so no From/To/Via routing card. */}
-      {state.type !== 'mfr' && (
+      {state.type === 'business-letter' && (
+        <Card
+          title="Recipient & greeting"
+          hint="A business letter is addressed with an inside address and a salutation (Ch 11), not From/To/Via."
+        >
+          <Field label="Inside address (recipient)">
+            <textarea
+              value={state.business.insideAddress}
+              rows={5}
+              placeholder={'Mr. A. B. Recipient\nVice President, Operations\nExample Company, Inc.\n1234 Any Street\nAnytown, ST 12345-6789'}
+              aria-label="Inside address"
+              onChange={(e) => patchBiz({ insideAddress: e.target.value })}
+            />
+          </Field>
+          <Field label="Attention line (optional)">
+            <input
+              value={state.business.attention}
+              placeholder="e.g. H. Jones, or Records Manager"
+              onChange={(e) => patchBiz({ attention: e.target.value })}
+            />
+          </Field>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={state.business.subjectReplacesSalutation}
+              onChange={(e) => patchBiz({ subjectReplacesSalutation: e.target.checked })}
+            />
+            Use the subject line in place of the salutation (11-2.5)
+          </label>
+          {!state.business.subjectReplacesSalutation && (
+            <Field label="Salutation">
+              <input
+                value={state.business.salutation}
+                placeholder="Dear Mr. Recipient:"
+                onChange={(e) => patchBiz({ salutation: e.target.value })}
+              />
+            </Field>
+          )}
+          <p className="hint">
+            The subject line is optional and may replace the salutation; it still prints in ALL CAPS —
+            set its text in the Subject card below. Main paragraphs are not numbered.
+          </p>
+        </Card>
+      )}
+
+      {/* MFR is "for the record"; the business letter uses an inside address — neither has From/To/Via. */}
+      {state.type !== 'mfr' && state.type !== 'business-letter' && (
       <Card title="Routing">
         <Field label="From">
           <input
@@ -776,19 +823,31 @@ export function Editor({
         />
       </Card>
 
-      <Card title="References" hint="Lettered (a), (b)… — cite each in the text.">
-        <EntryList
-          items={state.refs}
-          placeholder="e.g. SECNAV M-5216.5 of June 2015"
-          onChange={(refs) => patch({ refs })}
-        />
-      </Card>
+      {/* Business letters cite prior communications/enclosures in the body only (11-2.7) — no Ref: line. */}
+      {state.type !== 'business-letter' && (
+        <Card title="References" hint="Lettered (a), (b)… — cite each in the text.">
+          <EntryList
+            items={state.refs}
+            placeholder="e.g. SECNAV M-5216.5 of June 2015"
+            onChange={(refs) => patch({ refs })}
+          />
+        </Card>
+      )}
 
       <Card
         title="Enclosures"
         hint="Numbered (1), (2)… Name one, choose to embed its file in the document or attach it separately, then drag an image or PDF onto it."
       >
         <EnclosureCards encls={state.encls} onChange={(encls) => patch({ encls })} />
+        {state.type === 'business-letter' && (
+          <Field label="Separate mailing (optional)">
+            <input
+              value={state.business.separateMailing}
+              placeholder="e.g. Secretarial Handbook"
+              onChange={(e) => patchBiz({ separateMailing: e.target.value })}
+            />
+          </Field>
+        )}
       </Card>
 
       <Card
@@ -817,7 +876,23 @@ export function Editor({
         </button>
       </Card>
 
-      <Card title="Signature" hint="Last name in CAPS; no rank or complimentary close (7-2.14).">
+      <Card
+        title="Signature"
+        hint={
+          state.type === 'business-letter'
+            ? 'Centered under the complimentary close; last name in CAPS, grade spelled out, then title and authority (11-2.9).'
+            : 'Last name in CAPS; no rank or complimentary close (7-2.14).'
+        }
+      >
+        {state.type === 'business-letter' && (
+          <Field label="Complimentary close">
+            <input
+              value={state.business.complimentaryClose}
+              placeholder="Sincerely,"
+              onChange={(e) => patchBiz({ complimentaryClose: e.target.value })}
+            />
+          </Field>
+        )}
         <Field label="Name">
           <input
             value={state.signature.name}

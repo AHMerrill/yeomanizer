@@ -339,6 +339,46 @@
   margin-top: var(--para-gap);
 }
 
+/* ---- Business letter (Ch 11) ---- */
+/* Identification symbols sit at the upper LEFT for a business letter (11-2.1), not right-aligned. */
+.biz-ident {
+  margin-left: 0;
+  text-align: left;
+}
+/* Inside address: blocked flush left, a few lines below the date (11-2.2). */
+.biz-address {
+  margin-top: calc(var(--para-gap) * 2.4);
+}
+.biz-attention {
+  margin-top: calc(var(--para-gap) * 1.6);
+}
+.biz-salutation {
+  margin-top: calc(var(--para-gap) * 1.6);
+}
+.biz-subject {
+  margin-top: calc(var(--para-gap) * 1.6);
+  text-transform: uppercase;
+}
+/* "Sincerely," + signature: left edge at the page center (11-2.8/2.9). */
+.biz-signoff {
+  margin-top: calc(var(--para-gap) * 1.4);
+  margin-left: 3.25in;
+}
+.biz-signature {
+  margin-top: calc(var(--para-gap) * 2.6); /* the name begins on the fourth line below "Sincerely," */
+}
+/* Enclosure + separate-mailing notations: left margin, below the signature (11-2.10/2.11). */
+.biz-encls {
+  margin-top: calc(var(--para-gap) * 2.6);
+}
+.biz-sepmail {
+  margin-top: var(--para-gap);
+}
+/* Continuation page repeats the identification symbols at the left margin (11-2.14). */
+.biz-cont {
+  text-align: left;
+}
+
 /* ---- CUI markings (DoDI 5200.48 / ISOO handbook / DON PII guidance) ----
    Banner top & bottom of every page; designation indicator block on the
    first page, lower-right. Bold, capitalized, centered, black, 12pt. */

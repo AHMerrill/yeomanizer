@@ -1,5 +1,5 @@
 import type { LetterState, ListEntry } from '../types';
-import { abbreviatedDate } from './date';
+import { abbreviatedDate, civilianDate } from './date';
 import { alphaIndex } from './alpha';
 
 export interface IdentLines {
@@ -19,7 +19,10 @@ export function buildIdent(s: LetterState, today: Date = new Date()): IdentLines
   const codeLine = serial ? `Ser ${code}/${serial}` : code;
 
   let date = '';
-  if (s.dateMode === 'auto') date = abbreviatedDate(today);
+  // The business letter dates in civilian month-day-year order ("January 5, 2015"); everything else
+  // uses the abbreviated sender's-symbol date ("7 Sep 06"). (Ch 11-2.1.c vs 2-16.)
+  const autoDate = s.type === 'business-letter' ? civilianDate(today) : abbreviatedDate(today);
+  if (s.dateMode === 'auto') date = autoDate;
   else if (s.dateMode === 'manual') date = s.dateManual.trim();
 
   return { ssic: s.ssic.trim(), codeLine, date };

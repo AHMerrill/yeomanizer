@@ -39,7 +39,8 @@ const TYPES: TypeInfo[] = [
   },
   {
     name: 'Business Letter',
-    blurb: 'For writing to civilians or organizations outside the DoD who wouldn’t recognize the standard naval format. Uses a normal salutation (“Dear Ms. Smith:”) and closing (“Sincerely,”).',
+    inApp: true,
+    blurb: 'For writing to civilians, firms, or agencies outside the DoD who wouldn’t recognize the standard naval format (Ch 11). Uses an inside address and a salutation (“Dear Ms. Smith:”), a civilian-style date, and a centered “Sincerely,” over the signature — main paragraphs are not numbered.',
   },
   {
     name: 'Multiple-Address Letter',

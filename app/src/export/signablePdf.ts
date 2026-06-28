@@ -123,6 +123,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
 
   // ---- Identification block: lines left-aligned within a right-positioned block ----
   const ident = buildIdent(state, today);
+  const isBusiness = state.type === 'business-letter';
   const idLines = [
     state.includeSsic ? state.ssic : '',
     state.includeCode ? ident.codeLine : '',
@@ -130,7 +131,8 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   ].filter(Boolean);
   if (idLines.length) {
     const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
-    const idX = RIGHT - blockW;
+    // Business letter: identification symbols at the upper LEFT (11-2.1); all else right-aligned (7-2.3).
+    const idX = isBusiness ? LEFT : RIGHT - blockW;
     idLines.forEach((l) => put(l, idX));
   }
 
@@ -139,8 +141,27 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   const isMfr = state.type === 'mfr';
   const memoTitle = isMfr ? 'MEMORANDUM FOR THE RECORD' : isMemo ? 'MEMORANDUM' : '';
 
-  // ---- Heading block (From/To/Via/Subj/Ref/Encl) ----
-  if (memoTitle) {
+  // ---- Heading block (From/To/Via/Subj/Ref/Encl — or, for a business letter, the inside address) ----
+  if (isBusiness) {
+    // Inside address (a few lines below the date), optional attention line, then salutation or subject.
+    const biz = state.business;
+    gap(PARA_GAP * 2);
+    biz.insideAddress.split('\n').forEach((l) => put(l, LEFT));
+    if (biz.attention.trim()) {
+      gap(PARA_GAP);
+      put(`Attention:  ${biz.attention.trim()}`, LEFT);
+    }
+    gap(PARA_GAP);
+    if (biz.subjectReplacesSalutation) {
+      if (state.subj.trim()) put(`SUBJECT:  ${state.subj.toUpperCase()}`, LEFT);
+    } else {
+      if (biz.salutation.trim()) put(biz.salutation.trim(), LEFT);
+      if (state.subj.trim()) {
+        gap(PARA_GAP);
+        put(`SUBJECT:  ${state.subj.toUpperCase()}`, LEFT);
+      }
+    }
+  } else if (memoTitle) {
     gap(PARA_GAP);
     room(SIZE * BODY_LH);
     put(memoTitle, LEFT);
@@ -163,6 +184,8 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     put(lines[0] ?? '', textX);
     lines.slice(1).forEach((ln) => put(ln, textX));
   };
+  // The business letter is addressed by the inside address above — no From/To/Via/Subj/Ref/Encl heading.
+  if (!isBusiness) {
   // MFR is "for the record" — no addressee, so no From/To/Via.
   if (!isMfr) {
     if (state.from) headRow('From:', state.from);
@@ -184,15 +207,17 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     if (i === 0) gap(PARA_GAP);
     headRow(i === 0 ? 'Encl:' : '', e.text, `(${i + 1})  `);
   });
+  } // end of the non-business heading block
 
   // ---- Body (numbered paragraphs; first line indented, continuation at the left margin) ----
   gap(PARA_GAP);
-  const drawBody = (list: Paragraph[], depth: number, portionActive: boolean) => {
+  const drawBody = (list: Paragraph[], depth: number, portionActive: boolean, business = false) => {
     list.forEach((p, i) => {
-      const marker = markerText(paragraphMarker(depth, i));
-      const indent = depthIndentIn(depth) * PT;
+      // Business letter: main paragraphs are unnumbered; the ladder shifts one level deeper (11-2.6).
+      const marker = business && depth === 0 ? '' : markerText(paragraphMarker(depth, i));
+      const indent = (business ? depthIndentIn(depth + 1) : depthIndentIn(depth)) * PT;
       const markerX = LEFT + indent;
-      const textX = markerX + font.widthOfTextAtSize(marker, SIZE) + PGAP;
+      const textX = markerX + (marker ? font.widthOfTextAtSize(marker, SIZE) + PGAP : 0);
       // Portion marking when active: "(CUI)" on a marked paragraph, else "(U)" — sits before the title.
       const portion = portionActive ? (p.cui ? '(CUI) ' : '(U) ') : '';
       const portionW = portion ? font.widthOfTextAtSize(portion, SIZE) : 0;
@@ -246,7 +271,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
         room(SIZE * BODY_LH);
         const baseY = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
         if (li === 0) {
-          page.drawText(marker, { x: markerX, y: baseY, font, size: SIZE });
+          if (marker) page.drawText(marker, { x: markerX, y: baseY, font, size: SIZE });
           if (portion) page.drawText(portion, { x: textX, y: baseY, font, size: SIZE });
           if (p.title) {
             page.drawText(p.title + '.', { x: titleX, y: baseY, font, size: SIZE });
@@ -278,7 +303,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
         top += SIZE * BODY_LH;
       });
       gap(PARA_GAP);
-      if (p.children.length) drawBody(p.children, depth + 1, portionActive);
+      if (p.children.length) drawBody(p.children, depth + 1, portionActive, business);
     });
   };
   // ---- Signature block (page center, left edge 3.25in past the margin). Reusable so each
@@ -299,8 +324,45 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     );
   };
 
-  drawBody(state.body, 0, state.cui.enabled && anyCui(state.body));
-  signatureBlock(state.signature.name, state.signature.title, state.signature.authority, 'Signature1');
+  // Business letter closing: centered "Sincerely," + signature (with CAC field), then the
+  // left-margin Enclosures + Separate-Mailing notations (11-2.8 through 2.11).
+  const drawBizClose = () => {
+    const biz = state.business;
+    gap(PARA_GAP * 0.4); // "Sincerely," sits just below the last body line
+    put(biz.complimentaryClose.trim() || 'Sincerely,', sigX);
+    gap(PARA_GAP * 2.6); // the signer's name begins ~4 lines below the close
+    room(SIZE * BODY_LH * 4);
+    const fieldTopY = PAGE_H - top - 2;
+    const fieldH = 30;
+    top += fieldH;
+    if (state.signature.name) put(state.signature.name, sigX);
+    if (state.signature.title) put(state.signature.title, sigX);
+    if (state.signature.authority === 'by-direction') put('By direction', sigX);
+    if (state.signature.authority === 'acting') put('Acting', sigX);
+    sigRefs.push(
+      addSignatureField(doc, page, [sigX, fieldTopY - fieldH, sigX + 3 * PT, fieldTopY], 'Signature1', PDFName, PDFString),
+    );
+    const bizEncls = state.encls.filter((e) => e.text.trim());
+    if (bizEncls.length === 1) {
+      gap(PARA_GAP);
+      put(`Enclosure:  ${bizEncls[0].text}`, LEFT);
+    } else if (bizEncls.length > 1) {
+      gap(PARA_GAP);
+      put('Enclosures:', LEFT);
+      bizEncls.forEach((e, i) => put(`${i + 1}.  ${e.text}`, LEFT));
+    }
+    if (biz.separateMailing.trim()) {
+      gap(PARA_GAP);
+      put(`Separate Mailing:  ${biz.separateMailing.trim()}`, LEFT);
+    }
+  };
+
+  drawBody(state.body, 0, state.cui.enabled && anyCui(state.body), isBusiness);
+  if (isBusiness) {
+    drawBizClose();
+  } else {
+    signatureBlock(state.signature.name, state.signature.title, state.signature.authority, 'Signature1');
+  }
 
   // ---- Copy to ----
   const copyTo = state.copyTo.filter((c) => c.trim());

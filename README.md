@@ -1,7 +1,8 @@
 # the yeomanizer
 
 A free, **unofficial** web app for drafting U.S. Navy correspondence — standard naval letters,
-memoranda, endorsements, and NATO travel orders — to the format prescribed by **SECNAV M-5216.5**,
+memoranda (including the MFR), business letters, endorsements, and NATO travel orders — to the
+format prescribed by **SECNAV M-5216.5**,
 with a live, pixel-accurate preview and `.docx` / `.pdf` / `.json` export. It runs entirely in your
 browser; nothing you type ever leaves the page.
 
@@ -12,8 +13,10 @@ Live: **https://yeomanizer.com**
 
 ## What it does
 
-- **Document types** — standard naval letter, memorandum (From-To), endorsements (Ch 9, appended
-  automatically when you add a Via addressee), and the bilingual two-page NATO travel order.
+- **Document types** — standard naval letter, memorandum (From-To), memorandum for the record
+  (MFR), business letter (Ch 11 — inside address, salutation, civilian date, unnumbered paragraphs,
+  centered "Sincerely,"), endorsements (Ch 9, appended automatically when you add a Via addressee),
+  and the bilingual two-page NATO travel order.
 - **Pixel-faithful preview** — letterhead with the authentic DoD seal, the SSIC/identification
   block, the From/To/Via/Subj/Ref/Encl heading, automatic paragraph numbering & indentation, the
   signature block, and multi-page continuation (numbered from page 2) — all to the manual.

@@ -1,8 +1,8 @@
 # the yeomanizer
 
 > A free, unofficial web tool that drafts U.S. Navy correspondence — standard naval letters,
-> memoranda, endorsements, and NATO travel orders — in the exact format prescribed by SECNAV
-> M-5216.5, with a live preview and in-browser .docx / .pdf / .json export.
+> memoranda (including the MFR), business letters, endorsements, and NATO travel orders — in the
+> exact format prescribed by SECNAV M-5216.5, with a live preview and in-browser .docx / .pdf / .json export.
 
 the yeomanizer formats naval correspondence automatically: the letterhead, the
 SSIC/identification block, the From/To/Via/Subj/Ref/Encl heading block, automatic paragraph
@@ -24,9 +24,11 @@ side and a correctly formatted letter appears on the other.
   .json copy of the draft that can be re-imported to keep working. The exported documents are clean
   — no hidden or embedded data. It can also combine a saved letter PDF with enclosure files into a
   single packet.
-- Document types: standard naval letter, memorandum (From-To), endorsements (appended to a
-  letter automatically when a Via addressee is added, or built standalone), and the NATO
-  travel order (the bilingual two-page form).
+- Document types: standard naval letter, memorandum (From-To), memorandum for the record (MFR),
+  business letter (Ch 11 — an inside address and salutation, a civilian-style date, unnumbered main
+  paragraphs, and a centered "Sincerely," over the signature; for correspondents outside the DoD),
+  endorsements (appended to a letter automatically when a Via addressee is added, or built
+  standalone), and the NATO travel order (the bilingual two-page form).
 - Also handles CUI markings, inline emphasis (bold, italic, underline), automatic U.S.-grade to
   NATO (OF/OR) rank translation, letterhead in printed / plain-paper / pre-printed modes with the
   DoD seal, and a layout that works on phones, tablets, and desktops.

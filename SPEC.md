@@ -137,7 +137,15 @@ side" rule, 7-2.13) is a future refinement.
 Plain bond (letterhead off) or letterhead. The only ID symbol is the **date**, flush right
 on the ~6th line — no SSIC (10-2). "MEMORANDUM" at the left margin, then
 From/To/Via/Subj/Ref/Encl and numbered paragraphs exactly as a letter; signature centered.
-MFR, decision memo, and MOA/MOU remain as future sub-variants.
+The MFR is done; decision memos and MOA/MOU remain as future sub-variants.
+
+## Business letter (Ch 11) — done
+For correspondents outside the DoD. Letterhead required; identification symbols (SSIC / Ser /
+**civilian** date, "January 5, 2015") at the upper **LEFT**, not right. An **inside address** and a
+**salutation** ("Dear Mr. Jones:") replace From/To/Via; an optional all-caps **subject** may stand
+in for the salutation. Main paragraphs are **not numbered** (the subparagraph ladder shifts one level
+deeper); a centered **"Sincerely,"** + signature; **Enclosures:** / **Separate Mailing:** notations at
+the left margin. Same engine + exports (PDF / .docx / print / .json round-trip) as the standard letter.
 
 ## Endorsement (Ch 9) — done (auto-on-Via or standalone)
 Adding a Via addressee **automatically creates its endorsement** (one per non-empty Via, via

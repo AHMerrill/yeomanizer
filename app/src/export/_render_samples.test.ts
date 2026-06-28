@@ -143,6 +143,29 @@ const base: LetterState = {
   };
   writeFileSync(`${OUT}/mfr.pdf`, await buildSignablePdf(mfr, today));
 
+  // Business letter (Ch 11): letterhead, LEFT identification block, inside address + salutation,
+  // civilian date, unnumbered main paragraphs, centered "Sincerely," + signature, end-of-letter
+  // Enclosures + Separate Mailing. Verifies the business branch (must match preview + docx + Fig 11-2).
+  const business: LetterState = {
+    ...defaultFor('business-letter'),
+    letterhead: {
+      line1: 'DEPARTMENT OF THE NAVY',
+      activityName: 'USS NEW HAMPSHIRE (SSN 778)',
+      addressLine: '',
+      cityStateZip: 'FPO AE 09579-2305',
+      seal: 'dod',
+      replyRefPrinted: false,
+      mode: 'on',
+    },
+    signature: { name: 'E. SCOTT HOWARD', title: 'Executive Officer', authority: 'by-direction' },
+    encls: [
+      { id: 'be1', text: 'Sample Business Letter' },
+      { id: 'be2', text: 'SECNAV M-5216.5' },
+    ],
+    business: { ...defaultFor('business-letter').business, separateMailing: 'Secretarial Handbook' },
+  };
+  writeFileSync(`${OUT}/business.pdf`, await buildSignablePdf(business, today));
+
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
   const { Packer } = await import('docx');
@@ -160,4 +183,5 @@ const base: LetterState = {
   await writeDocx('portions', portions);
   await writeDocx('mfr', mfr);
   await writeDocx('enclosures', encls);
+  await writeDocx('business', business);
 });

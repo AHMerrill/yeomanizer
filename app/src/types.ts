@@ -9,6 +9,19 @@ export type CorrespondenceType =
   | 'endorsement'
   | 'nato';
 
+// Business letter (Ch 11) — used to correspond with agencies/businesses/individuals outside DoD.
+// Distinct shape vs the standard letter: an inside address + salutation instead of From/To/Via, a
+// civilian date, unnumbered main paragraphs, and a centered "Sincerely," + signature block. These
+// fields hold the parts unique to it; SSIC/serial/subj/body/encls/copyTo/signature are shared.
+export interface BusinessLetter {
+  insideAddress: string; // multi-line recipient address (blocked flush left), 2–8 lines below date
+  attention: string; // optional "Attention:" line (11-2.3) — directs a letter to a person/department
+  salutation: string; // "Dear Mr. Jones:" (ends with a colon). May be omitted if the subject replaces it
+  subjectReplacesSalutation: boolean; // 11-2.5: an all-caps subject line may stand in for the salutation
+  complimentaryClose: string; // "Sincerely," (11-2.8) — editable but defaults to the prescribed close
+  separateMailing: string; // optional "Separate Mailing:" note (11-2.11) for separately-mailed enclosures
+}
+
 // NATO travel order (a bilingual form, not a naval letter). DoD/FCG template.
 export interface NatoOrder {
   orderNumber: string;
@@ -142,4 +155,7 @@ export interface LetterState {
 
   // NATO travel order (used when type === 'nato')
   nato: NatoOrder;
+
+  // Business letter parts (used when type === 'business-letter')
+  business: BusinessLetter;
 }

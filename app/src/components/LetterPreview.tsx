@@ -9,6 +9,7 @@ import {
   ENDORSE_ORD,
   basicLetterId,
   remainingVias,
+  type IdentLines,
 } from '../format/identification';
 import { NatoForm } from './NatoForm';
 import './preview.css';
@@ -65,11 +66,23 @@ function Inline({ text }: { text: string }) {
   );
 }
 
-function ParaFlow({ fp, portionActive }: { fp: FlatPara; portionActive: boolean }) {
+function ParaFlow({
+  fp,
+  portionActive,
+  business,
+}: {
+  fp: FlatPara;
+  portionActive: boolean;
+  business?: boolean;
+}) {
+  // Business letter (Ch 11-2.6): main paragraphs are NOT numbered (just indented); subparagraphs are
+  // lettered/numbered the same as a standard letter, so the whole ladder shifts one level deeper.
+  const indent = business ? depthIndentIn(fp.depth + 1) : depthIndentIn(fp.depth);
+  const showMarker = !(business && fp.depth === 0);
   return (
-    <p className="para" style={{ textIndent: `${depthIndentIn(fp.depth)}in` }}>
-      <MarkerSpan depth={fp.depth} index={fp.index} />
-      <span className="pgap" />
+    <p className="para" style={{ textIndent: `${indent}in` }}>
+      {showMarker && <MarkerSpan depth={fp.depth} index={fp.index} />}
+      {showMarker && <span className="pgap" />}
       {portionActive ? (fp.cui ? '(CUI) ' : '(U) ') : ''}
       {fp.title && (
         <>
@@ -123,6 +136,7 @@ function Head({ state }: { state: LetterState }) {
   const via = state.via.filter((v) => v.text.trim());
   const refs = state.refs.filter((r) => r.text.trim());
   const encls = state.encls.filter((e) => e.text.trim());
+  if (state.type === 'business-letter') return <BusinessHead state={state} ident={ident} />;
   return (
     <>
       {lh.mode === 'on' && <Letterhead state={state} />}
@@ -230,6 +244,96 @@ function ContinuationHead({ subj }: { subj: string }) {
         <span className="label">Subj:</span>
         <span className="content subj">{subj}</span>
       </div>
+    </div>
+  );
+}
+
+// Business letter (Ch 11) first-page top matter: letterhead + identification symbols + inside
+// address + optional attention line + salutation (or an all-caps subject standing in for it).
+function BusinessHead({ state, ident }: { state: LetterState; ident: IdentLines }) {
+  const lh = state.letterhead;
+  const biz = state.business;
+  const hasAddr = biz.insideAddress.trim().length > 0;
+  return (
+    <>
+      {lh.mode === 'on' && <Letterhead state={state} />}
+      {lh.mode === 'preprinted' && <div className="lh-spacer" aria-hidden />}
+      <div className={`${lh.mode === 'off' ? 'ident no-letterhead' : 'ident'} biz-ident`}>
+        {state.includeSsic && (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph">SSIC</div>)}
+        {state.includeCode &&
+          (ident.codeLine ? <div>{ident.codeLine}</div> : <div className="ph">Code</div>)}
+        {ident.date ? <div>{ident.date}</div> : <div className="ph">Date</div>}
+      </div>
+      <div className="biz-address">
+        {hasAddr ? (
+          biz.insideAddress.split('\n').map((l, i) => <div key={i}>{l || ' '}</div>)
+        ) : (
+          <div className="ph">Mr. A. B. Recipient · Company · Street · City, ST ZIP+4</div>
+        )}
+      </div>
+      {biz.attention.trim() && <div className="biz-attention">Attention:&ensp;{biz.attention}</div>}
+      {biz.subjectReplacesSalutation ? (
+        <div className="biz-subject">
+          SUBJECT:&ensp;
+          <span className={state.subj.trim() ? '' : 'ph'}>
+            {state.subj.trim() || 'SUBJECT IN ALL CAPS'}
+          </span>
+        </div>
+      ) : (
+        <>
+          <div className={biz.salutation.trim() ? 'biz-salutation' : 'biz-salutation ph'}>
+            {biz.salutation.trim() || 'Dear Mr. Recipient:'}
+          </div>
+          {state.subj.trim() && <div className="biz-subject">SUBJECT:&ensp;{state.subj}</div>}
+        </>
+      )}
+    </>
+  );
+}
+
+// Business letter closing: a centered "Sincerely," + signature block (11-2.8/2.9), then the
+// left-margin Enclosures and Separate-Mailing notations (11-2.10/2.11). Copy-to flows after.
+function BusinessClose({ state }: { state: LetterState }) {
+  const biz = state.business;
+  const sig = state.signature;
+  const encls = state.encls.filter((e) => e.text.trim());
+  return (
+    <div className="biz-close">
+      <div className="biz-signoff">
+        <div className="biz-complimentary">{biz.complimentaryClose.trim() || 'Sincerely,'}</div>
+        <div className="biz-signature">
+          <div className={sig.name ? '' : 'ph'}>{sig.name || 'I. M. LASTNAME'}</div>
+          {sig.title && <div>{sig.title}</div>}
+          {sig.authority === 'by-direction' && <div>By direction</div>}
+          {sig.authority === 'acting' && <div>Acting</div>}
+        </div>
+      </div>
+      {encls.length === 1 && <div className="biz-encls">Enclosure:&ensp;{encls[0].text}</div>}
+      {encls.length > 1 && (
+        <div className="biz-encls">
+          <div>Enclosures:</div>
+          {encls.map((e, i) => (
+            <div key={e.id} className="biz-encl-item">
+              {i + 1}.&ensp;{e.text}
+            </div>
+          ))}
+        </div>
+      )}
+      {biz.separateMailing.trim() && (
+        <div className="biz-sepmail">Separate Mailing:&ensp;{biz.separateMailing}</div>
+      )}
+    </div>
+  );
+}
+
+// Business letter continuation pages repeat the identification symbols (11-2.14), not the Subj line.
+function BusinessContinuationHead({ state }: { state: LetterState }) {
+  const ident = buildIdent(state);
+  return (
+    <div className="cont-head biz-cont">
+      {state.includeSsic && ident.ssic && <div>{ident.ssic}</div>}
+      {state.includeCode && ident.codeLine && <div>{ident.codeLine}</div>}
+      {ident.date && <div>{ident.date}</div>}
     </div>
   );
 }
@@ -429,9 +533,13 @@ function LetterDoc({ state }: { state: LetterState }) {
   // Flatten the body into atomic flow blocks: paragraphs, then signature, then copy-to.
   const flat: FlatPara[] = [];
   flattenForFlow(state.body, 0, flat);
+  const isBusiness = state.type === 'business-letter';
   const items: FlowItem[] = [
-    ...flat.map((fp) => ({ key: `p_${fp.key}`, node: <ParaFlow fp={fp} portionActive={portionActive} /> })),
-    { key: 'sig', node: <Signature state={state} /> },
+    ...flat.map((fp) => ({
+      key: `p_${fp.key}`,
+      node: <ParaFlow fp={fp} portionActive={portionActive} business={isBusiness} />,
+    })),
+    { key: 'sig', node: isBusiness ? <BusinessClose state={state} /> : <Signature state={state} /> },
     ...(copyTo.length ? [{ key: 'copy', node: <CopyTo items={copyTo} /> }] : []),
   ];
 
@@ -484,7 +592,11 @@ function LetterDoc({ state }: { state: LetterState }) {
           <Head state={state} />
         </div>
         <div data-m="cont">
-          <ContinuationHead subj={state.subj} />
+          {isBusiness ? (
+            <BusinessContinuationHead state={state} />
+          ) : (
+            <ContinuationHead subj={state.subj} />
+          )}
         </div>
         {items.map((it) => (
           <div data-m="item" key={it.key}>
@@ -497,7 +609,13 @@ function LetterDoc({ state }: { state: LetterState }) {
       {pageList.map((idxs, p) => (
         <div className={p === 0 ? 'page' : 'page cont'} key={p}>
           {cui.enabled && <CuiBanner pos="top" text={bannerText} />}
-          {p === 0 ? <Head state={state} /> : <ContinuationHead subj={state.subj} />}
+          {p === 0 ? (
+            <Head state={state} />
+          ) : isBusiness ? (
+            <BusinessContinuationHead state={state} />
+          ) : (
+            <ContinuationHead subj={state.subj} />
+          )}
           <div className="body">
             {idxs.map((i) => {
               // pages can briefly hold stale indices after content shrinks (before the

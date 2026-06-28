@@ -145,27 +145,35 @@ export async function loadSealBytes(state: LetterState): Promise<ArrayBuffer | u
   }
 }
 
-function flattenBody(list: P[], depth: number, out: Paragraph[], portionActive: boolean): void {
+function flattenBody(
+  list: P[],
+  depth: number,
+  out: Paragraph[],
+  portionActive: boolean,
+  business = false,
+): void {
   list.forEach((p, i) => {
     const m = paragraphMarker(depth, i);
+    // Business letter: main paragraphs are unnumbered; the ladder shifts one level deeper (11-2.6).
+    const noMark = business && depth === 0;
     const mark = portionActive ? (p.cui ? '(CUI) ' : '(U) ') : '';
+    const indentIn = business ? depthIndentIn(depth + 1) : depthIndentIn(depth);
     out.push(
       new Paragraph({
         children: [
-          R(m.prefix),
-          R(m.core, { underline: m.underline }),
-          R(m.suffix),
-          R('  ' + mark),
+          ...(noMark
+            ? [R(mark)]
+            : [R(m.prefix), R(m.core, { underline: m.underline }), R(m.suffix), R('  ' + mark)]),
           ...(p.title ? [R(p.title, { underline: true }), R('.  ')] : []),
           ...parseInline(p.text).map((r) =>
             R(r.text, { bold: r.bold, italics: r.italic, underline: r.underline }),
           ),
         ],
-        indent: { firstLine: Math.round(depthIndentIn(depth) * IN) },
+        indent: { firstLine: Math.round(indentIn * IN) },
         spacing: { after: BLANK },
       }),
     );
-    if (p.children.length) flattenBody(p.children, depth + 1, out, portionActive);
+    if (p.children.length) flattenBody(p.children, depth + 1, out, portionActive, business);
   });
 }
 
@@ -182,6 +190,7 @@ export function buildDocxDocument(
   const isMemo = state.type === 'memo-from-to';
   const isMfr = state.type === 'mfr';
   const isEndorsement = state.type === 'endorsement';
+  const isBusiness = state.type === 'business-letter';
   const children: Paragraph[] = [];
 
   // Letterhead: on = print it (text only in v1); preprinted = reserve blank lines; off = none.
@@ -215,6 +224,8 @@ export function buildDocxDocument(
   ].filter(Boolean);
   const rightLine = (line: string) =>
     new Paragraph({ alignment: AlignmentType.RIGHT, children: [R(line)], spacing: { after: 0 } });
+  const leftLine = (line: string) =>
+    new Paragraph({ alignment: AlignmentType.LEFT, children: [R(line)], spacing: { after: 0 } });
   if (isMemo) {
     if (ident.date) children.push(rightLine(ident.date));
     children.push(new Paragraph({ children: [R('MEMORANDUM')], spacing: { before: BLANK, after: BLANK } }));
@@ -223,6 +234,10 @@ export function buildDocxDocument(
     children.push(
       new Paragraph({ children: [R('MEMORANDUM FOR THE RECORD')], spacing: { before: BLANK, after: BLANK } }),
     );
+  } else if (isBusiness) {
+    // Business letter: identification symbols at the upper LEFT (11-2.1).
+    identLines.forEach((line) => children.push(leftLine(line)));
+    children.push(spacer());
   } else {
     identLines.forEach((line) => children.push(rightLine(line)));
     children.push(spacer());
@@ -237,6 +252,42 @@ export function buildDocxDocument(
       spacing: { before: gapBefore ? BLANK : 0, after: 0 },
     });
 
+  if (isBusiness) {
+    // Inside address (a few lines below the date), optional attention line, then salutation or subject.
+    const biz = state.business;
+    children.push(spacer());
+    biz.insideAddress.split('\n').forEach((l) =>
+      children.push(new Paragraph({ children: [R(l)], spacing: { after: 0 } })),
+    );
+    if (biz.attention.trim())
+      children.push(
+        new Paragraph({
+          children: [R(`Attention:  ${biz.attention.trim()}`)],
+          spacing: { before: BLANK, after: 0 },
+        }),
+      );
+    if (biz.subjectReplacesSalutation) {
+      if (state.subj.trim())
+        children.push(
+          new Paragraph({
+            children: [R(`SUBJECT:  ${state.subj.toUpperCase()}`)],
+            spacing: { before: BLANK, after: 0 },
+          }),
+        );
+    } else {
+      if (biz.salutation.trim())
+        children.push(
+          new Paragraph({ children: [R(biz.salutation.trim())], spacing: { before: BLANK, after: 0 } }),
+        );
+      if (state.subj.trim())
+        children.push(
+          new Paragraph({
+            children: [R(`SUBJECT:  ${state.subj.toUpperCase()}`)],
+            spacing: { before: BLANK, after: 0 },
+          }),
+        );
+    }
+  } else {
   if (isEndorsement) {
     children.push(
       new Paragraph({
@@ -266,13 +317,23 @@ export function buildDocxDocument(
   encls.forEach((e, i) =>
     children.push(heading(i === 0 ? 'Encl:' : '', `(${i + 1}) ${e.text}`, i === 0)),
   );
+  } // end of the non-business heading block
 
   children.push(spacer());
-  flattenBody(state.body, 0, children, cui.enabled && anyCui(state.body));
+  flattenBody(state.body, 0, children, cui.enabled && anyCui(state.body), isBusiness);
 
   // Signature — left edge at page center. The export leaves the signature space blank so the
   // signer can wet-sign or CAC-sign the PDF in Adobe (no script-font placeholder).
   const sigIndent = Math.round(3.25 * IN);
+  // Business letter: a centered "Sincerely," precedes the signature (11-2.8).
+  if (isBusiness)
+    children.push(
+      new Paragraph({
+        children: [R(state.business.complimentaryClose.trim() || 'Sincerely,')],
+        indent: { left: sigIndent },
+        spacing: { before: BLANK, after: 0 },
+      }),
+    );
   const sigLines = [state.signature.name];
   if (state.signature.title) sigLines.push(state.signature.title);
   if (state.signature.authority === 'by-direction') sigLines.push('By direction');
@@ -286,6 +347,31 @@ export function buildDocxDocument(
       }),
     ),
   );
+
+  // Business letter: Enclosures + Separate-Mailing notations at the left margin (11-2.10/2.11).
+  if (isBusiness) {
+    const bizEncls = state.encls.filter((e) => e.text.trim());
+    if (bizEncls.length === 1)
+      children.push(
+        new Paragraph({
+          children: [R(`Enclosure:  ${bizEncls[0].text}`)],
+          spacing: { before: BLANK, after: 0 },
+        }),
+      );
+    else if (bizEncls.length > 1) {
+      children.push(new Paragraph({ children: [R('Enclosures:')], spacing: { before: BLANK, after: 0 } }));
+      bizEncls.forEach((e, i) =>
+        children.push(new Paragraph({ children: [R(`${i + 1}.  ${e.text}`)], spacing: { after: 0 } })),
+      );
+    }
+    if (state.business.separateMailing.trim())
+      children.push(
+        new Paragraph({
+          children: [R(`Separate Mailing:  ${state.business.separateMailing.trim()}`)],
+          spacing: { before: BLANK, after: 0 },
+        }),
+      );
+  }
 
   const copyTo = state.copyTo.filter((c) => c.trim());
   if (copyTo.length) {

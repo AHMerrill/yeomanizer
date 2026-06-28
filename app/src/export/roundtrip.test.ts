@@ -29,6 +29,24 @@ describe('project-file round-trip (.yeomanizer.json)', () => {
     expect(back?.type).toBe('mfr');
   });
 
+  it('round-trips a business letter losslessly (type + business fields survive)', () => {
+    const business: LetterState = {
+      ...defaultFor('business-letter'),
+      business: {
+        insideAddress: 'Mr. A. B. Recipient\nExample Company, Inc.\n1234 Any Street\nAnytown, ST 12345-6789',
+        attention: 'Records Manager',
+        salutation: 'Dear Mr. Recipient:',
+        subjectReplacesSalutation: false,
+        complimentaryClose: 'Sincerely,',
+        separateMailing: 'Secretarial Handbook',
+      },
+    };
+    const back = parseProject(serializeProject(business));
+    expect(back).toEqual(business);
+    expect(back?.type).toBe('business-letter');
+    expect(back?.business.insideAddress).toContain('Example Company');
+  });
+
   it('is plain, human-readable JSON (no code, no compression)', () => {
     const text = serializeProject(state);
     expect(() => JSON.parse(text)).not.toThrow();

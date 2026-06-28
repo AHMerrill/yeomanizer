@@ -87,6 +87,14 @@ export const defaultState: LetterState = {
     authorizingOfficer: '',
     dateOfIssue: '',
   },
+  business: {
+    insideAddress: '',
+    attention: '',
+    salutation: '',
+    subjectReplacesSalutation: false,
+    complimentaryClose: 'Sincerely,',
+    separateMailing: '',
+  },
 };
 
 // Per-type starting draft. Most types share `defaultState`; some need faithful defaults that match
@@ -121,6 +129,51 @@ export function defaultFor(type: CorrespondenceType): LetterState {
           children: [],
         },
       ],
+    };
+  }
+  if (type === 'business-letter') {
+    return {
+      ...base,
+      letterhead: { ...base.letterhead, mode: 'on' }, // 11-2.13: every copy needs a letterhead (no From: line)
+      includeSsic: true,
+      includeCode: true,
+      ssic: '5216',
+      originatorCode: '00',
+      serial: '',
+      from: '',
+      to: '',
+      via: [],
+      subj: 'PREPARATION OF A BUSINESS LETTER',
+      refs: [],
+      encls: [],
+      business: {
+        insideAddress:
+          'Mr. A. B. Recipient\nVice President, Operations\nExample Company, Inc.\n1234 Any Street\nAnytown, ST 12345-6789',
+        attention: '',
+        salutation: 'Dear Mr. Recipient:',
+        subjectReplacesSalutation: false,
+        complimentaryClose: 'Sincerely,',
+        separateMailing: '',
+      },
+      body: [
+        {
+          id: uid(),
+          text: 'Use the business letter to correspond with agencies, businesses, or individuals outside the Department of Defense who are unfamiliar with the standard naval letter.',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'Unlike the standard letter, the business letter uses an inside address and a salutation, a civilian-style date, and a centered “Sincerely,” over the signature. Main paragraphs are not numbered; subparagraphs are lettered and numbered just as in a standard letter.',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'Refer to previous communications and enclosures in the body of the letter only, without calling them references or enclosures.',
+          children: [],
+        },
+      ],
+      signature: { name: '', title: 'Executive Officer', authority: 'by-direction' },
+      copyTo: [],
     };
   }
   return base;
