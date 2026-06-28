@@ -6,20 +6,29 @@
     <link rel="icon" sizes="any" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="A free, fast, unofficial naval correspondence document generator — draft U.S. Navy standard letters, memos, memoranda for the record, business letters, endorsements, and NATO travel orders in exact SECNAV M-5216.5 format. Live preview, instant PDF & Word (.docx) export. Nothing you type is saved or sent." />
-    <meta name="robots" content="index,follow,max-image-preview:large" />
-    <meta name="keywords" content="naval correspondence document generator, naval correspondence generator, Navy correspondence, naval letter generator, naval letter format, standard naval letter, SECNAV M-5216.5, Navy memo format, naval memorandum, memorandum for the record, business letter, endorsement, NATO travel order, yeoman, Navy writing, naval letter template" />
+    <meta
+      name="description"
+      content="Free naval correspondence generator — draft U.S. Navy standard letters, memos, memoranda for the record (MFR), business letters, endorsements, and NATO travel orders in exact SECNAV M-5216.5 format. Live preview, one-click PDF & Word (.docx) export, a CAC-signable PDF, SSIC lookup, and CUI marking. Private by design: nothing you type is saved or sent."
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
+    <meta
+      name="keywords"
+      content="naval correspondence generator, naval correspondence document generator, naval letter generator, naval letter format, standard naval letter, how to write a naval letter, SECNAV M-5216.5, Navy memo format, naval memorandum, memorandum for the record, MFR, naval business letter, naval endorsement, NATO travel order, SSIC lookup, CUI marking, by direction signature, Via addressee, yeoman, Navy writing, naval letter template, naval letter example, free naval letter tool, navy letter generator online"
+    />
     <meta name="author" content="the yeomanizer" />
     <meta name="theme-color" content="#002d72" />
     <link rel="canonical" href="https://yeomanizer.com/" />
     <link rel="manifest" href="/site.webmanifest" />
-    <title>Naval Correspondence Document Generator — the yeomanizer (SECNAV M-5216.5)</title>
+    <title>Naval Correspondence Generator — Navy Letters & Memos (SECNAV M-5216.5) · the yeomanizer</title>
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="the yeomanizer" />
-    <meta property="og:title" content="Naval Correspondence Document Generator — the yeomanizer" />
-    <meta property="og:description" content="Draft U.S. Navy letters, memos, business letters, endorsements, and NATO travel orders in exact SECNAV M-5216.5 format. Free, private (nothing is saved), instant PDF & Word export." />
+    <meta property="og:title" content="Naval Correspondence Generator — Navy Letters, Memos & More" />
+    <meta
+      property="og:description"
+      content="Draft U.S. Navy letters, memos, business letters, endorsements, and NATO travel orders in exact SECNAV M-5216.5 format. Free, private (nothing is saved), with one-click PDF & Word export and a CAC-signable PDF."
+    />
     <meta property="og:url" content="https://yeomanizer.com/" />
     <meta property="og:image" content="https://yeomanizer.com/og.png" />
     <meta property="og:image:width" content="1200" />
@@ -27,51 +36,301 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Naval Correspondence Document Generator — the yeomanizer" />
-    <meta name="twitter:description" content="Draft U.S. Navy letters, memos, business letters, endorsements, and NATO travel orders in exact SECNAV M-5216.5 format. Free, private, instant PDF & Word export." />
+    <meta name="twitter:title" content="Naval Correspondence Generator — the yeomanizer (SECNAV M-5216.5)" />
+    <meta
+      name="twitter:description"
+      content="Draft U.S. Navy letters, memos, business letters, endorsements, and NATO travel orders in exact SECNAV M-5216.5 format. Free, private, one-click PDF & Word export."
+    />
     <meta name="twitter:image" content="https://yeomanizer.com/og.png" />
 
-    <!-- Structured data (data block; not executed) -->
+    <!-- Structured data (JSON-LD; inert data, never executed). Helps search engines and AI answer
+         engines understand the tool, the format steps, and common questions. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "the yeomanizer",
-        "alternateName": "Naval Correspondence Document Generator",
-        "url": "https://yeomanizer.com/",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Any (web browser)",
-        "browserRequirements": "Requires JavaScript. Runs entirely in the browser.",
-        "isAccessibleForFree": true,
-        "description": "A free, unofficial naval correspondence document generator for U.S. Navy letters, memoranda, memoranda for the record, business letters, endorsements, and NATO travel orders in SECNAV M-5216.5 format, with live preview and PDF/Word export. Nothing typed is stored or transmitted.",
-        "keywords": "naval correspondence document generator, naval letter, SECNAV M-5216.5, Navy memo, business letter, endorsement, NATO travel order",
-        "featureList": [
-          "Standard naval letter (SECNAV M-5216.5)",
-          "Memorandum (From-To) and Memorandum for the Record",
-          "Business letter (Chapter 11)",
-          "Endorsements (auto on a Via addressee)",
-          "NATO travel order",
-          "Live pixel-accurate preview",
-          "CAC-signable PDF export",
-          "Editable Word (.docx) export",
-          "CUI marking",
-          "Runs entirely in your browser — nothing saved or sent"
-        ],
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://yeomanizer.com/#website",
+            "url": "https://yeomanizer.com/",
+            "name": "the yeomanizer",
+            "description": "Free naval correspondence generator for U.S. Navy letters, memoranda, business letters, endorsements, and NATO travel orders in SECNAV M-5216.5 format.",
+            "inLanguage": "en-US"
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://yeomanizer.com/#app",
+            "name": "the yeomanizer",
+            "alternateName": [
+              "Naval Correspondence Generator",
+              "Naval Correspondence Document Generator",
+              "Naval Letter Generator",
+              "Navy Letter Format Tool"
+            ],
+            "url": "https://yeomanizer.com/",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Any (web browser)",
+            "browserRequirements": "Requires JavaScript. Runs entirely in the browser.",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "description": "A free, unofficial naval correspondence generator for U.S. Navy standard letters, memoranda, memoranda for the record, business letters, endorsements, and NATO travel orders in SECNAV M-5216.5 format, with live preview and PDF/Word export. Runs entirely in the browser; nothing typed is stored or transmitted.",
+            "featureList": [
+              "Standard naval letter (SECNAV M-5216.5)",
+              "Memorandum (From-To) and Memorandum for the Record (MFR)",
+              "Business letter (Chapter 11)",
+              "Endorsements (auto-created when a Via addressee is added)",
+              "NATO travel order (bilingual two-page form)",
+              "Live pixel-accurate preview",
+              "CAC-signable, searchable PDF export",
+              "Editable Microsoft Word (.docx) export",
+              "CUI marking, including per-enclosure banners",
+              "Searchable SSIC lookup",
+              "Pre-send proofread checklist (SECNAV M-5216.5 Ch 2 para 19)",
+              "Works offline; nothing is saved or sent"
+            ],
+            "datePublished": "2026-06-26",
+            "dateModified": "2026-06-28",
+            "screenshot": "https://yeomanizer.com/og.png",
+            "softwareHelp": "https://yeomanizer.com/"
+          },
+          {
+            "@type": "DefinedTermSet",
+            "@id": "https://yeomanizer.com/#glossary",
+            "name": "Naval correspondence terms",
+            "hasDefinedTerm": [
+              {
+                "@type": "DefinedTerm",
+                "name": "SSIC",
+                "description": "Standard Subject Identification Code — the numeric code that classifies the subject of naval correspondence (e.g. 5216 is Correspondence Management). The full catalog is SECNAV M-5210.2."
+              },
+              {
+                "@type": "DefinedTerm",
+                "name": "MFR",
+                "description": "Memorandum for the Record — a plain-paper memorandum that documents a meeting, phone call, decision, or oral agreement for the file."
+              },
+              {
+                "@type": "DefinedTerm",
+                "name": "By direction",
+                "description": "A signature authority indicating a subordinate signed correspondence on the commanding officer's behalf, under delegated authority."
+              },
+              {
+                "@type": "DefinedTerm",
+                "name": "Via addressee",
+                "description": "An intermediate command a naval letter is routed through on its way to the action addressee; each Via typically adds an endorsement."
+              },
+              {
+                "@type": "DefinedTerm",
+                "name": "Endorsement",
+                "description": "A forwarding action appended after a basic naval letter, used when the letter is routed via one or more intermediate commands."
+              },
+              {
+                "@type": "DefinedTerm",
+                "name": "CUI",
+                "description": "Controlled Unclassified Information — information requiring safeguarding or dissemination controls, marked with banners and a designation block per DoDI 5200.48."
+              }
+            ]
+          },
+          {
+            "@type": "HowTo",
+            "@id": "https://yeomanizer.com/#howto-standard-letter",
+            "name": "How to write a U.S. Navy standard letter (SECNAV M-5216.5)",
+            "description": "The parts of a standard naval letter, in order, per SECNAV M-5216.5. The yeomanizer formats all of this automatically as you type.",
+            "totalTime": "PT5M",
+            "step": [
+              {
+                "@type": "HowToStep",
+                "position": 1,
+                "name": "Letterhead",
+                "text": "Start with the letterhead — 'DEPARTMENT OF THE NAVY', the command name, and address — or choose plain or pre-printed paper."
+              },
+              {
+                "@type": "HowToStep",
+                "position": 2,
+                "name": "Identification block",
+                "text": "Add the sender's symbols on the right: the SSIC (Standard Subject Identification Code), the originator's code, an optional serial, and the date."
+              },
+              {
+                "@type": "HowToStep",
+                "position": 3,
+                "name": "Heading block",
+                "text": "Write From, To, an optional Via, the Subject in all capitals, References (a), (b)…, and Enclosures (1), (2)…"
+              },
+              {
+                "@type": "HowToStep",
+                "position": 4,
+                "name": "Body",
+                "text": "Write the body in numbered paragraphs (1, 2, 3…), with subparagraphs lettered a, b, c… and indented."
+              },
+              {
+                "@type": "HowToStep",
+                "position": 5,
+                "name": "Signature",
+                "text": "Close with the signature block — the signer's last name in capitals — adding 'By direction' or 'Acting' when applicable."
+              },
+              {
+                "@type": "HowToStep",
+                "position": 6,
+                "name": "Copy-to and markings",
+                "text": "List any Copy-to addressees, and apply CUI markings if the content requires them. Then export to PDF or Word."
+              }
+            ]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://yeomanizer.com/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is the yeomanizer?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "A free, unofficial web tool that drafts U.S. Navy correspondence — standard letters, memoranda, memoranda for the record, business letters, endorsements, and NATO travel orders — in the exact format prescribed by SECNAV M-5216.5, with a live preview and one-click PDF and Word (.docx) export. It runs entirely in your browser."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is it free, and does it save or send my data?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, it is free, with no account. It is private by design: your draft lives only in the browser tab and is erased when you close it. Nothing you type is stored or transmitted — the only data that ever leaves the browser is two anonymous, content-free counters (page loads and download clicks)."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is SECNAV M-5216.5?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "SECNAV M-5216.5 is the Department of the Navy Correspondence Manual — the official standard for formatting Navy and Marine Corps letters, memoranda, and other correspondence. The yeomanizer follows it automatically."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is a memorandum for the record (MFR)?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "A memorandum for the record (MFR) documents a meeting, phone call, decision, or oral agreement for the file. It is on plain paper with a date-only identification block, the title 'MEMORANDUM FOR THE RECORD', no From/To addressee, body paragraphs, and a signature with the writer's office code."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is an SSIC?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "An SSIC, or Standard Subject Identification Code, is the numeric subject code that classifies the topic of a piece of naval correspondence (for example, 5216 is Correspondence Management). The full catalog is in SECNAV M-5210.2; the yeomanizer includes a searchable lookup of the common codes."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I mark CUI (Controlled Unclassified Information) on a naval letter?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "CUI is marked with a banner at the top and bottom of every page, a designation indicator block, and optional per-paragraph (CUI)/(U) portion marks, per DoDI 5200.48. The yeomanizer adds these automatically, including a separate banner for each enclosure. You decide what is CUI; the tool only formats — it makes no classification determination, and CUI belongs only on authorized equipment."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I export to Microsoft Word and PDF?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Every document exports as an editable Microsoft Word (.docx) file and as a pixel-accurate, searchable PDF with a built-in CAC-signable signature field. Both are generated in your browser and contain no hidden data."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is a 'by direction' signature or an endorsement?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "A 'by direction' signature shows that a subordinate signed on the commanding officer's authority. An endorsement is a forwarding action appended after a letter when it is routed through a Via addressee; the yeomanizer creates the endorsement page automatically when you add a Via."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What font is used for naval letters?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Per SECNAV M-5216.5, official naval correspondence uses a 10- to 12-point font, with Times New Roman 12-point preferred; Courier New may be used for informal correspondence. The yeomanizer renders the standard typeface automatically."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is there a free tool to write naval letters?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. The yeomanizer (https://yeomanizer.com) is a free naval correspondence generator that drafts standard letters, memos, business letters, endorsements, and NATO travel orders in SECNAV M-5216.5 format, with live preview and PDF and Word export. It runs in your browser and needs no account."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is the difference between a naval letter and a memorandum?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "A standard naval letter uses command letterhead, an SSIC identification block, and a From/To heading, and is generally used for correspondence leaving the command. A memorandum is a more informal format — often plain paper with a date-only identification block — used within a command or to document something for the record."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is a Via addressee in a naval letter?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "A Via addressee is an intermediate command a naval letter is routed through on its way to the action addressee. Each Via normally adds an endorsement; in the yeomanizer, adding a Via automatically creates its endorsement page."
+                }
+              }
+            ]
+          }
+        ]
       }
     </script>
   </head>
   <body>
     <div id="root">
       <noscript>
-        <h1>Naval Correspondence Document Generator</h1>
-        <p>
-          The yeomanizer is a free, unofficial tool for drafting U.S. Navy correspondence — standard
-          naval letters, memoranda, memoranda for the record, business letters, endorsements, and NATO
-          travel orders — in the exact format prescribed by SECNAV M-5216.5, with a live preview and
-          instant PDF and Word (.docx) export. It runs entirely in your browser; nothing you type is
-          saved or sent. Please enable JavaScript to use it.
-        </p>
+        <main>
+          <h1>Naval Correspondence Generator (SECNAV M-5216.5)</h1>
+          <p>
+            <strong>the yeomanizer</strong> is a free, unofficial tool that drafts U.S. Navy
+            correspondence in the exact format prescribed by <strong>SECNAV M-5216.5</strong>, with a
+            live preview and one-click <strong>PDF and Word (.docx)</strong> export — including a
+            CAC-signable PDF. It runs entirely in your browser: nothing you type is saved or sent.
+          </p>
+
+          <h2>What you can create</h2>
+          <ul>
+            <li><strong>Standard naval letter</strong> — the full letterhead, identification block, From/To/Via/Subject heading, numbered paragraphs, and signature block.</li>
+            <li><strong>Memorandum (From-To)</strong> and <strong>Memorandum for the Record (MFR)</strong> — for routine memos and to capture a meeting, call, or oral agreement.</li>
+            <li><strong>Business letter (Chapter 11)</strong> — for correspondents outside the Department of Defense: inside address, salutation, civilian date, and a centered “Sincerely,”.</li>
+            <li><strong>Endorsements</strong> — appended automatically when you add a Via addressee.</li>
+            <li><strong>NATO travel order</strong> — the bilingual two-page form, with U.S.-to-NATO rank translation.</li>
+          </ul>
+
+          <h2>How to write a standard naval letter</h2>
+          <ol>
+            <li>Begin with the <strong>letterhead</strong> (Department of the Navy, command, address) — or plain / pre-printed paper.</li>
+            <li>Add the <strong>identification block</strong>: SSIC, originator’s code, serial, and date.</li>
+            <li>Write the <strong>heading</strong>: From, To, optional Via, Subject (all capitals), References, and Enclosures.</li>
+            <li>Write the <strong>body</strong> in numbered paragraphs (1, 2…), with subparagraphs lettered a, b, c….</li>
+            <li>Close with the <strong>signature block</strong> — last name in capitals — and “By direction” or “Acting” if applicable.</li>
+            <li>List any <strong>Copy-to</strong> addressees and apply <strong>CUI markings</strong> if required, then export to PDF or Word.</li>
+          </ol>
+
+          <h2>Common questions</h2>
+          <h3>Is there a free tool to write naval letters?</h3>
+          <p>Yes — the yeomanizer is a free naval correspondence generator that drafts standard letters, memos, business letters, endorsements, and NATO travel orders in SECNAV M-5216.5 format, with live preview and PDF and Word export. It runs in your browser and needs no account.</p>
+          <h3>Is it private?</h3>
+          <p>Yes. Your draft never leaves the browser tab — nothing is stored or transmitted; the documents you download are clean, with no hidden data.</p>
+          <h3>What is SECNAV M-5216.5?</h3>
+          <p>The Department of the Navy Correspondence Manual — the official standard for formatting Navy and Marine Corps correspondence. The yeomanizer follows it automatically.</p>
+          <h3>What is an SSIC?</h3>
+          <p>A Standard Subject Identification Code — the numeric subject code for a piece of correspondence (for example, 5216 is Correspondence Management). The tool includes a searchable lookup.</p>
+          <h3>What is a memorandum for the record (MFR)?</h3>
+          <p>An MFR documents a meeting, phone call, decision, or oral agreement for the file. It is on plain paper, titled “MEMORANDUM FOR THE RECORD,” with no From/To addressee and a date-only identification block.</p>
+          <h3>What font is used for naval letters?</h3>
+          <p>Per SECNAV M-5216.5, a 10- to 12-point font, with Times New Roman 12-point preferred; Courier New may be used for informal correspondence.</p>
+          <h3>How do I mark CUI on a naval letter?</h3>
+          <p>Controlled Unclassified Information is marked with a banner at the top and bottom of every page, a designation block, and optional per-paragraph marks, per DoDI 5200.48. You decide what is CUI; the tool only formats it.</p>
+
+          <p>This tool requires JavaScript. Please enable JavaScript to use the live editor and export.</p>
+          <p><em>Unofficial — not affiliated with or endorsed by the U.S. Navy or the Department of Defense.</em></p>
+        </main>
       </noscript>
     </div>
     <script type="module" src="/src/main.tsx"></script>

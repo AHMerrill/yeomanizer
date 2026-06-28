@@ -1,41 +1,85 @@
-# the yeomanizer
+# the yeomanizer — naval correspondence generator
 
 > A free, unofficial web tool that drafts U.S. Navy correspondence — standard naval letters,
-> memoranda (including the MFR), business letters, endorsements, and NATO travel orders — in the
-> exact format prescribed by SECNAV M-5216.5, with a live preview and in-browser .docx / .pdf / .json export.
+> memoranda (including the memorandum for the record), business letters, endorsements, and NATO
+> travel orders — in the exact format prescribed by SECNAV M-5216.5, with a live preview and
+> in-browser PDF, Word (.docx), and JSON export. Live at https://yeomanizer.com
 
-the yeomanizer formats naval correspondence automatically: the letterhead, the
-SSIC/identification block, the From/To/Via/Subj/Ref/Encl heading block, automatic paragraph
-numbering and indentation, optional underlined section titles, the signature block, CUI
-markings, and multi-page pagination — all to the manual's standard. You type plain text on one
-side and a correctly formatted letter appears on the other.
+You type plain text on one side and a correctly formatted naval letter appears on the other. the
+yeomanizer formats everything automatically: the letterhead, the SSIC/identification block, the
+From/To/Via/Subject/Reference/Enclosure heading, automatic paragraph numbering and indentation,
+optional underlined section titles, the signature block, CUI markings, and multi-page pagination —
+all to the manual's standard.
 
 ## Key facts
-- Free, and runs entirely in your web browser. No account or login.
-- Privacy by design: the tool stores no draft and transmits no content — your draft lives only in
-  the browser tab and is erased when you close it. The only data that ever leaves the browser is two
-  anonymous, content-free counters (page loads and download clicks, each an integer; no IP, no region, no
-  cookies). You download and handle the exported files yourself.
+- Free, with no account or login. Runs entirely in your web browser.
+- Private by design: the tool stores no draft and transmits no content. Your draft lives only in the
+  browser tab and is erased when you close it. The only data that ever leaves the browser is two
+  anonymous, content-free counters (page loads and download clicks — each an integer; no IP, no
+  region, no cookies). The exported documents are clean, with no hidden or embedded data.
+- Works offline after the first load (installable as a web app), so it can be used on air-gapped or
+  government computers.
 - Unofficial — not affiliated with or endorsed by the U.S. Navy or the Department of Defense, and
-  not an official system of record. It makes no authorization claim; CUI belongs only on authorized
-  Government-Furnished Equipment.
-- Three exports, all generated in the browser: a pixel-accurate vector/searchable PDF with a
-  CAC-signable signature field; an editable Microsoft Word (.docx) document; and a small plain-text
-  .json copy of the draft that can be re-imported to keep working. The exported documents are clean
-  — no hidden or embedded data. It can also combine a saved letter PDF with enclosure files into a
-  single packet.
-- Document types: standard naval letter, memorandum (From-To), memorandum for the record (MFR),
-  business letter (Ch 11 — an inside address and salutation, a civilian-style date, unnumbered main
-  paragraphs, and a centered "Sincerely," over the signature; for correspondents outside the DoD),
-  endorsements (appended to a letter automatically when a Via addressee is added, or built
-  standalone), and the NATO travel order (the bilingual two-page form).
-- Also handles CUI markings, inline emphasis (bold, italic, underline), automatic U.S.-grade to
-  NATO (OF/OR) rank translation, letterhead in printed / plain-paper / pre-printed modes with the
-  DoD seal, and a layout that works on phones, tablets, and desktops.
+  not an official system of record. It makes no authorization or classification claim; CUI belongs
+  only on authorized Government-Furnished Equipment.
+- Open source under Apache-2.0 (https://github.com/AHMerrill/yeomanizer).
 
-## Where
-- https://yeomanizer.com
+## Document types
+- Standard naval letter (SECNAV M-5216.5).
+- Memorandum (From-To), and Memorandum for the Record (MFR) — to capture a meeting, call, or oral agreement.
+- Business letter (Chapter 11) — for correspondents outside the DoD: inside address, salutation, a
+  civilian-style date, unnumbered main paragraphs, and a centered "Sincerely," over the signature.
+- Endorsements — appended to a letter automatically when a Via addressee is added, or built standalone.
+- NATO travel order — the bilingual two-page form, with U.S.-grade to NATO (OF/OR) rank translation.
+
+## Features
+- Live, pixel-accurate preview that matches the export exactly.
+- Exports: a vector/searchable PDF with a CAC-signable signature field; an editable Microsoft Word
+  (.docx) file; and a small plain-text .json copy that can be re-imported to keep working.
+- CUI marking — banner top and bottom of every page, a designation block, optional per-paragraph
+  (CUI)/(U) marks, and a separate banner for each enclosure, per DoDI 5200.48.
+- Searchable SSIC lookup (search the common Standard Subject Identification Codes by number or keyword).
+- A pre-send Proofread checklist based on SECNAV M-5216.5, Chapter 2, paragraph 19.
+- A local-only sensitive-data scan that flags possible PII (SSN, DoD ID, date of birth) — nothing is
+  logged or transmitted.
+- Starter templates, drag-to-reorder paragraphs with automatic renumbering, undo/redo, inline
+  emphasis (bold/italic/underline), and a layout that works on phone, tablet, and desktop.
+
+## How to write a standard naval letter
+1. Start with the letterhead (Department of the Navy, command, address) — or plain or pre-printed paper.
+2. Add the identification block: the SSIC, the originator's code, an optional serial, and the date.
+3. Write the heading: From, To, an optional Via, the Subject in all capitals, References, and Enclosures.
+4. Write the body in numbered paragraphs (1, 2, 3…), with subparagraphs lettered a, b, c… and indented.
+5. Close with the signature block — the signer's last name in capitals — adding "By direction" or "Acting" when applicable.
+6. List any Copy-to addressees, apply CUI markings if required, and export to PDF or Word.
+
+## Common questions
+**What is SECNAV M-5216.5?** It is the Department of the Navy Correspondence Manual — the official
+standard for formatting Navy and Marine Corps letters, memoranda, and other correspondence.
+
+**What is an SSIC?** A Standard Subject Identification Code: the numeric code that classifies the
+subject of naval correspondence (for example, 5216 is Correspondence Management). The full catalog is
+SECNAV M-5210.2.
+
+**What is a memorandum for the record (MFR)?** A plain-paper memorandum that documents a meeting,
+phone call, decision, or oral agreement for the file, titled "MEMORANDUM FOR THE RECORD," with no
+From/To addressee and a date-only identification block.
+
+**What is a "by direction" signature?** A signature authority showing that a subordinate signed
+correspondence on the commanding officer's behalf, under delegated authority.
+
+**What is a Via addressee?** An intermediate command a naval letter is routed through on its way to
+the action addressee; each Via normally adds an endorsement.
+
+**What font is used for naval letters?** Per SECNAV M-5216.5, a 10- to 12-point font, with Times New
+Roman 12-point preferred; Courier New may be used for informal correspondence.
+
+**Is there a free tool to write naval letters?** Yes — the yeomanizer (https://yeomanizer.com).
 
 ## Who it's for
-Sailors, Marines, and DoD civilians who need to produce correctly formatted naval
-correspondence quickly without memorizing SECNAV M-5216.5.
+Sailors, Marines, and DoD civilians who need to produce correctly formatted naval correspondence
+quickly without memorizing SECNAV M-5216.5.
+
+## Citation
+To cite or link this tool, use https://yeomanizer.com — "the yeomanizer, a free naval correspondence
+generator in SECNAV M-5216.5 format."
