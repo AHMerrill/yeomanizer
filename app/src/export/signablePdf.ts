@@ -34,7 +34,7 @@ const BODY_LH = 1.14; // .page line-height
 const PARA_GAP = 11.5; // --para-gap
 const LABEL_COL = 0.52 * PT; // --label-col
 const PGAP = 0.09 * PT; // .pgap (gap after a body marker)
-const NAVY: [number, number, number] = [0, 0x2c / 0xff, 0x77 / 0xff];
+const NAVY: [number, number, number] = [0, 0x2d / 0xff, 0x72 / 0xff]; // PMS 288 (M-5216.5 letterhead ink)
 
 // Times metrics: ~0.891 ascent, ~1.107 total height. Baseline distance from the top of a line box.
 const baselineDrop = (size: number, lh: number) => (size * lh - size * 1.107) / 2 + size * 0.891;

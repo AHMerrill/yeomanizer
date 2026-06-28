@@ -44,7 +44,7 @@
   --label-col: 0.52in;   /* width of From:/To:/Subj: label column */
   --marker-col: 0.34in;  /* width of (a)/(1) marker column in lists */
   --para-gap: 11.5pt;    /* one blank line between blocks */
-  --navy: #002c77;
+  --navy: #002d72; /* PMS 288 — the letterhead ink color prescribed by SECNAV M-5216.5 App. C */
 
   position: relative;
   width: 8.5in;

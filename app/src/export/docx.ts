@@ -30,7 +30,7 @@ import { parseInline } from '../format/inline';
 const IN = 1440; // twips per inch
 const FONT = 'Times New Roman';
 const SZ = 24; // 12pt in half-points
-const NAVY = '11337A';
+const NAVY = '002D72'; // PMS 288 — letterhead ink (M-5216.5 App. C); was '11337A', off-spec + mismatched the PDF/preview
 const BLANK = 240; // ~one 12pt blank line
 
 interface RunOpts {
