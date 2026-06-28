@@ -16,6 +16,7 @@ const AVAILABLE: [string, string][] = [
   ['Combine into one PDF', 'Or merge an already-saved letter PDF with separate enclosure files into one packet — entirely in your browser.'],
   ['Letterhead control', 'Printed, plain paper, or pre-printed stock; the authentic DoD seal.'],
   ['Identification block', "SSIC, originator's code, serial, and date — each optional."],
+  ['Searchable SSIC lookup', 'Find a Standard Subject Identification Code by number or keyword (e.g. “legal”, “awards”) — all 13 major groups plus the most-used codes, click to fill. The full catalog is SECNAV M-5210.2.'],
   ['References, enclosures, copy-to', 'Auto-lettered (a), (b)… and numbered (1), (2)…'],
   ['Reorder & auto-number', 'Drag a paragraph by its grip — or use ↑/↓ — to reorder it; numbering (1, 2…, then a, b…) and indentation update themselves.'],
   ['Undo / redo', 'Step back and forward through your edits — ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z, or the toolbar buttons. Each draft keeps its own history, in memory only.'],
@@ -34,7 +35,6 @@ const AVAILABLE: [string, string][] = [
 const PLANNED: [string, string][] = [
   ['PDF pages inside Word', 'Render attached PDF pages into the .docx as images (today they embed as real pages in the PDF and are referenced by name in Word).'],
   ['More letter types', 'Multiple-address and multiple-reply letters.'],
-  ['Expanded SSIC lookup', 'Search the full Standard Subject Identification Code list.'],
 ];
 
 function Column({ title, items, planned }: { title: string; items: [string, string][]; planned?: boolean }) {

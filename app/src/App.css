@@ -1122,6 +1122,65 @@
   line-height: 1.4;
   color: #8b8f9a;
 }
+
+/* Searchable SSIC lookup */
+.ssic-lookup {
+  position: relative;
+}
+.ssic-results {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: #1c1d22;
+  border: 1px solid #3a3d47;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.ssic-results li button {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: #d7d9df;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ssic-results li button:hover {
+  background: #2a2d36;
+}
+.ssic-code {
+  font-family: ui-monospace, Menlo, monospace;
+  color: #2f9be0;
+  min-width: 46px;
+}
+.ssic-label {
+  flex: 1;
+}
+.ssic-major {
+  font-size: 10px;
+  color: #8b8f9a;
+  border: 1px solid #3a3d47;
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+.ssic-none {
+  padding: 8px;
+  font-size: 12.5px;
+  color: #9a9ea8;
+}
 .encl-file {
   display: flex;
   align-items: center;

@@ -138,6 +138,58 @@ function Pill({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   );
 }
 
+// Searchable SSIC picker: filter the common-code list by number OR keyword, click to fill the field.
+// Covers all 13 major groups + the most-used second-level codes; the full catalog is SECNAV M-5210.2.
+function SsicLookup({ onPick }: { onPick: (code: string) => void }) {
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(false);
+  const needle = q.trim().toLowerCase();
+  const matches = needle
+    ? COMMON_SSIC.filter((s) => s.code.includes(needle) || s.label.toLowerCase().includes(needle))
+    : COMMON_SSIC;
+  return (
+    <div className="ssic-lookup">
+      <input
+        value={q}
+        placeholder="search by number or keyword — e.g. 56, legal, awards"
+        aria-label="Search common SSICs"
+        onChange={(e) => {
+          setQ(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+      />
+      {open && (
+        <ul className="ssic-results">
+          {matches.length === 0 ? (
+            <li className="ssic-none">No match — type the code directly above, or see SECNAV M-5210.2.</li>
+          ) : (
+            matches.map((s) => (
+              <li key={s.code}>
+                <button
+                  type="button"
+                  // onMouseDown (before blur) so the pick registers before the list closes
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onPick(s.code);
+                    setQ('');
+                    setOpen(false);
+                  }}
+                >
+                  <span className="ssic-code">{s.code}</span>
+                  <span className="ssic-label">{s.label}</span>
+                  {s.major && <span className="ssic-major">major group</span>}
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // A small number stepper: −  [n]  + — type a value or click to nudge it.
 function Stepper({
   value,
@@ -854,14 +906,7 @@ export function Editor({
                   />
                 </Field>
                 <Field label="↳ look up a common SSIC">
-                  <select value="" onChange={(e) => e.target.value && patch({ ssic: e.target.value })}>
-                    <option value="">— pick to fill SSIC —</option>
-                    {COMMON_SSIC.map((s) => (
-                      <option key={s.code} value={s.code}>
-                        {s.code} — {s.label}
-                      </option>
-                    ))}
-                  </select>
+                  <SsicLookup onPick={(code) => patch({ ssic: code })} />
                 </Field>
               </>
             )}
