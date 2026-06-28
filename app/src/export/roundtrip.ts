@@ -32,10 +32,11 @@ function sanitizeEnclosures(state: LetterState): LetterState {
     ...state,
     encls: (state.encls ?? [])
       .filter((e): e is EnclosureEntry => !!e && typeof e === 'object')
+      .slice(0, 50) // bound the count from a hostile/corrupt file — a real letter has a handful
       .map((e) => ({
         ...e,
-        // Coerce the optional per-enclosure banner to a string (we call .trim() on it downstream).
-        cuiBanner: typeof e.cuiBanner === 'string' ? e.cuiBanner : undefined,
+        // Coerce + length-cap the optional per-enclosure banner (we call .trim() on it downstream).
+        cuiBanner: typeof e.cuiBanner === 'string' ? e.cuiBanner.slice(0, 200) : undefined,
         // Only let image/PDF data URLs back in — stops a hand-edited/hostile file from slipping a
         // non-media URL (e.g. data:text/html) into an <img>/embed.
         file: e.file && !/^data:(image\/|application\/pdf)/i.test(e.file.dataUrl) ? undefined : e.file,

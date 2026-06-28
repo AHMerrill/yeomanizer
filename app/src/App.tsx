@@ -67,8 +67,16 @@ export default function App() {
   // Which state the cards, preview, and exports operate on, by tab: Builder → the per-type draft;
   // Editor → the imported letter (null until a file is dropped, which shows the drop zone instead).
   const editingState = view === 'editor' ? importedState : view === 'builder' ? state : null;
+  // The Proofread tab is its own view, so remember which document was last being edited (the Builder
+  // draft or the Editor import) and analyze THAT — the tab and its badge follow the active context,
+  // not whichever happens to be the Builder draft.
+  const lastEditedRef = useRef<'builder' | 'editor'>('builder');
+  if (view === 'builder' || view === 'editor') lastEditedRef.current = view;
+  const reviewSubject = lastEditedRef.current === 'editor' ? importedState : state;
   // Non-blocking nudge for the Proofread tab: how many draft warnings + sensitive-data hits to look at.
-  const reviewCount = proofread(state).filter((c) => c.status === 'warn').length + detectPii(state).length;
+  const reviewCount = reviewSubject
+    ? proofread(reviewSubject).filter((c) => c.status === 'warn').length + detectPii(reviewSubject).length
+    : 0;
   const setEditingState: Dispatch<SetStateAction<LetterState>> =
     view === 'editor'
       ? (update) =>
@@ -388,7 +396,7 @@ export default function App() {
       ) : view === 'guide' ? (
         <Guide />
       ) : view === 'checklist' ? (
-        <Checklist state={state} />
+        <Checklist state={reviewSubject} />
       ) : editingState ? (
         <main
           className="panes"

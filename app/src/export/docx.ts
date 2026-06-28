@@ -419,8 +419,12 @@ export function buildDocxDocument(
   }
 
   // CUI banner paragraph (centered, bold) — shared by the letter section and each enclosure section.
+  // Banner is rendered UPPERCASE to match the preview (CSS text-transform) and the PDF (.toUpperCase()).
   const bannerPara = (text: string) =>
-    new Paragraph({ alignment: AlignmentType.CENTER, children: [R((text || '').trim() || 'CUI', { bold: true })] });
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [R(((text || '').trim() || 'CUI').toUpperCase(), { bold: true })],
+    });
 
   // In-document enclosures (§7) — each appended as its OWN section so it can carry its OWN CUI banner
   // (header/footer) when a package mixes categories; a section break starts each on a new page, marked
@@ -438,7 +442,9 @@ export function buildDocxDocument(
         new Paragraph({
           alignment: AlignmentType.RIGHT,
           children: [R(`Enclosure (${n + 1})`)],
-          spacing: { before: Math.max(BLANK, CONTENT_TWIPS - imgTwips - 300) },
+          // Reserve ~0.5in below the mark so the spacer never pushes it (and its own line) past the
+          // bottom margin onto a near-blank page when the image fills the height.
+          spacing: { before: Math.max(BLANK, CONTENT_TWIPS - imgTwips - 720) },
         }),
       );
     const pageImage = (data: Uint8Array, w: number, h: number, kind: 'png' | 'jpg' | 'gif' | 'bmp') => {

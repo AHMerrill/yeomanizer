@@ -1,7 +1,9 @@
 # CLAUDE.md — working in the yeomanizer
 
 Product + architecture: [README.md](README.md) and [app/README.md](app/README.md). Format rules:
-[SPEC.md](SPEC.md). This file is the working guide for Claude sessions in this repo.
+[SPEC.md](SPEC.md). Security posture: [THREAT_MODEL.md](THREAT_MODEL.md). Attribution / open-source
+credits (keep current when adding a dependency or a borrowed feature idea): [CREDITS.md](CREDITS.md).
+This file is the working guide for Claude sessions in this repo.
 
 > **Before building or changing ANY document type, read [CHECKLIST.md](CHECKLIST.md) top-to-bottom —
 > then again before you commit.** It's the distilled memory of every bug Zan caught that "looked
@@ -12,14 +14,22 @@ Product + architecture: [README.md](README.md) and [app/README.md](app/README.md
 
 1. **Privacy / CUI.** Nothing persists or is transmitted — in-memory only; the sole network calls are
    two content-free counters (a page-load tally and a download-click tally, each an integer; their handlers
-   take only the KV binding and never read the request, so no IP or region is seen). Exported
-   documents stay clean — no hidden or
-   embedded data. Regular, non-executable file types. No code-execution path anywhere
-   (`JSON.parse`, never `eval`; escape all text). The CSP is locked to `'self'`. The tool makes **no
-   authorization claim** — CUI belongs only on authorized Government-Furnished Equipment.
+   take only the KV binding and never read the request, so no IP or region is seen). This covers everything
+   session-only too: the **undo/redo history**, the per-type drafts, **starter-template** loads, the **PII
+   scan** (`format/pii.ts` runs locally on the in-memory draft — nothing logged or sent), and the **Proofread**
+   checkboxes. Exported documents stay clean — no hidden or embedded data. Regular, non-executable file types.
+   No code-execution path anywhere (`JSON.parse`, never `eval`; escape all text). The CSP is locked to `'self'`,
+   and the **service worker caches app code only — never user content** (same-origin GET assets only; the
+   `/api/` counter + POSTs + cross-origin pass straight through). The tool makes **no authorization claim** and
+   **no classification determination** — it marks exactly what the user enters (including any **per-enclosure
+   CUI banner**), and CUI belongs only on authorized Government-Furnished Equipment. The PII scan and proofread
+   checks are **advisory** — they flag, they never block an export.
 2. **Faithfulness.** export == preview == the manual == real examples, with no loss of formatting.
    Vector (never rasterized) PDFs. Authentic downloaded seals, never hand-drawn. If the right way is
-   harder, do the right way.
+   harder, do the right way. The **per-enclosure CUI banner** must agree across all three renderers — the
+   preview's `EnclosurePage`, the PDF's `pageBannerOverride` map (`export/signablePdf.ts`), and the per-enclosure
+   Word **section** header/footer (`export/docx.ts`, each in-document enclosure is its own `ISectionOptions`);
+   a blank per-enclosure banner inherits the letter's banner everywhere.
 
 ## Verify output changes — never claim you "can't see" a PDF
 
@@ -35,11 +45,23 @@ Product + architecture: [README.md](README.md) and [app/README.md](app/README.md
 ## Gotchas
 
 - `research/` and `*.pdf` are **gitignored** — never commit them (real PII lives there). Never
-  fabricate UICs, addresses, or facts.
+  fabricate UICs, addresses, or facts. **`data/ssic.ts` is curated, not the full SECNAV M-5210.2 catalog** —
+  add only real codes/titles, never invented ones; `data/templates.ts` uses `[BRACKETS]` for anything the
+  writer must supply.
 - Pagination compares DOM `offsetHeight` against pixel constants, so it is **not** scale-invariant —
   the preview fit-to-width scaler uses CSS `transform` (leaves `offsetHeight` true), never `zoom`.
 - `Editor.tsx` is shared by the Builder tab (`state`) and the Editor/import tab (`importedState`);
   importing a `.json` must never clobber the Builder draft.
+- **Undo/redo** (`App.tsx`) is keyed **per editing context** — `editor` and `builder:<type>` each have
+  their own `{past, future}`. Rapid edits coalesce within ~700ms (one typing burst = one step); the keydown
+  handler **defers to native undo inside a focused INPUT/TEXTAREA/contentEditable**, so per-character text undo
+  still works. Loading a template and importing a file both snapshot into the right context's history. Keep all
+  of it in-memory — never persist history.
+- **Drag-to-reorder** uses `tree.reorder` and is **sibling-only** (matches ↑/↓); cross-level drops are a no-op
+  by design (use "Add subparagraph" to change depth). Numbering is render-driven, so a reorder renumbers itself.
+- The **Proofread** tab analyzes `reviewSubject` (the *last* edited context — Builder draft or Editor import),
+  not always the Builder draft; its tab badge = warn-count + PII-hit count. The manual checkboxes are session-only
+  and reset on leaving the tab (a feature: re-verify after any change).
 - The `.json` round-trip is a **separate** file — do **not** re-embed draft data inside the `.docx`
   or `.pdf` (it was built and deliberately backed out; embedded data is a government sanitization/DLP
   problem).

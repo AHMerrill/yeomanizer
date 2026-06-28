@@ -121,9 +121,17 @@ PII"** guidance (doncio.navy.mil) — both saved to `research/`.
   Privacy), `Distribution/Dissemination Control:` (e.g. `FEDCON`), `POC:`.
 - **Portion markings:** `(U)`/`(CUI)` optional for DoD; DON recommends **against** for PII.
   Default off; if on, used throughout.
-- **Implementation:** print uses `position: fixed` banners (repeat every page); `.docx`
-  uses Word's native first-page/default headers & footers (designation block in the
-  first-page footer). True multi-page *content* pagination still pending (see below).
+- **Per-enclosure banners (impl):** each in-document enclosure (`EnclosureEntry.cuiBanner`) may carry
+  its **own** CUI banner. When CUI is on and the enclosure is rendered into the document, its appended
+  page(s) use *that* banner top & bottom instead of the letter's — so a package can assemble enclosures
+  of differing CUI categories, each marked correctly on its own pages. **Blank = inherit** the letter's
+  banner. The tool marks exactly what the user enters; it makes **no classification determination** of
+  its own. Rendered identically across the preview (`EnclosurePage`), the PDF (a `pageBannerOverride`
+  page→banner map), and the `.docx` (each in-document enclosure is its **own Word section** with its own
+  header/footer; the letter section keeps the designation block in its first-page footer).
+- **Implementation:** print/preview uses `position: fixed` banners (repeat every page); `.docx`
+  uses Word's native first-page/default headers & footers (designation block in the first-page footer),
+  one section per in-document enclosure. True multi-page *content* pagination still pending (see below).
 
 ## Pagination (done)
 Measurement-based: the preview measures rendered block heights and splits content into
@@ -164,20 +172,54 @@ format/identification.ts, used by both the preview and the .docx export.
 The bilingual two-page form (order + reverse instructions), with U.S.-grade → NATO (OF/OR)
 rank-code translation and the arms / dispatch / SOFA options.
 
+## Proofread checklist (Ch 2, ¶19) — done
+A pre-send review modeled on the manual's proofreading method (§2 ¶19), surfaced as the **Proofread**
+tab (`components/Checklist.tsx`). **Advisory only — it flags and formats; it never blocks an export and
+certifies nothing.** Three groups:
+1. **Draft checks** (data-driven, `format/proofread.ts`) — pass/warn on what the writer supplies:
+   subject present + ALL CAPS + no trailing period; From/To present; body has content; **no lone
+   subparagraph** (¶19.b(6): a `1a` requires a `1b`); signature name and date set; every listed
+   enclosure has a title (¶19.b(7)); business-letter inside-address + salutation. The ¶19.b *format*
+   framework (1-inch margins, sequential numbering, centered page numbers, letterhead/ident placement,
+   enclosure markings, CUI banners) is already guaranteed by the render engine, so it is listed as
+   "handled automatically," not re-checked.
+2. **Sensitive-data scan** (`format/pii.ts`) — a **local-only** heuristic that flags SSN
+   (`nnn-nn-nnnn`), a bare 9-digit run (possible SSN), a 10-digit run (possible DoD ID / EDIPI — or a
+   phone number), and date-of-birth markers, located by area (body, signature, …). Nothing is logged,
+   stored, or transmitted; deciding what is PII/CUI, and marking it, remains the writer's call.
+3. **Substance checkboxes** (¶19.c typos/spelling/grammar, ¶19.d read-for-content, plus the
+   judgment items only a person can confirm — addressee currency, references available, enclosures
+   attached, marking matches content, signing authority). Session-only; they reset on leaving the tab,
+   by design — re-verify after any change.
+A non-blocking "to review" count (warnings + sensitive-data hits) shows as a badge on the tab.
+
 ## Exports — done
 - **PDF** (`export/signablePdf.ts`): pixel-accurate, vector/searchable; embeds a real AcroForm
   digital-signature field (`/FT /Sig`) over each signature space (basic letter + every endorsement),
   all collected into one AcroForm; renders endorsements, in-document enclosures (images embedded,
-  PDFs copied as real pages), and CUI banners top/bottom of every page.
+  PDFs copied as real pages), and CUI banners top/bottom of every page — with a per-page override so
+  an enclosure can carry its **own** banner (see *Per-enclosure banners* above). Page numbers skip the
+  enclosure pages (they carry the "Enclosure (n)" mark instead).
 - **.docx** (`export/docx.ts`): editable Word mirror — embeds the seal as an image, CUI via Word
-  headers/footers, section titles + inline emphasis as styled runs.
+  headers/footers, section titles + inline emphasis as styled runs. Each in-document enclosure is its
+  **own Word section** so it can carry its own CUI header/footer banner; PDF enclosures are rasterized
+  to page images (`export/rasterizePdf.ts`, pdf.js) since a `.docx` can't hold vector PDF pages.
 - **.json** (`export/roundtrip.ts`): a separate plain-text project file for lossless re-import via
   the Editor tab — never embedded in the `.docx`/PDF (clean documents).
+- **SSIC lookup (impl):** the editor offers a searchable combobox over a curated common-code list
+  (`data/ssic.ts`, all 13 major groups + common second-level codes) — filter by number *or* keyword,
+  click to fill. It is **not** the full ~2,200-code catalog (SECNAV M-5210.2); unknown codes are typed
+  directly and never fabricated.
+- **Starter templates (impl):** one-click examples (appreciation / request / MFR / business,
+  `data/templates.ts`) load a correctly-structured draft into the editor with `[BRACKETS]` for the
+  parts to replace; loading one is undoable. Static bundled content — nothing fetched.
 
 ## Known gaps / TODO
-- Enclosure packets: shipped a client-side "combine into one PDF" tool (pdf-lib merge of the
-  saved letter PDF + enclosure files). Still TODO: tying attachments to specific enclosure
-  entries and auto-marking "Enclosure (n)" on the merged pages.
-- Mid-paragraph page splitting (currently breaks only at paragraph boundaries).
-- Other types: business letter (Ch 11), multiple-address (Ch 8).
-- The advisor / style-suggestion layer.
+- In-document enclosures are tied to a specific enclosure entry and auto-marked "Enclosure (n)" on
+  their appended pages (PDF + `.docx`), and each can carry its own CUI banner. The separate
+  client-side "combine into one PDF" **packet** tool (pdf-lib merge of an already-saved letter PDF +
+  loose enclosure files) does **not** yet re-mark "Enclosure (n)" on the merged pages — that's still TODO.
+- Mid-paragraph page splitting (currently breaks only at paragraph boundaries; the "≥2 lines each side"
+  rule, 7-2.13).
+- Other types: multiple-address (Ch 8); decision memos and MOA/MOU sub-variants.
+- A deeper advisor / style-suggestion layer beyond the Ch 2 ¶19 proofread checklist (done).

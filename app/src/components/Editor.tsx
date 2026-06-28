@@ -151,7 +151,7 @@ function SsicLookup({ onPick }: { onPick: (code: string) => void }) {
     <div className="ssic-lookup">
       <input
         value={q}
-        placeholder="search by number or keyword — e.g. 56, legal, awards"
+        placeholder="search by number or keyword — e.g. 5216, legal, awards"
         aria-label="Search common SSICs"
         onChange={(e) => {
           setQ(e.target.value);

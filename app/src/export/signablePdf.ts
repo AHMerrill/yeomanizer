@@ -4,9 +4,9 @@
 // no visible border, so it's invisible when printed on paper.
 //
 // Layout is driven off the SAME numbers as the on-screen CSS (preview.css / paragraphs.ts) so it
-// matches by construction. Vertical typography (baseline within each line box) is an approximation
-// that may need fine-tuning against the live preview. Deferred (rendered as TODO, tracked):
-// CUI banners/designation, endorsements, in-document enclosures, continuation-page Subj repeat.
+// matches by construction. Renders the FULL document: CUI banners + designation block (with
+// per-enclosure banner overrides), endorsements (each with its own /Sig field), in-document
+// enclosures (images embedded, PDFs copied as real vector pages), and continuation-page numbering.
 import type { LetterState, Paragraph } from '../types';
 import {
   buildIdent,

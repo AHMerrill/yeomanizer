@@ -29,7 +29,18 @@ Live: **https://yeomanizer.com**
 - **Undo / redo** — ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z (or toolbar buttons); each draft keeps its own
   in-memory history (nothing persisted).
 - **Proofread tab** — a pre-send review built on SECNAV M-5216.5 Ch 2 ¶19: live checks on your draft,
-  the format items the engine guarantees, and the substance items you confirm. Advisory only.
+  the format items the engine guarantees, and the substance items you confirm. Advisory only — it never
+  blocks an export, and a non-blocking badge shows how many items are worth a look.
+- **Local sensitive-data scan** — a quick, **in-browser** pass over your draft flags possible SSNs,
+  9-/10-digit IDs (a DoD ID / EDIPI is 10), and dates of birth in the Proofread tab. It runs entirely
+  on your machine — nothing is logged or transmitted — and it's a reminder, not a verdict: what is
+  PII/CUI, and how it's marked, stays your call.
+- **Starter templates** — one click drops a correctly-structured example (letter of appreciation,
+  request, memorandum for the record, or business letter) into the editor, with the parts to replace
+  shown in `[BRACKETS]`. Undoable, and the content is bundled — nothing is fetched.
+- **SSIC lookup** — don't have a subject code memorized? Search a built-in list by number or keyword
+  and click to fill it in (all 13 major groups plus the common second-level codes). It's a curated
+  set, not the full SECNAV M-5210.2 catalog, so codes are never made up.
 - **CUI marking** — a banner top & bottom of every page (enclosures included), the designation
   block, optional per-paragraph (CUI)/(U) marks, and **per-enclosure banners** — give any
   in-document enclosure its own banner so a mixed-category package is marked correctly, each on its
@@ -89,9 +100,16 @@ Because there is no central store, there is nothing to breach, scrape, or collec
     npm run lint      # static analysis (oxlint)
     npm run build     # production build → dist/
 
-See [`app/README.md`](app/README.md) for the architecture and the visual-verification workflow, and
-[`SPEC.md`](SPEC.md) for the format rules (derived from SECNAV M-5216.5 and DON CUI marking
-guidance).
+## Documentation
+
+- [`SPEC.md`](SPEC.md) — the format/spec reference: the rules the deterministic formatter follows,
+  derived from SECNAV M-5216.5 and DON CUI marking guidance.
+- [`app/README.md`](app/README.md) — the developer architecture / module map and the
+  visual-verification workflow.
+- [`THREAT_MODEL.md`](THREAT_MODEL.md) — the security write-up: assets, trust boundary, and a
+  threat-by-threat table that points at the code behind each claim.
+- [`CREDITS.md`](CREDITS.md) — attribution: the public U.S. Government authorities, the open-source
+  libraries, and the projects whose *ideas* (no code) informed features here.
 
 ## Build & deploy (Cloudflare Pages)
 

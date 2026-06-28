@@ -22,10 +22,10 @@ const ENGINE = [
 // ¶19.c (typos/spelling/grammar) and ¶19.d (read for content), plus the judgment items only a person
 // can confirm. Checkboxes are a reminder, not a gate.
 const MANUAL = [
-  'Read slowly for typos, spelling, punctuation, spacing, and grammar (¶19.c).',
+  'Read slowly for typos, spelling, punctuation, spacing, and grammar.',
   'Looked up any hyphenated or uncertain words.',
   'Ran spell-check / grammar-check — as a tool, not the only check.',
-  'Read once more for content and substance (¶19.d).',
+  'Read once more for content and substance.',
   'Addressee’s name, title, and office code are current and correct.',
   'Every reference is accurate and available to the reader.',
   'Each listed enclosure is actually attached and in the right order.',

@@ -849,6 +849,27 @@
     margin-left: 0;
     flex: 1 1 100%;
   }
+  /* 6 tabs + the Proofread badge are tight on a phone: shrink them, and let the pill scroll
+     horizontally (scrollbar hidden) as a safety net so the layout never breaks on a narrow screen. */
+  .seg-toggle.seg-6 {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .seg-toggle.seg-6::-webkit-scrollbar {
+    display: none;
+  }
+  .seg-toggle.seg-6 .seg {
+    min-width: 0;
+    padding: 5px 7px;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+  .seg-toggle.seg-6 .seg .tab-badge {
+    min-width: 13px;
+    height: 13px;
+    margin-left: 3px;
+    font-size: 9px;
+  }
   .toolbar > button {
     flex: 1 1 auto;
   }
