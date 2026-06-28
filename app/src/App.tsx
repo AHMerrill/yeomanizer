@@ -6,6 +6,7 @@ import { LetterPreview } from './components/LetterPreview';
 import { About } from './components/About';
 import { ImportDropZone } from './components/ImportDropZone';
 import { Faq } from './components/Faq';
+import Guide from './components/Guide';
 import { PreviewErrorBoundary } from './components/PreviewErrorBoundary';
 import { printLetter } from './export/print';
 import { recordVisit, recordDownload, type Counts } from './api/counter';
@@ -32,7 +33,7 @@ export default function App() {
     useState<Record<CorrespondenceType, LetterState>>(makeStates);
   const [activeType, setActiveType] = useState<CorrespondenceType>('standard-letter');
   const [counts, setCounts] = useState<Counts | null>(null);
-  const [view, setView] = useState<'editor' | 'builder' | 'features' | 'faq'>('builder');
+  const [view, setView] = useState<'editor' | 'builder' | 'features' | 'faq' | 'guide'>('builder');
   // The Editor tab edits a separately-imported letter, so importing never clobbers a Builder draft.
   const [importedState, setImportedState] = useState<LetterState | null>(null);
 
@@ -128,7 +129,7 @@ export default function App() {
           <span className="brand-sub">naval correspondence, formatted</span>
         </div>
         <nav
-          className={`seg-toggle seg-4 ${view === 'editor' ? 'pos-0' : view === 'builder' ? 'pos-1' : view === 'features' ? 'pos-2' : 'pos-3'}`}
+          className={`seg-toggle seg-5 ${view === 'editor' ? 'pos-0' : view === 'builder' ? 'pos-1' : view === 'guide' ? 'pos-2' : view === 'features' ? 'pos-3' : 'pos-4'}`}
           role="tablist"
           aria-label="Page"
         >
@@ -148,6 +149,14 @@ export default function App() {
             onClick={() => setView('builder')}
           >
             Builder
+          </button>
+          <button
+            className={view === 'guide' ? 'seg on' : 'seg'}
+            role="tab"
+            aria-selected={view === 'guide'}
+            onClick={() => setView('guide')}
+          >
+            Guide
           </button>
           <button
             className={view === 'features' ? 'seg on' : 'seg'}
@@ -223,6 +232,8 @@ export default function App() {
         <About />
       ) : view === 'faq' ? (
         <Faq />
+      ) : view === 'guide' ? (
+        <Guide />
       ) : editingState ? (
         <main className="panes">
           {/* autoComplete + spellCheck off so the browser never stores or transmits entries

@@ -119,6 +119,66 @@
   min-width: 62px;
   padding: 5px 12px;
 }
+/* 5 tabs (Editor / Builder / Guide / Features / FAQ) */
+.seg-toggle.seg-5 .seg-thumb {
+  width: calc((100% - 6px) / 5);
+}
+.seg-toggle.pos-4 .seg-thumb {
+  transform: translateX(400%);
+}
+.seg-toggle.seg-5 .seg {
+  min-width: 52px;
+  padding: 5px 9px;
+}
+
+/* Guide tab — plain-language correspondence guide (reuses .faq container) */
+.guide-section {
+  margin-top: 22px;
+}
+.guide-section > h2 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9aa1b0;
+  margin: 0 0 8px;
+}
+.guide-qa {
+  border-top: 1px solid #2c2e36;
+  padding: 2px 0;
+}
+.guide-qa > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 11px 28px 11px 4px;
+  position: relative;
+  font-weight: 600;
+  color: #e7e9ee;
+}
+.guide-qa > summary::-webkit-details-marker {
+  display: none;
+}
+.guide-qa > summary::after {
+  content: '+';
+  position: absolute;
+  right: 6px;
+  top: 9px;
+  font-size: 18px;
+  color: #9aa1b0;
+}
+.guide-qa[open] > summary::after {
+  content: '\2212'; /* minus */
+}
+.guide-qa > summary:hover {
+  color: #fff;
+}
+.guide-a {
+  padding: 0 28px 14px 4px;
+  color: #c3c7d0;
+  line-height: 1.55;
+}
+.guide-a strong {
+  color: #e7e9ee;
+}
 
 /* FAQ / Security tab */
 .faq {
