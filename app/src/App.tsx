@@ -253,6 +253,60 @@ export default function App() {
     window.addEventListener('pointerup', up);
   };
 
+  // Preview → editor scroll-sync: as the preview scrolls, the matching editor card scrolls into view
+  // and flashes. One-directional (the preview drives the editor — no feedback loop), and only when the
+  // panes are side-by-side (skipped when stacked on mobile). Preview blocks carry data-sync; editor
+  // targets carry data-sync-target with the same key (p:<id>, head, sig, dist, copy). Re-queried each
+  // tick so it always reflects the current pagination/paragraphs.
+  useEffect(() => {
+    if (view !== 'builder' && view !== 'editor') return;
+    const panes = panesRef.current;
+    const preview = panes?.querySelector<HTMLElement>('.paper-backdrop');
+    const editor = panes?.querySelector<HTMLElement>('.editor-pane');
+    if (!preview || !editor) return;
+
+    let raf = 0;
+    let lastKey = '';
+    const sync = () => {
+      raf = 0;
+      const er = editor.getBoundingClientRect();
+      const pr = preview.getBoundingClientRect();
+      if (pr.left < er.right - 40) return; // panes stacked (mobile) — nothing to sync side-by-side
+      const line = pr.top + 80; // the topmost block crossing this line is the "active" one
+      let bestKey = '';
+      let bestTop = -Infinity;
+      preview.querySelectorAll<HTMLElement>('[data-sync]').forEach((b) => {
+        if (b.closest('.measurer')) return; // skip the hidden pagination measurer's duplicate blocks
+        const t = b.getBoundingClientRect().top;
+        if (t <= line && t > bestTop) {
+          bestTop = t;
+          bestKey = b.dataset.sync ?? '';
+        }
+      });
+      if (!bestKey || bestKey === lastKey) return;
+      lastKey = bestKey;
+      const target = [...editor.querySelectorAll<HTMLElement>('[data-sync-target]')].find(
+        (el) => el.dataset.syncTarget === bestKey,
+      );
+      if (!target) return;
+      const offset = target.getBoundingClientRect().top - er.top;
+      // Only scroll when the target isn't already comfortably in view (avoid needless jumps).
+      if (offset < 8 || offset > er.height - 80) {
+        editor.scrollTo({ top: editor.scrollTop + offset - 24, behavior: 'smooth' });
+      }
+      target.classList.add('sync-flash');
+      window.setTimeout(() => target.classList.remove('sync-flash'), 1100);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(sync);
+    };
+    preview.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      preview.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [view]);
+
   return (
     <div className="app">
       <div className="disclaimer">

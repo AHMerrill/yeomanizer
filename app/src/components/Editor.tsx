@@ -29,15 +29,17 @@ function Card({
   title,
   hint,
   onReset,
+  syncId,
   children,
 }: {
   title: string;
   hint?: string;
   onReset?: () => void;
+  syncId?: string; // maps a preview block (data-sync) to this card for scroll-sync
   children: ReactNode;
 }) {
   return (
-    <section className="card" id={sectionId(title)}>
+    <section className="card" id={sectionId(title)} data-sync-target={syncId}>
       <div className="card-head">
         <h2>{title}</h2>
         {onReset && (
@@ -291,6 +293,7 @@ function ParaEditor({
         <div
           className="para-node"
           key={p.id}
+          data-sync-target={`p:${p.id}`}
           data-drop={drop && drop.id === p.id ? drop.place : undefined}
           onDragOver={(e) => {
             if (!dragId || dragId === p.id) return; // only react while dragging another sibling
@@ -1027,6 +1030,7 @@ export function Editor({
       {state.type !== 'mfr' && state.type !== 'business-letter' && (
       <Card
         title="Routing"
+        syncId="head"
         onReset={() =>
           setState((s) => syncViaEndorsements({ ...s, from: '', to: '', toAddrs: [], via: [], distribution: [] }))
         }
@@ -1072,7 +1076,7 @@ export function Editor({
           </p>
         )}
         {/* Distribution block (Ch 8-2): prints after the signature, above Copy to. */}
-        <div className="sub-label">Distribution (prints after the signature)</div>
+        <div className="sub-label" data-sync-target="dist">Distribution (prints after the signature)</div>
         <EntryList
           items={state.distribution}
           placeholder="e.g., COMSUBFOR NORFOLK (4 copies)"
@@ -1167,6 +1171,7 @@ export function Editor({
 
       <Card
         title="Signature"
+        syncId="sig"
         hint={
           state.type === 'business-letter'
             ? 'Centered under the complimentary close; last name in CAPS, grade spelled out, then title and authority (11-2.9).'
@@ -1216,6 +1221,7 @@ export function Editor({
 
       <Card
         title="Copy to"
+        syncId="copy"
         hint="One addressee per line."
         onReset={() => patch({ copyTo: [] })}
       >

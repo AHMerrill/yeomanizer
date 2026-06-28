@@ -21,6 +21,7 @@ const AVAILABLE: [string, string][] = [
   ['References, enclosures, copy-to', 'Auto-lettered (a), (b)… and numbered (1), (2)…'],
   ['Multiple-address letters', 'One letter to several action addressees (Ch 8): up to four stack on the To: line; five or more move to a Distribution: line after the signature, with copy counts if needed. A Proofread check nudges you past four.'],
   ['Reorder & auto-number', 'Drag a paragraph by its grip — or use ↑/↓ — to reorder it; numbering (1, 2…, then a, b…) and indentation update themselves.'],
+  ['Scroll-sync', 'Scroll the live preview and the editor follows: the card for whatever you’re looking at scrolls into view and briefly highlights. Heading, each body paragraph, signature, and distribution all map across (desktop, side-by-side view).'],
   ['Undo / redo', 'Step back and forward through your edits — ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z, or the toolbar buttons. Each draft keeps its own history, in memory only.'],
   ['Proofread tab', 'A pre-send review built on SECNAV M-5216.5 Ch 2 ¶19 — live checks on your draft (subject case, From/To, signature, lone subparagraphs…), the format items the engine guarantees for you, and the substance items you confirm. Advisory only; it never blocks an export.'],
   ['Sensitive-data check', 'The Proofread tab runs a local-only scan for likely PII — SSN, DoD ID/EDIPI, date of birth — and reminds you to mark and protect it. Nothing is logged or sent; it just flags.'],

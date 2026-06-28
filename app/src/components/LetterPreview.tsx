@@ -81,7 +81,7 @@ function ParaFlow({
   const indent = business ? depthIndentIn(fp.depth + 1) : depthIndentIn(fp.depth);
   const showMarker = !(business && fp.depth === 0);
   return (
-    <p className="para" style={{ textIndent: `${indent}in` }}>
+    <p className="para" data-sync={`p:${fp.key}`} style={{ textIndent: `${indent}in` }}>
       {showMarker && <MarkerSpan depth={fp.depth} index={fp.index} />}
       {showMarker && <span className="pgap" />}
       {portionActive ? (fp.cui ? '(CUI) ' : '(U) ') : ''}
@@ -162,7 +162,10 @@ function Head({ state }: { state: LetterState }) {
           )}
         </div>
       )}
-      <div className={isMemo || isMfr ? 'headings memo' : isEndorsement ? 'headings endo' : 'headings'}>
+      <div
+        data-sync="head"
+        className={isMemo || isMfr ? 'headings memo' : isEndorsement ? 'headings endo' : 'headings'}
+      >
         {/* MFR is "for the record" — no addressee, so no From/To/Via. */}
         {!isMfr && (
           <>
@@ -350,7 +353,7 @@ function BusinessContinuationHead({ state }: { state: LetterState }) {
 function Signature({ state }: { state: LetterState }) {
   const sig = state.signature;
   return (
-    <div className="signature">
+    <div className="signature" data-sync="sig">
       <div className={sig.name ? '' : 'ph'}>{sig.name || 'I. M. LASTNAME'}</div>
       {sig.title && <div>{sig.title}</div>}
       {sig.authority === 'by-direction' && <div>By direction</div>}
@@ -361,7 +364,7 @@ function Signature({ state }: { state: LetterState }) {
 
 function CopyTo({ items }: { items: string[] }) {
   return (
-    <div className="copyto">
+    <div className="copyto" data-sync="copy">
       <div>Copy to:</div>
       {items.map((c, i) => (
         <div key={i}>{c}</div>
@@ -374,7 +377,7 @@ function CopyTo({ items }: { items: string[] }) {
 // the signature and above "Copy to:". Shares the copy-to styling.
 function Distribution({ items }: { items: ListEntry[] }) {
   return (
-    <div className="copyto">
+    <div className="copyto" data-sync="dist">
       <div>Distribution:</div>
       {items.map((d) => (
         <div key={d.id}>{d.text}</div>
