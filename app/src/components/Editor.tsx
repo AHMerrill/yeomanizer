@@ -565,7 +565,7 @@ export function Editor({
               />
             </Field>
             <p className="hint">
-              Portion markings are <strong>per paragraph</strong> — use the (CUI) toggle on any
+              Portion markings are per paragraph — use the (CUI) toggle on any
               paragraph in the Body section. Marking one turns this on; once any portion is marked,
               every paragraph shows (CUI) or (U). DON recommends against portion marking for PII.
             </p>
@@ -650,7 +650,7 @@ export function Editor({
               >
                 Look it up in the Standard Navy Distribution List
               </a>{' '}
-              <strong>(CAC required)</strong>.
+              (CAC required).
             </p>
             <Field label="Activity name (one line each)">
               <textarea
@@ -1056,7 +1056,7 @@ export function Editor({
         </Field>
         <p className="hint">
           The export leaves the signature space blank so you can sign for real. The PDF already
-          places a <strong>CAC-signable signature field</strong> over that space — open it in Adobe
+          places a CAC-signable signature field over that space — open it in Adobe
           Acrobat/Reader and click to sign with your CAC (no <em>Prepare a Form</em> step), or just
           print and wet-sign.
         </p>

@@ -75,9 +75,9 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         a: (
           <>
             Letterhead is your command’s printed header (DEPARTMENT OF THE NAVY plus your activity’s name
-            and address). The rule of thumb: <strong>letters get letterhead, memos stay plain.</strong> A{' '}
-            <strong>standard naval letter</strong> — anything formal going outside your command or up the
-            chain — uses letterhead. A <strong>memorandum</strong> is internal and informal, so it’s on
+            and address). The rule of thumb: letters get letterhead, memos stay plain. A{' '}
+            standard naval letter — anything formal going outside your command or up the
+            chain — uses letterhead. A memorandum is internal and informal, so it’s on
             plain bond. The one exception is the “letterhead memorandum,” used only for routine matters
             with people <em>outside</em> your activity when direct liaison is authorized. (“Pre-printed”
             is for paper that already has the letterhead printed on it — the tool just reserves the space
@@ -91,9 +91,9 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
           <>
             Section titles are short underlined labels at the start of a paragraph — <u>Purpose</u>.,{' '}
             <u>Background</u>., <u>Recommendation</u>. — that tell the reader what the paragraph covers.
-            Use them when a document is <strong>long or structured</strong> enough that labeled sections
+            Use them when a document is long or structured enough that labeled sections
             help the reader (a multi-page letter, an instruction, a point paper). For a{' '}
-            <strong>short, routine letter you usually don’t need them</strong> — plain numbered paragraphs
+            short, routine letter you usually don’t need them — plain numbered paragraphs
             are cleaner. On a one-pager, when in doubt, skip them.
           </>
         ),
@@ -102,9 +102,9 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'How should I think about breaking up paragraphs?',
         a: (
           <>
-            One idea per paragraph, and <strong>lead with your bottom line</strong> — naval writing puts
+            One idea per paragraph, and lead with your bottom line — naval writing puts
             the main point first (the ask, the decision, the recommendation), then the supporting detail.
-            Reach for <strong>sub-paragraphs</strong> (a, b, c) when a single paragraph carries several
+            Reach for sub-paragraphs (a, b, c) when a single paragraph carries several
             related sub-points — a list of conditions, steps, or reasons. Keep it tight; brevity is a
             virtue here. You just decide where one idea ends and the next begins, and when a point is
             really a sub-point — the tool numbers and indents the rest.
@@ -115,10 +115,10 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'Do I ever use bold, italics, or underline in the body — and when?',
         a: (
           <>
-            Rarely. Traditional naval correspondence is <strong>plain</strong> — the format carries the
-            emphasis, not the typography. <strong>Underline</strong> has one real job: section titles
+            Rarely. Traditional naval correspondence is plain — the format carries the
+            emphasis, not the typography. Underline has one real job: section titles
             (above). Beyond that, use emphasis only for a genuinely critical word — a “NOT,” a hard
-            deadline — and even then, sparingly. <strong>Bold and italics</strong> are uncommon in a
+            deadline — and even then, sparingly. Bold and italics are uncommon in a
             standard letter; they show up more in instructions and briefs. The tool supports all three
             (type <code>**bold**</code>, <code>*italic*</code>, <code>__underline__</code>) for when you
             need them — but the default, and usually the right call, is to leave the body plain.
@@ -129,10 +129,10 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'When do I add an SSIC or a serial number?',
         a: (
           <>
-            The <strong>SSIC</strong> (Standard Subject Identification Code) is a filing number that
-            classifies the letter’s subject; the <strong>serial</strong> is a sequential control number.
+            The SSIC (Standard Subject Identification Code) is a filing number that
+            classifies the letter’s subject; the serial is a sequential control number.
             On a formal letter your command’s files office — the yeoman — normally assigns these. If
-            you’re drafting and don’t have them, <strong>leave them off</strong> (toggle them out); the
+            you’re drafting and don’t have them, leave them off (toggle them out); the
             yeoman adds them before it goes out. Memos and MFRs usually just carry the date.
           </>
         ),
@@ -141,9 +141,9 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'When do I add a “Via” addressee (and get an endorsement)?',
         a: (
           <>
-            Add a <strong>Via</strong> when your letter must <em>pass through</em> someone on its way to
+            Add a Via when your letter must <em>pass through</em> someone on its way to
             the action addressee — almost always your chain of command. Each Via addressee reviews it and
-            forwards it with an <strong>endorsement</strong> (their recommendation). Example: a request
+            forwards it with an endorsement (their recommendation). Example: a request
             from you to higher headquarters routes “Via” your Commanding Officer. The tool builds the
             endorsement page automatically for every Via you add.
           </>
@@ -153,9 +153,9 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'When do I sign “By direction” or “Acting”?',
         a: (
           <>
-            These appear under the signature. <strong>“By direction”</strong> means you’re signing{' '}
+            These appear under the signature. “By direction” means you’re signing{' '}
             <em>for</em> the commanding officer under standing authority to sign certain correspondence on
-            their behalf. <strong>“Acting”</strong> means you’re temporarily filling the billet (e.g., the
+            their behalf. “Acting” means you’re temporarily filling the billet (e.g., the
             XO acting as CO). If you <em>are</em> the official named in the “From” line, you use neither.
             If you’re not sure you have “by direction” authority, you probably don’t — ask.
           </>
@@ -165,11 +165,11 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'When do I mark something CUI?',
         a: (
           <>
-            <strong>Controlled Unclassified Information</strong> is sensitive-but-unclassified material the
-            government requires you to safeguard — most often <strong>privacy data / PII</strong> (SSNs,
+            Controlled Unclassified Information is sensitive-but-unclassified material the
+            government requires you to safeguard — most often privacy data / PII (SSNs,
             medical, personnel records). If your document contains it, check the CUI box: the tool adds the
             required banner at the top and bottom of every page plus the designation block. And remember —
-            CUI may only be handled on <strong>authorized government equipment</strong>, never a personal
+            CUI may only be handled on authorized government equipment, never a personal
             device.
           </>
         ),
@@ -178,8 +178,8 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'When do I attach an enclosure versus just cite a reference?',
         a: (
           <>
-            A <strong>reference</strong> points to an existing document the reader can look up on their own
-            — an instruction, a prior letter — listed as (a), (b). An <strong>enclosure</strong> is
+            A reference points to an existing document the reader can look up on their own
+            — an instruction, a prior letter — listed as (a), (b). An enclosure is
             something you’re <em>physically attaching</em> because the reader needs it in hand — a form, a
             chart, supporting paperwork — listed as (1), (2). The rule of thumb: if they can find it
             themselves, it’s a reference; if you have to hand it to them, it’s an enclosure.
@@ -190,7 +190,7 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'When do I use “Copy to”?',
         a: (
           <>
-            Add a <strong>Copy to</strong> for commands or offices that <em>need to know</em> about the
+            Add a Copy to for commands or offices that <em>need to know</em> about the
             letter but aren’t the action addressee and aren’t in the routing chain — for awareness or
             coordination. It’s the naval-letter version of a CC.
           </>
@@ -206,7 +206,7 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'I’ve never written one. Where do I start?',
         a: (
           <>
-            In the <strong>Builder</strong> tab, pick a type below, fill in the From / To / Subject, and
+            In the Builder tab, pick a type below, fill in the From / To / Subject, and
             type your paragraphs on the left — the formatted letter appears on the right. You only supply
             the words and the choices above; the tool does the rest.
           </>
@@ -216,8 +216,8 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'What goes in the “From” and “To” lines?',
         a: (
           <>
-            <strong>From</strong> is the official <em>title</em> of the originator — “Commanding Officer,
-            USS Example (DDG&nbsp;100)” — not a personal name. <strong>To</strong> is the action
+            From is the official <em>title</em> of the originator — “Commanding Officer,
+            USS Example (DDG&nbsp;100)” — not a personal name. To is the action
             addressee: the command or office that has to act on the letter.
           </>
         ),
@@ -237,8 +237,8 @@ const SECTIONS: { id: string; heading: string; intro?: React.ReactNode; items: Q
         q: 'Is this official? Can I use it for real correspondence?',
         a: (
           <>
-            It’s an <strong>unofficial</strong> formatting aid — not affiliated with or endorsed by the
-            Navy or DoD, and it makes <strong>no authorization claim</strong>. Use it on authorized
+            It’s an unofficial formatting aid — not affiliated with or endorsed by the
+            Navy or DoD, and it makes no authorization claim. Use it on authorized
             government equipment, follow your command’s policy, and treat your yeoman / admin office as the
             final word on format.
           </>
@@ -263,9 +263,9 @@ export default function Guide() {
         <p className="faq-lede">
           A plain-language guide for anyone who hasn’t written Navy correspondence before — no yeoman
           experience assumed. It follows the Department of the Navy Correspondence Manual (
-          <strong>
+          
             {PUB_TITLE}, {PUB_DATE}
-          </strong>
+          
           ); you can{' '}
           <a href={PUB_URL} target="_blank" rel="noopener noreferrer">
             read the official manual

@@ -53,7 +53,7 @@ export function Faq() {
         <h1>Security &amp; CUI</h1>
         <p className="faq-lede">
           How the yeomanizer handles your information, and why it&rsquo;s built to stay out of the
-          CUI-handling chain. This is an <strong>unofficial</strong> tool — it makes no authorization
+          CUI-handling chain. This is an unofficial tool — it makes no authorization
           claim. Always follow your command&rsquo;s policy and your security manager&rsquo;s guidance.
           Each answer links to authoritative sources — and the tool&rsquo;s full source code is
           public — so you (or your security team) can verify every claim.
@@ -103,7 +103,7 @@ export function Faq() {
           It processes it <em>locally</em>, in your browser, on your machine — exactly the same as
           when you type it in. The tool&rsquo;s server never receives, processes, stores, or
           transmits your content; there is no cloud step. Note that a .json (or .docx/.pdf) that
-          contains CUI is <strong>itself CUI</strong> — store it and send it only on, and through,
+          contains CUI is itself CUI — store it and send it only on, and through,
           authorized systems and channels, like any other CUI file.
         </QA>
 
@@ -112,11 +112,11 @@ export function Faq() {
           sources={[SRC.nist]}
         >
           NIST SP 800-171 sets the controls for protecting CUI on non-federal (and many DoD) systems.
-          This tool is <strong>designed to stay on the right side of those controls</strong> rather than
+          This tool is designed to stay on the right side of those controls rather than
           to claim a formal accreditation or ATO: every bit of processing happens in your browser (no
           server ever receives or transmits your content), nothing is stored or persisted (your draft
           lives only in the tab and is erased when you close it), there are no accounts, cookies,
-          telemetry, or analytics, and it runs fully <strong>offline / air-gapped</strong> once loaded.
+          telemetry, or analytics, and it runs fully offline / air-gapped once loaded.
           The only thing that ever leaves the browser is two content-free integer counters (page loads
           and download-button clicks). It makes no authorization claim and certifies nothing — you and
           your command remain responsible for handling CUI per policy on authorized equipment. Run it on
@@ -126,7 +126,7 @@ export function Faq() {
         <QA q="Are the downloads safe, regular file types?" sources={[SRC.jsonOrg, SRC.ecma404]}>
           Yes. .docx (Office Open XML, ISO/IEC 29500), .pdf (ISO 32000), and .json (ECMA-404) are
           open, standard, non-executable file types — no macros, no scripts. And by design there is
-          <strong> no hidden or embedded data</strong> inside the documents: what you see is what the
+           no hidden or embedded data inside the documents: what you see is what the
           file contains. The editable .json is a separate, plain-text file you can open and read in
           any text editor.
         </QA>
