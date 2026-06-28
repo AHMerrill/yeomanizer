@@ -25,7 +25,9 @@ Live: **https://yeomanizer.com**
 - **Inline emphasis** — type `**bold**`, `*italic*`, or `__underline__` for occasional emphasis; it
   renders identically in the preview, the `.docx`, and the PDF.
 - **CUI marking** — a banner top & bottom of every page (enclosures included), the designation
-  block, and optional per-paragraph (CUI)/(U) marks, per DoDI 5200.48 + DON guidance.
+  block, optional per-paragraph (CUI)/(U) marks, and **per-enclosure banners** — give any
+  in-document enclosure its own banner so a mixed-category package is marked correctly, each on its
+  own pages (preview, PDF, and `.docx`). Per DoDI 5200.48 + DON guidance.
 - **Enclosures** — mark one "in the document" and drop in an image or PDF; images embed and PDFs
   come in as real, searchable pages. Or merge an already-saved letter PDF with enclosure files into
   one packet — all in the browser.

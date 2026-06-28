@@ -989,6 +989,12 @@
   border-radius: 8px;
   padding: 10px;
 }
+.encl-cui-note {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #8b8f9a;
+}
 .encl-file {
   display: flex;
   align-items: center;

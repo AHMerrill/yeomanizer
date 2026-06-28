@@ -7,7 +7,7 @@
 // keep locally; open it in any text editor and see exactly what's there. Nothing is uploaded.
 import { defaultState } from '../defaultState';
 import { documentFilename } from '../format/filename';
-import type { LetterState, Paragraph } from '../types';
+import type { LetterState, Paragraph, EnclosureEntry } from '../types';
 
 const VERSION = 1;
 interface Project {
@@ -30,9 +30,16 @@ export function serializeProject(state: LetterState, includeEnclosureFiles = tru
 function sanitizeEnclosures(state: LetterState): LetterState {
   return {
     ...state,
-    encls: (state.encls ?? []).map((e) =>
-      e.file && !/^data:(image\/|application\/pdf)/i.test(e.file.dataUrl) ? { ...e, file: undefined } : e,
-    ),
+    encls: (state.encls ?? [])
+      .filter((e): e is EnclosureEntry => !!e && typeof e === 'object')
+      .map((e) => ({
+        ...e,
+        // Coerce the optional per-enclosure banner to a string (we call .trim() on it downstream).
+        cuiBanner: typeof e.cuiBanner === 'string' ? e.cuiBanner : undefined,
+        // Only let image/PDF data URLs back in — stops a hand-edited/hostile file from slipping a
+        // non-media URL (e.g. data:text/html) into an <img>/embed.
+        file: e.file && !/^data:(image\/|application\/pdf)/i.test(e.file.dataUrl) ? undefined : e.file,
+      })),
   };
 }
 

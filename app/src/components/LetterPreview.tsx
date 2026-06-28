@@ -512,7 +512,7 @@ export function LetterPreview({ state }: { state: LetterState }) {
                     encl={e}
                     index={i + 1}
                     cuiOn={state.cui.enabled}
-                    banner={state.cui.banner || 'CUI'}
+                    banner={e.cuiBanner?.trim() || state.cui.banner || 'CUI'}
                   />
                 ) : null,
               )}

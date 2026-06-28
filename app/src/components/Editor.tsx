@@ -289,9 +289,13 @@ function ParaEditor({
 function EnclosureCards({
   encls,
   onChange,
+  cuiOn,
+  letterBanner,
 }: {
   encls: EnclosureEntry[];
   onChange: (e: EnclosureEntry[]) => void;
+  cuiOn: boolean;
+  letterBanner: string;
 }) {
   const [shrink, setShrink] = useState(true);
   const update = (id: string, patch: Partial<EnclosureEntry>) =>
@@ -340,6 +344,20 @@ function EnclosureCards({
                 onFile={(f) => attach(e.id, f)}
                 onClear={() => update(e.id, { file: undefined })}
               />
+              {cuiOn && e.inDocument && e.file && (
+                <Field label="CUI banner for this enclosure (optional)">
+                  <input
+                    value={e.cuiBanner ?? ''}
+                    placeholder={`Inherits “${letterBanner}”`}
+                    onChange={(ev) => update(e.id, { cuiBanner: ev.target.value })}
+                  />
+                  <p className="encl-cui-note">
+                    Marks this enclosure’s appended page(s) with its own banner — for a package whose
+                    enclosures carry different CUI categories. Leave blank to inherit the letter’s banner.
+                    You set the marking; the tool makes no classification determination.
+                  </p>
+                </Field>
+              )}
             </>
           )}
         </div>
@@ -972,7 +990,12 @@ export function Editor({
         hint="Numbered (1), (2)… Name one, choose to embed its file in the document or attach it separately, then drag an image or PDF onto it."
         onReset={() => patch({ encls: [] })}
       >
-        <EnclosureCards encls={state.encls} onChange={(encls) => patch({ encls })} />
+        <EnclosureCards
+          encls={state.encls}
+          onChange={(encls) => patch({ encls })}
+          cuiOn={state.cui.enabled}
+          letterBanner={state.cui.banner || 'CUI'}
+        />
         {state.type === 'business-letter' && (
           <Field label="Separate mailing (optional)">
             <input

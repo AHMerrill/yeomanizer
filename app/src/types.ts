@@ -78,6 +78,12 @@ export interface EnclosureEntry {
   text: string; // the enclosure title
   inDocument?: boolean; // true = render the file into the document; false = attach separately
   file?: AttachedFile;
+  // Optional per-enclosure CUI banner. When CUI is enabled and this enclosure is rendered IN the
+  // document, its appended page(s) carry THIS banner (top/bottom) instead of the letter's — so a
+  // package can assemble enclosures of differing CUI categories, each marked on its own pages.
+  // Blank = inherit the letter's banner. The tool marks what the user specifies; it makes no
+  // classification determination of its own.
+  cuiBanner?: string;
 }
 
 export interface Paragraph {

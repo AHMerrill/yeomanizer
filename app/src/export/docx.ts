@@ -12,6 +12,7 @@ import {
   HorizontalPositionRelativeFrom,
   VerticalPositionRelativeFrom,
   TextWrappingType,
+  type ISectionOptions,
 } from 'docx';
 import type { LetterState, Paragraph as P } from '../types';
 import type { RasterPage } from './rasterizePdf';
@@ -417,16 +418,23 @@ export function buildDocxDocument(
     });
   }
 
-  // In-document enclosures (§7) — appended after the body/endorsements, each on its own page,
-  // marked "Enclosure (n)". Images embed (full fidelity); PDFs are referenced, since a .docx
-  // can't carry vector PDF pages (matches the preview's note — the signable PDF copies them).
+  // CUI banner paragraph (centered, bold) — shared by the letter section and each enclosure section.
+  const bannerPara = (text: string) =>
+    new Paragraph({ alignment: AlignmentType.CENTER, children: [R((text || '').trim() || 'CUI', { bold: true })] });
+
+  // In-document enclosures (§7) — each appended as its OWN section so it can carry its OWN CUI banner
+  // (header/footer) when a package mixes categories; a section break starts each on a new page, marked
+  // "Enclosure (n)". Images embed (full fidelity); a multi-page PDF rasterizes to one image per page; a
+  // PDF we can't rasterize is noted (a .docx can't carry vector PDF pages — the signable PDF copies them).
+  const enclSections: ISectionOptions[] = [];
   state.encls.forEach((e, n) => {
     if (!e.inDocument || !e.file) return;
-    // "Enclosure (n)" lands at the lower-right (§7): right-aligned, with spacing-before sized so it
-    // sits near the bottom margin regardless of image height (a docx frame won't render reliably).
+    const enclKids: Paragraph[] = [];
     const CONTENT_TWIPS = Math.round(9.5 * IN); // 11in page − 0.5in top − 1in bottom
+    // "Enclosure (n)" lands lower-right (§7): right-aligned, spacing-before sized so it sits near the
+    // bottom margin regardless of image height (a docx frame won't render reliably).
     const mark = (imgTwips: number) =>
-      children.push(
+      enclKids.push(
         new Paragraph({
           alignment: AlignmentType.RIGHT,
           children: [R(`Enclosure (${n + 1})`)],
@@ -436,9 +444,10 @@ export function buildDocxDocument(
     const pageImage = (data: Uint8Array, w: number, h: number, kind: 'png' | 'jpg' | 'gif' | 'bmp') => {
       const s = Math.min((6.5 * 96) / w, (8.7 * 96) / h); // fit within the 1-inch margins
       const dispH = Math.round(h * s); // displayed height in px @ 96 DPI
-      children.push(
+      enclKids.push(
         new Paragraph({
-          pageBreakBefore: true,
+          // the section break already starts page 1 of the enclosure; only break BEFORE later pages
+          pageBreakBefore: enclKids.length > 0,
           alignment: AlignmentType.CENTER,
           children: [new ImageRun({ type: kind, data, transformation: { width: Math.round(w * s), height: dispH } })],
           spacing: { after: 0 },
@@ -454,18 +463,20 @@ export function buildDocxDocument(
       // PDF rasterized to page images in-memory (export/rasterizePdf.ts) — one image per page
       enclImages[e.id].forEach((pg) => mark(pageImage(pg.bytes, pg.width, pg.height, 'png')));
     } else {
-      children.push(
-        new Paragraph({ pageBreakBefore: true, children: [R(e.text || 'Enclosure')], spacing: { after: BLANK } }),
-      );
-      children.push(new Paragraph({ children: [R(`${e.file.name} — PDF attached separately.`)] }));
+      enclKids.push(new Paragraph({ children: [R(e.text || 'Enclosure')], spacing: { after: BLANK } }));
+      enclKids.push(new Paragraph({ children: [R(`${e.file.name} — PDF attached separately.`)] }));
       mark(0);
     }
+    const banner = e.cuiBanner?.trim() || cui.banner || 'CUI';
+    enclSections.push({
+      properties: { page: { margin: { top: Math.round(0.5 * IN), right: IN, bottom: IN, left: IN } } },
+      headers: cui.enabled ? { default: new Header({ children: [bannerPara(banner)] }) } : undefined,
+      footers: cui.enabled ? { default: new Footer({ children: [bannerPara(banner)] }) } : undefined,
+      children: enclKids,
+    });
   });
 
-  // CUI banner (header + footer, repeats on every page via Word's native headers/footers)
-  // and the designation indicator block in the first-page footer (lower-right).
-  const cuiBanner = () =>
-    new Paragraph({ alignment: AlignmentType.CENTER, children: [R(cui.banner || 'CUI', { bold: true })] });
+  // The letter section's CUI header/footer + the designation indicator block in its first-page footer.
   const designationParas = () =>
     [
       `Controlled by: ${cui.controlledBy1}`,
@@ -484,13 +495,14 @@ export function buildDocxDocument(
           }),
       );
 
+  const letterBanner = cui.banner || 'CUI';
   const headers = cui.enabled
-    ? { default: new Header({ children: [cuiBanner()] }), first: new Header({ children: [cuiBanner()] }) }
+    ? { default: new Header({ children: [bannerPara(letterBanner)] }), first: new Header({ children: [bannerPara(letterBanner)] }) }
     : undefined;
   const footers = cui.enabled
     ? {
-        default: new Footer({ children: [cuiBanner()] }),
-        first: new Footer({ children: [...designationParas(), cuiBanner()] }),
+        default: new Footer({ children: [bannerPara(letterBanner)] }),
+        first: new Footer({ children: [...designationParas(), bannerPara(letterBanner)] }),
       }
     : undefined;
 
@@ -516,6 +528,7 @@ export function buildDocxDocument(
         footers,
         children,
       },
+      ...enclSections,
     ],
   });
 }

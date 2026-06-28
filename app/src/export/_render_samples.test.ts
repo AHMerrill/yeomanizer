@@ -126,13 +126,19 @@ const base: LetterState = {
     'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC';
   const encls: LetterState = {
     ...base,
-    cui: { ...base.cui, enabled: true }, // verify the CUI banner reaches enclosure pages too (§6)
+    // Per-enclosure CUI: the letter is CUI//PRVCY; enclosure 1 OVERRIDES to CUI//SP-PROPIN; enclosure 2
+    // inherits the letter banner. Verifies the banner is applied per-page (PDF) / per-section (docx),
+    // so a package of mixed-category enclosures is marked correctly (§6 + DoDI 5200.48).
+    cui: { ...base.cui, enabled: true, banner: 'CUI//PRVCY' },
     encls: [
-      { id: 'en1', text: 'Photograph of the event', inDocument: true, file: { name: 'photo.png', type: 'image/png', dataUrl: onePx } },
+      { id: 'en1', text: 'Photograph of the event', inDocument: true, cuiBanner: 'CUI//SP-PROPIN', file: { name: 'photo.png', type: 'image/png', dataUrl: onePx } },
       { id: 'en2', text: 'Supporting documentation', inDocument: true, file: { name: 'doc.pdf', type: 'application/pdf', dataUrl: enclPdfUrl } },
     ],
   };
   writeFileSync(`${OUT}/enclosures.pdf`, await buildSignablePdf(encls, today));
+  // Round-trip the CUI package (.json export → import → re-render) — proves per-enclosure banners survive.
+  const enclsRT = parseProject(serializeProject(encls));
+  if (enclsRT) writeFileSync(`${OUT}/enclosures-roundtrip.pdf`, await buildSignablePdf(enclsRT, today));
 
   // Memorandum for the Record (MFR): plain paper, date-only ident, "MEMORANDUM FOR THE RECORD" title,
   // NO From/To/Via, signature = name + org code. Verifies the MFR branch (must match preview + docx + Fig 10-1).

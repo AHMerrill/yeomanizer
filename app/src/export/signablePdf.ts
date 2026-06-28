@@ -406,10 +406,15 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   // ---- In-document enclosures — appended as their own page(s), marked "Enclosure (n)" (§7).
   // Images embed directly; PDFs copy their real pages (vector, not rasterized). ----
   const enclStart = doc.getPageCount(); // enclosure pages get the mark, not a letter page number
+  // Per-enclosure CUI banner: an enclosure's appended page(s) can carry their OWN banner (top/bottom)
+  // instead of the letter's, so a package assembled from mixed-category enclosures is marked correctly
+  // on a per-page basis. Recorded here, applied in the CUI banner pass below.
+  const pageBannerOverride = new Map<number, string>();
   for (let n = 0; n < state.encls.length; n++) {
     const e = state.encls[n];
     if (!e.inDocument || !e.file) continue;
     const mark = `Enclosure (${n + 1})`;
+    const enclBanner = (e.cuiBanner?.trim() || state.cui.banner || 'CUI').toUpperCase();
     const stamp = (pg: ReturnType<Ctx['addPage']>) => {
       const pw = pg.getSize().width;
       pg.drawText(mark, { x: pw - M_SIDE - font.widthOfTextAtSize(mark, SIZE), y: M_BOT, size: SIZE, font });
@@ -419,11 +424,13 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
       const copied = await doc.copyPages(src, src.getPageIndices());
       copied.forEach((pg) => {
         doc.addPage(pg);
+        pageBannerOverride.set(doc.getPageCount() - 1, enclBanner);
         stamp(pg);
       });
     } else {
       const img = await embedImageFile(doc, e.file);
       const pg = doc.addPage([PAGE_W, PAGE_H]);
+      pageBannerOverride.set(doc.getPageCount() - 1, enclBanner);
       if (img) {
         const bw = RIGHT - LEFT;
         const bh = PAGE_H - M_TOP - M_BOT;
@@ -443,9 +450,10 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   const cui = state.cui;
   const pages = doc.getPages();
   if (cui.enabled) {
-    const banner = (cui.banner || 'CUI').toUpperCase();
-    const bw = bold.widthOfTextAtSize(banner, 12);
-    pages.forEach((pg) => {
+    const letterBanner = (cui.banner || 'CUI').toUpperCase();
+    pages.forEach((pg, i) => {
+      const banner = pageBannerOverride.get(i) || letterBanner; // enclosure pages may carry their own
+      const bw = bold.widthOfTextAtSize(banner, 12);
       const { width: pw, height: ph } = pg.getSize();
       pg.drawText(banner, { x: (pw - bw) / 2, y: ph - 0.22 * PT - 10.7, size: 12, font: bold });
       pg.drawText(banner, { x: (pw - bw) / 2, y: 0.22 * PT + 2.6, size: 12, font: bold });

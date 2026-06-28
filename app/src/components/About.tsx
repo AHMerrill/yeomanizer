@@ -23,13 +23,13 @@ const AVAILABLE: [string, string][] = [
   ['Rank auto-translation', 'Pick a U.S. grade (E-1…O-10); the NATO OF/OR code is filled in.'],
   ['Multi-page handling', 'Continuation pages start at the 1-inch margin and number from page 2 (§7-2.17).'],
   ['CUI marking', 'Banner top & bottom of every page — enclosures included — plus the designation block and optional per-paragraph (CUI)/(U) marks. Per DoDI 5200.48 and DON PII guidance.'],
+  ['Per-enclosure CUI banners', 'Give any in-document enclosure its own banner — so a package of mixed-category enclosures is marked correctly, each on its own page(s), in the preview, the PDF, and the .docx. Blank inherits the letter’s banner. You set the marking; the tool makes no classification determination.'],
   ['Phone, tablet, desktop', 'The two-pane layout stacks and the sheet scales to fit — usable from a phone up to a wide monitor.'],
   ['Private by design', 'The tool stores and transmits nothing — your draft lives only in this tab and is erased when you close it. You download and handle the files yourself.'],
   ['NIST 800-171 minded', 'Designed to support the controls for protecting CUI on non-federal systems — local-only processing, nothing transmitted, nothing stored, air-gap capable. Not a formal accreditation; see the FAQ.'],
 ];
 
 const PLANNED: [string, string][] = [
-  ['Per-enclosure CUI', 'Mark individual enclosures as CUI or not — each enclosure is its own document under the marking rules.'],
   ['PDF pages inside Word', 'Render attached PDF pages into the .docx as images (today they embed as real pages in the PDF and are referenced by name in Word).'],
   ['More letter types', 'Multiple-address and multiple-reply letters.'],
   ['Expanded SSIC lookup', 'Search the full Standard Subject Identification Code list.'],
