@@ -134,6 +134,23 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('MEMORANDUM OF UNDERSTANDING');
   });
 
+  it('renders a joint letter — multi-command letterhead, JOINT LETTER title, per-command ident, dual signatures (Ch 7)', async () => {
+    const xml = await docxText({ ...defaultFor('joint-letter') });
+    expect(xml).toContain('JOINT LETTER');
+    expect(xml).toContain('NAVAL SEA SYSTEMS COMMAND (20362-5101)'); // letterhead lists each command
+    expect(xml).toContain('NAVSEA'); // identification column
+    expect(xml).toContain('NAVSUP');
+    expect(xml).toContain('Commander, Naval Sea Systems Command'); // a From per command
+    expect(xml).toContain('A. N. PIDGEON'); // senior signer
+    expect(xml).toContain('J. K. JANICKI'); // second signer
+  });
+
+  it('renders a JOINT MEMORANDUM when the kind is MEMORANDUM', async () => {
+    const base = defaultFor('joint-letter');
+    const xml = await docxText({ ...base, joint: { ...base.joint, kind: 'MEMORANDUM' } });
+    expect(xml).toContain('JOINT MEMORANDUM');
+  });
+
   it('embeds the seal as a media image when seal bytes are provided', async () => {
     // a 1x1 PNG stands in for the seal
     const png =

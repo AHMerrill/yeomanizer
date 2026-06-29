@@ -1894,6 +1894,43 @@
   color: #d6dae2;
 }
 
+/* Joint-letter editor: one bordered sub-block per cosigning command. */
+.joint-party {
+  border: 1px solid #2f323b;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 8px;
+}
+.joint-party .sub-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.joint-rm {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #9aa0ad;
+  cursor: pointer;
+}
+.joint-rm:hover {
+  background: #3a2730;
+  color: #ffb4b4;
+}
+.joint-triple {
+  display: flex;
+  gap: 6px;
+}
+.joint-triple > input,
+.joint-triple > select {
+  min-width: 0;
+  flex: 1;
+}
+
 /* ---- Paragraph tree ---- */
 .para-tree {
   display: flex;

@@ -11,6 +11,7 @@ import type {
   EndorsementEntry,
   EnclosureEntry,
   AttachedFile,
+  JointParty,
 } from '../types';
 import { uid, syncViaEndorsements, blankFor } from '../defaultState';
 import * as tree from '../format/tree';
@@ -589,6 +590,13 @@ export function Editor({
     setState((s) => ({ ...s, business: { ...s.business, ...p } }));
   const patchMoa = (p: Partial<LetterState['moa']>) =>
     setState((s) => ({ ...s, moa: { ...s.moa, ...p } }));
+  const patchJoint = (p: Partial<LetterState['joint']>) =>
+    setState((s) => ({ ...s, joint: { ...s.joint, ...p } }));
+  const patchJointParty = (i: number, p: Partial<JointParty>) =>
+    setState((s) => ({
+      ...s,
+      joint: { ...s.joint, parties: s.joint.parties.map((q, idx) => (idx === i ? { ...q, ...p } : q)) },
+    }));
 
   // Each Via addressee auto-creates its endorsement (see syncViaEndorsements). This button adds
   // an EXTRA endorsement not tied to a Via (e.g. an additional endorser). Both append as pages.
@@ -624,6 +632,7 @@ export function Editor({
           <option value="nato">NATO Travel Order</option>
           <option value="business-letter">Business Letter (to firms/agencies outside DoD)</option>
           <option value="moa">Memorandum of Agreement / Understanding (MOA/MOU)</option>
+          <option value="joint-letter">Joint Letter / Memorandum (co-signed by 2+ commands)</option>
         </select>
       </Card>
 
@@ -1121,8 +1130,96 @@ export function Editor({
         </Card>
       )}
 
+      {state.type === 'joint-letter' && (
+        <Card
+          title="Joint commands"
+          syncId="head"
+          hint="Joint letter (Ch 7): co-signed by two or more commands. List the SENIOR command first — it sits at the top of the letterhead, its identification column at the right, and it signs at the right."
+        >
+          <Field label="Kind">
+            <select value={state.joint.kind} onChange={(e) => patchJoint({ kind: e.target.value as 'LETTER' | 'MEMORANDUM' })}>
+              <option value="LETTER">Joint Letter</option>
+              <option value="MEMORANDUM">Joint Memorandum</option>
+            </select>
+          </Field>
+          <Field label="Shared city / state (letterhead)">
+            <input
+              value={state.letterhead.cityStateZip}
+              placeholder="WASHINGTON DC"
+              onChange={(e) => patchLH({ cityStateZip: e.target.value })}
+            />
+          </Field>
+          <Field label="To (action addressee)">
+            <input value={state.to} placeholder="Chief of Naval Operations" onChange={(e) => patch({ to: e.target.value })} />
+          </Field>
+          {state.joint.parties.map((p, i) => (
+            <div className="joint-party" key={i}>
+              <div className="sub-label">
+                {i === 0 ? 'Senior command (top / right)' : `Command ${i + 1}`}
+                {state.joint.parties.length > 2 && (
+                  <button
+                    type="button"
+                    className="joint-rm"
+                    title="Remove this command"
+                    onClick={() => patchJoint({ parties: state.joint.parties.filter((_, idx) => idx !== i) })}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <Field label="Letterhead command title">
+                <input value={p.command} placeholder="NAVAL SEA SYSTEMS COMMAND (20362-5101)" onChange={(e) => patchJointParty(i, { command: e.target.value })} />
+              </Field>
+              <Field label="From: title">
+                <input value={p.from} placeholder="Commander, Naval Sea Systems Command" onChange={(e) => patchJointParty(i, { from: e.target.value })} />
+              </Field>
+              <Field label="Short title (identification column)">
+                <input value={p.shortTitle} placeholder="NAVSEA" onChange={(e) => patchJointParty(i, { shortTitle: e.target.value })} />
+              </Field>
+              <Field label="SSIC / Serial / Date">
+                <div className="joint-triple">
+                  <input value={p.ssic} placeholder="5216" onChange={(e) => patchJointParty(i, { ssic: e.target.value })} />
+                  <input value={p.serial} placeholder="Ser 07/207" onChange={(e) => patchJointParty(i, { serial: e.target.value })} />
+                  <input value={p.date} placeholder="16 Jan 15" onChange={(e) => patchJointParty(i, { date: e.target.value })} />
+                </div>
+              </Field>
+              <Field label="Signer (name · title · authority)">
+                <div className="joint-triple">
+                  <input value={p.signer.name} placeholder="A. N. PIDGEON" onChange={(e) => patchJointParty(i, { signer: { ...p.signer, name: e.target.value } })} />
+                  <input value={p.signer.title} placeholder="Deputy" onChange={(e) => patchJointParty(i, { signer: { ...p.signer, title: e.target.value } })} />
+                  <select value={p.signer.authority} onChange={(e) => patchJointParty(i, { signer: { ...p.signer, authority: e.target.value as SignatureAuthority } })}>
+                    <option value="none">—</option>
+                    <option value="by-direction">By direction</option>
+                    <option value="acting">Acting</option>
+                  </select>
+                </div>
+              </Field>
+            </div>
+          ))}
+          {state.joint.parties.length < 3 && (
+            <button
+              className="add-btn"
+              aria-label="Add command"
+              onClick={() =>
+                patchJoint({
+                  parties: [
+                    ...state.joint.parties,
+                    { command: '', from: '', shortTitle: '', ssic: '', serial: '', date: '', signer: { name: '', title: '', authority: 'none' } },
+                  ],
+                })
+              }
+            >
+              + Add command
+            </button>
+          )}
+        </Card>
+      )}
+
       {/* MFR is "for the record"; the business letter uses an inside address — neither has From/To/Via. */}
-      {state.type !== 'mfr' && state.type !== 'business-letter' && state.type !== 'moa' && (
+      {state.type !== 'mfr' &&
+        state.type !== 'business-letter' &&
+        state.type !== 'moa' &&
+        state.type !== 'joint-letter' && (
       <Card
         title="Routing"
         syncId="head"

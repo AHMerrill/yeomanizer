@@ -183,6 +183,7 @@ export function buildDocxDocument(
   const isEndorsement = state.type === 'endorsement';
   const isBusiness = state.type === 'business-letter';
   const isMoa = state.type === 'moa';
+  const isJoint = state.type === 'joint-letter';
   const children: Paragraph[] = [];
 
   // Letterhead: on = print it (text only in v1); preprinted = reserve blank lines; off = none.
@@ -197,12 +198,16 @@ export function buildDocxDocument(
         spacing: { after: 0 },
       }),
     );
-    if (lh.activityName)
+    if (isJoint) {
+      // Joint letter: each command on its own line (senior first).
+      state.joint.parties.forEach((p) => p.command.trim() && children.push(center(p.command, 15)));
+    } else if (lh.activityName) {
       lh.activityName
         .split('\n')
         .filter((l) => l.trim())
         .forEach((l) => children.push(center(l, 15)));
-    if (lh.addressLine) children.push(center(lh.addressLine, 15));
+    }
+    if (!isJoint && lh.addressLine) children.push(center(lh.addressLine, 15));
     if (lh.cityStateZip) children.push(center(lh.cityStateZip, 15));
     children.push(spacer());
   } else if (lh.mode === 'preprinted') {
@@ -227,7 +232,28 @@ export function buildDocxDocument(
   // Identification symbols are right-aligned for EVERY type — including the business letter. (¶11-2.1
   // says "upper left", but the manual's own canonical figures 11-2/11-6 show them upper-right with a
   // serial, like a standard letter; we follow the figures + real practice. See signablePdf for the note.)
-  identLines.forEach((line) => children.push(rightLine(line)));
+  if (isJoint) {
+    // Per-command identification columns at the right (senior rightmost), via tab stops (fig 7-4).
+    const order = [...state.joint.parties].reverse(); // junior … senior (right)
+    const n = order.length;
+    // A TIGHT block of columns near the right margin (~1.1in apart), senior rightmost — not spread
+    // across the page (a wide spread overflows the margin and wraps the right column).
+    const pos = (i: number) => Math.round((5.5 - (n - 1 - i) * 1.1) * IN);
+    const stops = order.map((_, i) => ({ type: TabStopType.LEFT, position: pos(i) }));
+    const fieldRow = (getter: (p: (typeof order)[number]) => string) =>
+      new Paragraph({
+        tabStops: stops,
+        children: order.flatMap((p) => [new TextRun({ text: '\t', font: FONT, size: SZ }), R(getter(p) || ' ')]),
+        spacing: { after: 0 },
+      });
+    const anyVal = (g: (p: (typeof order)[number]) => string) => order.some((p) => g(p).trim());
+    if (anyVal((p) => p.shortTitle)) children.push(fieldRow((p) => p.shortTitle));
+    if (anyVal((p) => p.ssic)) children.push(fieldRow((p) => p.ssic));
+    if (anyVal((p) => p.serial)) children.push(fieldRow((p) => p.serial));
+    if (anyVal((p) => p.date)) children.push(fieldRow((p) => p.date));
+  } else {
+    identLines.forEach((line) => children.push(rightLine(line)));
+  }
   if (isMemo) {
     children.push(new Paragraph({ children: [R('MEMORANDUM')], spacing: { before: BLANK, after: BLANK } }));
   } else if (isMfr) {
@@ -249,6 +275,13 @@ export function buildDocxDocument(
       children.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [R(l)], spacing: { after: 0 } })),
     );
     children.push(spacer());
+  } else if (isJoint) {
+    children.push(
+      new Paragraph({
+        children: [R(`JOINT ${state.joint.kind === 'MEMORANDUM' ? 'MEMORANDUM' : 'LETTER'}`)],
+        spacing: { before: BLANK, after: BLANK },
+      }),
+    );
   } else {
     children.push(spacer());
   }
@@ -307,7 +340,13 @@ export function buildDocxDocument(
     );
   }
   // MFR is "for the record" — no addressee, so no From/To/Via.
-  if (!isMfr && !isMoa) {
+  if (isJoint) {
+    // Joint letter: a From line per command (senior first), then the single To.
+    state.joint.parties.forEach((p, i) => {
+      if (p.from.trim()) children.push(heading(i === 0 ? 'From:' : '', p.from));
+    });
+    if (state.to) children.push(heading('To:', state.to));
+  } else if (!isMfr && !isMoa) {
     // Omit an empty From:/To: line (matches the PDF) — a Distribution-only multiple-address letter
     // (Ch 8-2, Fig 8-2) drops the To: line entirely and lists addressees after the signature.
     // (The MFR has no addressee; the MOA uses its BETWEEN block instead.)
@@ -367,6 +406,28 @@ export function buildDocxDocument(
     children.push(row(b.name, a.name));
     if (b.title || a.title) children.push(row(b.title, a.title));
     if (authOf(b) || authOf(a)) children.push(row(authOf(b), authOf(a)));
+  } else if (isJoint) {
+    // One signature per command, spread left→right with the senior (party listed first) at the right.
+    const order = [...state.joint.parties].reverse(); // junior … senior(right)
+    const n = order.length;
+    const stops = order
+      .slice(1)
+      .map((_, i) => ({ type: TabStopType.LEFT, position: Math.round((sigIndent * (i + 1)) / Math.max(1, n - 1)) }));
+    const authOf = (s: { authority?: string }) =>
+      s.authority === 'by-direction' ? 'By direction' : s.authority === 'acting' ? 'Acting' : '';
+    const sigRow = (getter: (p: (typeof order)[number]) => string, before = 0) =>
+      new Paragraph({
+        tabStops: stops,
+        children: order.flatMap((p, i) =>
+          i === 0 ? [R(getter(p))] : [new TextRun({ text: '\t', font: FONT, size: SZ }), R(getter(p))],
+        ),
+        spacing: { before, after: 0 },
+      });
+    const SIG_LINE = '____________________';
+    children.push(sigRow(() => SIG_LINE, 3 * BLANK));
+    children.push(sigRow((p) => p.signer.name));
+    if (order.some((p) => p.signer.title.trim())) children.push(sigRow((p) => p.signer.title));
+    if (order.some((p) => authOf(p.signer))) children.push(sigRow((p) => authOf(p.signer)));
   } else {
     const sigLines = [state.signature.name];
     if (state.signature.title) sigLines.push(state.signature.title);

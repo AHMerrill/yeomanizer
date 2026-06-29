@@ -143,6 +143,7 @@ function Head({ state }: { state: LetterState }) {
   const encls = state.encls.filter((e) => e.text.trim());
   if (state.type === 'business-letter') return <BusinessHead state={state} ident={ident} />;
   if (state.type === 'moa') return <MoaHead state={state} ident={ident} />;
+  if (state.type === 'joint-letter') return <JointHead state={state} />;
   return (
     <>
       {lh.mode === 'on' && <Letterhead state={state} />}
@@ -446,6 +447,115 @@ function MoaClose({ state }: { state: LetterState }) {
   );
 }
 
+// Joint letter / memorandum (Ch 7, fig 7-4): co-signed by multiple commands. The letterhead lists each
+// command (senior first); each command keeps its own identification column (senior at the right); a
+// "JOINT LETTER" title precedes the multi-command From block.
+function JointHead({ state }: { state: LetterState }) {
+  const lh = state.letterhead;
+  const j = state.joint;
+  const parties = j.parties;
+  const title = `JOINT ${j.kind === 'MEMORANDUM' ? 'MEMORANDUM' : 'LETTER'}`;
+  const refs = state.refs.filter((r) => r.text.trim());
+  const encls = state.encls.filter((e) => e.text.trim());
+  const sealSrc = SEAL_URL[lh.seal];
+  const identCols = [...parties].reverse(); // senior (parties[0]) rendered at the RIGHT
+  return (
+    <>
+      {lh.mode === 'on' && (
+        <>
+          {sealSrc && <img className="seal" src={sealSrc} alt="" />}
+          <div className="letterhead">
+            <div className="lh-dept">{lh.line1 || 'DEPARTMENT OF THE NAVY'}</div>
+            {parties.map((p, i) => (
+              <div key={i} className={p.command.trim() ? 'lh-sub' : 'lh-sub ph'}>
+                {p.command.trim() || 'COMMAND TITLE'}
+              </div>
+            ))}
+            <div className={lh.cityStateZip ? 'lh-sub' : 'lh-sub ph'}>{lh.cityStateZip || 'CITY STATE ZIP+4'}</div>
+          </div>
+        </>
+      )}
+      {lh.mode === 'preprinted' && (
+        <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(0.86, lh.preprintedLines * 0.11)}in` }} />
+      )}
+      <div className={lh.mode === 'off' ? 'joint-ident no-letterhead' : 'joint-ident'}>
+        {identCols.map((p, i) => (
+          <div className="joint-ident-col" key={i}>
+            {p.shortTitle.trim() && <div>{p.shortTitle}</div>}
+            {p.ssic.trim() && <div>{p.ssic}</div>}
+            {p.serial.trim() && <div>{p.serial}</div>}
+            {p.date.trim() && <div>{p.date}</div>}
+          </div>
+        ))}
+      </div>
+      <div className="joint-title" data-sync="head">{title}</div>
+      <div className="headings">
+        {parties.map((p, i) => (
+          <div className="hrow" key={i}>
+            <span className="label">{i === 0 ? 'From:' : ''}</span>
+            <span className={p.from.trim() ? 'content' : 'content ph'}>{p.from.trim() || 'Commander, [command]'}</span>
+          </div>
+        ))}
+        <div className="hrow">
+          <span className="label">To:</span>
+          <span className={state.to ? 'content' : 'content ph'}>{state.to || 'Action addressee'}</span>
+        </div>
+        <div className="hrow h-gap">
+          <span className="label">Subj:</span>
+          <span className={state.subj ? 'content subj' : 'content subj ph'}>
+            {state.subj || 'SUBJECT IN ALL CAPS, NO PUNCTUATION'}
+          </span>
+        </div>
+        {refs.length > 0 && (
+          <div className="hrow h-gap">
+            <span className="label">Ref:</span>
+            <span className="content hlist">
+              {refs.map((r, i) => (
+                <span className="hitem" key={r.id}>
+                  <span>({refLetter(i)})</span>
+                  <span>{r.text}</span>
+                </span>
+              ))}
+            </span>
+          </div>
+        )}
+        {encls.length > 0 && (
+          <div className="hrow h-gap">
+            <span className="label">Encl:</span>
+            <span className="content hlist">
+              {encls.map((e, i) => (
+                <span className="hitem" key={e.id}>
+                  <span>({i + 1})</span>
+                  <span>{e.text}</span>
+                </span>
+              ))}
+            </span>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// Joint letter closing — one signature per command, senior at the RIGHT (7-4). Reuses the MOA
+// signature-line styling.
+function JointClose({ state }: { state: LetterState }) {
+  const cols = [...state.joint.parties].reverse(); // senior (parties[0]) at the right
+  return (
+    <div className="moa-close" data-sync="sig">
+      {cols.map((p, i) => (
+        <div className="moa-sig" key={i}>
+          <div className="moa-sig-line" />
+          <div className={p.signer.name ? '' : 'ph'}>{p.signer.name || 'I. M. LASTNAME'}</div>
+          {p.signer.title && <div>{p.signer.title}</div>}
+          {p.signer.authority === 'by-direction' && <div>By direction</div>}
+          {p.signer.authority === 'acting' && <div>Acting</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Signature({ state }: { state: LetterState }) {
   const sig = state.signature;
   return (
@@ -660,6 +770,7 @@ function LetterDoc({ state }: { state: LetterState }) {
   flattenForFlow(state.body, 0, flat);
   const isBusiness = state.type === 'business-letter';
   const isMoa = state.type === 'moa';
+  const isJoint = state.type === 'joint-letter';
   const items: FlowItem[] = [
     ...flat.map((fp) => ({
       key: `p_${fp.key}`,
@@ -667,7 +778,9 @@ function LetterDoc({ state }: { state: LetterState }) {
     })),
     {
       key: 'sig',
-      node: isMoa ? (
+      node: isJoint ? (
+        <JointClose state={state} />
+      ) : isMoa ? (
         <MoaClose state={state} />
       ) : isBusiness ? (
         <BusinessClose state={state} />

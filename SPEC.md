@@ -164,6 +164,16 @@ From/To/Via block. Subj / Ref / Encl and numbered paragraphs as a standard lette
 at the left, each over its own signature line. Rendered across preview · PDF · `.docx` (the docx uses a
 center tab stop for the two columns). MOU = the same with the title word swapped.
 
+## Joint letter / memorandum (Ch 7, fig 7-4) — done
+One letter co-signed by **two or more commands**. The letterhead lists each command (senior first) +
+a shared city/state. Each command keeps its **own identification column** (short title / SSIC / serial /
+date), rendered as a tight block at the upper right with the **senior command rightmost**. A "JOINT
+LETTER" (or "JOINT MEMORANDUM") title precedes a **From: line per command**; then the single To / Subj /
+Ref / Encl and numbered paragraphs. **One signature per command**, spread with the senior at the **right**
+(third cosigner in the middle). Model: `joint.parties[]` (senior first); rendered across preview · PDF ·
+`.docx` (PDF positions the columns absolutely; the docx uses tab stops — idents as a tight right block,
+signatures spread). 2–3 parties supported.
+
 ## Business letter (Ch 11) — done
 For correspondents outside the DoD. Letterhead required; identification symbols (SSIC / Ser /
 **civilian** date, "January 5, 2015") at the upper **RIGHT**, like the standard letter. (NB: ¶11-2.1's
@@ -254,7 +264,7 @@ A non-blocking "to review" count (warnings + sensitive-data hits) shows as a bad
   loose enclosure files) does **not** yet re-mark "Enclosure (n)" on the merged pages — that's still TODO.
 - Mid-paragraph page splitting (currently breaks only at paragraph boundaries; the "≥2 lines each side"
   rule, 7-2.13).
-- Other types still to add from M-5216.5: joint letters/memoranda (Ch 7, fig 7-4). NB: information/
-  decision papers and naval messages (GENADMIN/MARADMIN/ALMAR) are governed by OTHER pubs (staff-action
-  guides; NTP-3 / USMTF), not this manual — out of scope to avoid fabricating a format.
+- Other types still to add from M-5216.5: executive correspondence (Ch 12 — flag stationery / action
+  memos). NB: information/decision papers and naval messages (GENADMIN/MARADMIN/ALMAR) are governed by
+  OTHER pubs (staff-action guides; NTP-3 / USMTF), not this manual — out of scope to avoid fabricating a format.
 - A deeper advisor / style-suggestion layer beyond the Ch 2 ¶19 proofread checklist (done).

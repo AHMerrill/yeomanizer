@@ -123,6 +123,39 @@ export function parseProject(text: string): LetterState | null {
       s.moa && typeof s.moa === 'object'
         ? { ...defaultState.moa, ...(s.moa as object) }
         : defaultState.moa;
+    // Joint letter: bound + coerce the parties array (a hostile file could smuggle a huge/odd one).
+    const rawJoint = s.joint as { kind?: unknown; parties?: unknown } | undefined;
+    const joint =
+      rawJoint && typeof rawJoint === 'object'
+        ? {
+            kind: rawJoint.kind === 'MEMORANDUM' ? ('MEMORANDUM' as const) : ('LETTER' as const),
+            parties: (Array.isArray(rawJoint.parties) ? rawJoint.parties : [])
+              .slice(0, 6)
+              .filter((p): p is Record<string, unknown> => !!p && typeof p === 'object')
+              .map((p) => {
+                const sg = (p.signer && typeof p.signer === 'object' ? p.signer : {}) as Record<string, unknown>;
+                const auth = sg.authority;
+                return {
+                  command: typeof p.command === 'string' ? p.command.slice(0, 300) : '',
+                  from: typeof p.from === 'string' ? p.from.slice(0, 300) : '',
+                  shortTitle: typeof p.shortTitle === 'string' ? p.shortTitle.slice(0, 60) : '',
+                  ssic: typeof p.ssic === 'string' ? p.ssic.slice(0, 20) : '',
+                  serial: typeof p.serial === 'string' ? p.serial.slice(0, 40) : '',
+                  date: typeof p.date === 'string' ? p.date.slice(0, 40) : '',
+                  signer: {
+                    name: typeof sg.name === 'string' ? sg.name.slice(0, 120) : '',
+                    title: typeof sg.title === 'string' ? sg.title.slice(0, 120) : '',
+                    authority:
+                      auth === 'by-direction'
+                        ? ('by-direction' as const)
+                        : auth === 'acting'
+                          ? ('acting' as const)
+                          : ('none' as const),
+                  },
+                };
+              }),
+          }
+        : defaultState.joint;
     return sanitizeEnclosures({
       ...defaultState,
       ...s,
@@ -131,6 +164,7 @@ export function parseProject(text: string): LetterState | null {
       letterhead,
       cui,
       moa,
+      joint,
       // Bound + coerce every list field so a hostile/corrupt file can't smuggle a giant array.
       toAddrs: sanitizeEntries(s.toAddrs),
       via: sanitizeEntries(s.via),

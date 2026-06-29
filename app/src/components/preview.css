@@ -401,6 +401,25 @@
   margin-bottom: 3px;
 }
 
+/* ---- Joint letter / memorandum (Ch 7, fig 7-4) ---- */
+/* Per-command identification columns, right-aligned as a group; the senior command sits at the right. */
+.joint-ident {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45in;
+  margin-top: 0.16in;
+}
+.joint-ident.no-letterhead {
+  margin-top: 0.5in;
+}
+.joint-ident-col {
+  text-align: left;
+}
+/* "JOINT LETTER" / "JOINT MEMORANDUM" — at the left margin, above the From block. */
+.joint-title {
+  margin: 0.22in 0 0.1in;
+}
+
 /* ---- CUI markings (DoDI 5200.48 / ISOO handbook / DON PII guidance) ----
    Banner top & bottom of every page; designation indicator block on the
    first page, lower-right. Bold, capitalized, centered, black, 12pt. */

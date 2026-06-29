@@ -111,9 +111,12 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   // headings start at the right spot regardless of how many letterhead/ident lines there are. ----
   if (lh.mode === 'on') {
     putCenter(lh.line1 || 'DEPARTMENT OF THE NAVY', bold, 11, 1.04, navy);
-    [...lh.activityName.split('\n'), lh.addressLine, lh.cityStateZip]
-      .filter((l) => l.trim())
-      .forEach((l) => putCenter(l.toUpperCase(), bold, 7.5, 1.04, navy));
+    // Joint letter: list each command (senior first) + the shared city/state; else the single activity.
+    const lhLines =
+      state.type === 'joint-letter'
+        ? [...state.joint.parties.map((p) => p.command), lh.cityStateZip]
+        : [...lh.activityName.split('\n'), lh.addressLine, lh.cityStateZip];
+    lhLines.filter((l) => l.trim()).forEach((l) => putCenter(l.toUpperCase(), bold, 7.5, 1.04, navy));
     top = Math.max(top, M_TOP + 0.86 * PT); // .letterhead min-height
     gap(0.16 * PT); // .ident margin-top
   } else if (lh.mode === 'preprinted') {
@@ -129,20 +132,42 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   const ident = buildIdent(state, today);
   const isBusiness = state.type === 'business-letter';
   const isMoa = state.type === 'moa';
-  // A KEPT but blank SSIC / code line reserves a blank line (a space) so an admin can fill it in by
-  // hand later; an un-kept line is dropped entirely.
-  const idLines = [
-    state.includeSsic ? state.ssic || ' ' : null,
-    state.includeCode ? ident.codeLine || ' ' : null,
-    ident.date || null,
-  ].filter((l): l is string => l !== null);
-  if (idLines.length) {
-    const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
-    // Identification symbols are right-aligned for every letter type. NB: SECNAV M-5216.5 ¶11-2.1
-    // *says* the business letter's go "upper left", but the manual's own canonical figures (11-2
-    // BUSINESS LETTER – FIRST PAGE and 11-6 SHORT BUSINESS LETTER) show them upper RIGHT, with a
-    // serial, exactly like the standard letter — so we follow the figures (and real practice).
-    idLines.forEach((l) => put(l, RIGHT - blockW));
+  const isJoint = state.type === 'joint-letter';
+  if (isJoint) {
+    // Joint letter: each command its own identification column (shortTitle/SSIC/Ser/date); the columns
+    // sit at the right, senior command (parties[0]) rightmost (fig 7-4).
+    const colLines = (p: (typeof state.joint.parties)[number]) =>
+      [p.shortTitle, p.ssic, p.serial, p.date].map((s) => s.trim()).filter(Boolean);
+    const order = [...state.joint.parties].reverse(); // draw left→right: junior … senior
+    const widths = order.map((p) => Math.max(0, ...colLines(p).map((l) => font.widthOfTextAtSize(l, SIZE))));
+    const GAPC = 0.3 * PT;
+    const totalW = widths.reduce((a, b) => a + b, 0) + GAPC * Math.max(0, order.length - 1);
+    let x = RIGHT - totalW;
+    const startTop = top;
+    let maxTop = top;
+    order.forEach((p, idx) => {
+      top = startTop;
+      colLines(p).forEach((l) => put(l, x));
+      maxTop = Math.max(maxTop, top);
+      x += widths[idx] + GAPC;
+    });
+    top = maxTop;
+  } else {
+    // A KEPT but blank SSIC / code line reserves a blank line (a space) so an admin can fill it in by
+    // hand later; an un-kept line is dropped entirely.
+    const idLines = [
+      state.includeSsic ? state.ssic || ' ' : null,
+      state.includeCode ? ident.codeLine || ' ' : null,
+      ident.date || null,
+    ].filter((l): l is string => l !== null);
+    if (idLines.length) {
+      const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
+      // Identification symbols are right-aligned for every letter type. NB: SECNAV M-5216.5 ¶11-2.1
+      // *says* the business letter's go "upper left", but the manual's own canonical figures (11-2
+      // BUSINESS LETTER – FIRST PAGE and 11-6 SHORT BUSINESS LETTER) show them upper RIGHT, with a
+      // serial, exactly like the standard letter — so we follow the figures (and real practice).
+      idLines.forEach((l) => put(l, RIGHT - blockW));
+    }
   }
 
   // ---- Memo / MFR title at the left margin, one blank line above + below (.memo-title) ----
@@ -192,6 +217,11 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
       put(l, LEFT + (RIGHT - LEFT - w) / 2); // centered within the (equal) margins = page center
     });
     gap(PARA_GAP);
+  } else if (isJoint) {
+    gap(PARA_GAP);
+    room(SIZE * BODY_LH);
+    put(`JOINT ${state.joint.kind === 'MEMORANDUM' ? 'MEMORANDUM' : 'LETTER'}`, LEFT);
+    gap(PARA_GAP);
   } else {
     gap(0.3 * PT - PARA_GAP < 0 ? 0.14 * PT : 0.3 * PT); // .headings margin-top (~0.3in from ident)
   }
@@ -212,8 +242,14 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   };
   // The business letter is addressed by the inside address above — no From/To/Via/Subj/Ref/Encl heading.
   if (!isBusiness) {
-  // MFR is "for the record" and the MOA uses its BETWEEN block — neither has a From/To/Via.
-  if (!isMfr && !isMoa) {
+  // MFR is "for the record"; MOA uses its BETWEEN block — neither has a From/To/Via.
+  if (isJoint) {
+    // Joint letter: a From line per command (senior first), then the single To.
+    state.joint.parties.forEach((p, i) => {
+      if (p.from.trim()) headRow(i === 0 ? 'From:' : '', p.from);
+    });
+    if (state.to) headRow('To:', state.to);
+  } else if (!isMfr && !isMoa) {
     if (state.from) headRow('From:', state.from);
     if (state.to) headRow('To:', state.to);
     // Multiple-address letter (Ch 8): additional action addressees stack under the To: line.
@@ -406,11 +442,37 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     top = Math.max(leftEnd, top);
   };
 
+  // Joint letter closing: one signature per command, spread across the page with the senior (party
+  // listed first) at the RIGHT and a third cosigner in the middle (7-4).
+  const drawJointClose = () => {
+    gap(PARA_GAP * 3);
+    room(SIZE * BODY_LH * 4);
+    const SIG_LINE = '____________________';
+    const sigW = font.widthOfTextAtSize(SIG_LINE, SIZE);
+    const order = [...state.joint.parties].reverse(); // left→right: junior … senior (right)
+    const n = order.length;
+    const startTop = top;
+    let maxTop = top;
+    order.forEach((p, idx) => {
+      top = startTop;
+      const x = n > 1 ? LEFT + ((RIGHT - sigW - LEFT) * idx) / (n - 1) : sigX;
+      put(SIG_LINE, x);
+      if (p.signer.name) put(p.signer.name, x);
+      if (p.signer.title) put(p.signer.title, x);
+      if (p.signer.authority === 'by-direction') put('By direction', x);
+      if (p.signer.authority === 'acting') put('Acting', x);
+      maxTop = Math.max(maxTop, top);
+    });
+    top = maxTop;
+  };
+
   drawBody(state.body, 0, state.cui.enabled && anyCui(state.body), isBusiness);
   if (isBusiness) {
     drawBizClose();
   } else if (isMoa) {
     drawMoaClose();
+  } else if (isJoint) {
+    drawJointClose();
   } else {
     signatureBlock(state.signature.name, state.signature.title, state.signature.authority, 'Signature1');
   }

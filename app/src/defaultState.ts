@@ -105,6 +105,10 @@ export const defaultState: LetterState = {
     partyB: '',
     signerB: { name: '', title: '', authority: 'none' },
   },
+  joint: {
+    kind: 'LETTER',
+    parties: [],
+  },
 };
 
 // Per-type starting draft. Most types share `defaultState`; some need faithful defaults that match
@@ -191,6 +195,62 @@ export function defaultFor(type: CorrespondenceType): LetterState {
     // Default to date-only; the SSIC/code toggles stay available for commands whose practice adds them.
     return { ...base, includeSsic: false, includeCode: false };
   }
+  if (type === 'joint-letter') {
+    // Joint letter (Ch 7, fig 7-4): co-signed by multiple commands, each keeping its own identification
+    // symbols; the senior command is listed first and signs at the right.
+    return {
+      ...base,
+      letterhead: { ...base.letterhead, line1: 'DEPARTMENT OF THE NAVY', activityName: '', addressLine: '', cityStateZip: 'WASHINGTON DC' },
+      includeSsic: false, // each party carries its own SSIC in the joint identification columns
+      includeCode: false,
+      from: '',
+      to: 'Chief of Naval Operations',
+      via: [],
+      subj: 'HOW TO PREPARE A JOINT LETTER',
+      refs: [],
+      encls: [],
+      joint: {
+        kind: 'LETTER',
+        parties: [
+          {
+            command: 'NAVAL SEA SYSTEMS COMMAND (20362-5101)',
+            from: 'Commander, Naval Sea Systems Command',
+            shortTitle: 'NAVSEA',
+            ssic: '5216',
+            serial: 'Ser 07/207',
+            date: '16 Jan 15',
+            signer: { name: 'A. N. PIDGEON', title: 'Deputy', authority: 'none' },
+          },
+          {
+            command: 'NAVAL SUPPLY SYSTEMS COMMAND (20376-5000)',
+            from: 'Commander, Naval Supply Systems Command',
+            shortTitle: 'NAVSUP',
+            ssic: '5216',
+            serial: 'Ser 02/318',
+            date: '9 Jan 15',
+            signer: { name: 'J. K. JANICKI', title: 'Acting', authority: 'none' },
+          },
+        ],
+      },
+      body: [
+        {
+          id: uid(),
+          text: 'A joint letter may be used to establish an agreement between two or more activities, or for other matters of mutual concern. To prepare a joint memorandum, switch the kind above — “JOINT LETTER” becomes “JOINT MEMORANDUM.”',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'List the command titles so the senior is at the top. Each command keeps its own identification symbols, shown in the columns above.',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'Arrange the signature lines so the senior official is at the right; the senior official signs last.',
+          children: [],
+        },
+      ],
+    };
+  }
   if (type === 'moa') {
     // MOA/MOU (fig 10-5): plain bond, date-only ident, BETWEEN the two activities, dual signatures.
     return {
@@ -260,6 +320,7 @@ export function blankFor(type: CorrespondenceType): LetterState {
     business: { ...defaultState.business },
     nato: { ...defaultState.nato },
     moa: { ...defaultState.moa, signerB: { ...defaultState.moa.signerB } },
+    joint: { ...defaultState.joint, parties: [] },
   };
 }
 

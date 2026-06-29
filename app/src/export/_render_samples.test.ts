@@ -221,6 +221,11 @@ const base: LetterState = {
   };
   writeFileSync(`${OUT}/moa.pdf`, await buildSignablePdf(moa, today));
 
+  // Joint letter (Ch 7, fig 7-4): multi-command letterhead, per-command identification columns (senior
+  // right), JOINT LETTER title, a From per command, dual signatures (senior right).
+  const joint: LetterState = { ...defaultFor('joint-letter') };
+  writeFileSync(`${OUT}/joint.pdf`, await buildSignablePdf(joint, today));
+
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
   const { Packer } = await import('docx');
@@ -242,4 +247,5 @@ const base: LetterState = {
   await writeDocx('multi-address-to', multiTo);
   await writeDocx('multi-address-dist', multiDist);
   await writeDocx('moa', moa);
+  await writeDocx('joint', joint);
 });

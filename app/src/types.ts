@@ -8,6 +8,7 @@ export type CorrespondenceType =
   | 'business-letter'
   | 'endorsement'
   | 'moa'
+  | 'joint-letter'
   | 'nato';
 
 // Business letter (Ch 11) — used to correspond with agencies/businesses/individuals outside DoD.
@@ -32,6 +33,24 @@ export interface Moa {
   partyA: string; // senior activity — listed first under BETWEEN, signs at the right
   partyB: string; // second activity — signs at the left
   signerB: SignatureBlock; // party B's signer (party A uses the shared state.signature)
+}
+
+// Joint letter / joint memorandum (Ch 7, fig 7-4): one letter co-signed by two or more commands.
+// Each party keeps its OWN identification (short title + SSIC + serial + date) and its own signer.
+// Parties are listed senior-first; the senior command sits at the TOP of the letterhead/From and signs
+// at the RIGHT (10-2 / 7-4). `shared` letterhead line1 + city/state + the To/Subj/body are common.
+export interface JointParty {
+  command: string; // letterhead command title (may include the SNDL address code), senior first
+  from: string; // the "From:" title, e.g. "Commander, Naval Sea Systems Command"
+  shortTitle: string; // identification-column header, e.g. "NAVSEA"
+  ssic: string;
+  serial: string;
+  date: string; // each command dates its own signature (free text, e.g. "16 Jan 15")
+  signer: SignatureBlock;
+}
+export interface Joint {
+  kind: 'LETTER' | 'MEMORANDUM';
+  parties: JointParty[]; // senior first; rendered with the senior at the right (ident + signature)
 }
 
 // NATO travel order (a bilingual form, not a naval letter). DoD/FCG template.
@@ -198,4 +217,7 @@ export interface LetterState {
 
   // Memorandum of Agreement/Understanding parts (used when type === 'moa')
   moa: Moa;
+
+  // Joint letter / joint memorandum parts (used when type === 'joint-letter')
+  joint: Joint;
 }

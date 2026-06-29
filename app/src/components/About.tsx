@@ -7,6 +7,7 @@ const AVAILABLE: [string, string][] = [
   ['Memorandum for the Record (MFR)', 'Plain bond, date-only identification, “MEMORANDUM FOR THE RECORD” — to capture a meeting, call, or oral agreement (Ch 10).'],
   ['Business letter', 'For firms, agencies, or people outside the DoD (Ch 11): an inside address and salutation, a civilian-style date, unnumbered paragraphs, and a centered “Sincerely,” over the signature.'],
   ['Memorandum of Agreement / Understanding', 'MOA/MOU (Ch 10): plain bond, a centered title and “BETWEEN” the two activities (senior first), then dual signatures with the senior at the right — each over its own signature line, in the preview, PDF, and Word.'],
+  ['Joint letter / memorandum', 'Co-signed by two or more commands (Ch 7): each command listed in the letterhead (senior first), its own SSIC/serial/date identification column (senior at the right), a “JOINT LETTER” title, a From per command, and one signature per command arranged senior-right.'],
   ['Endorsements', 'Add a Via and the endorsement appends as its own page — with its own signature block, and its own CAC-signable field in the PDF.'],
   ['NATO travel order', 'The bilingual two-page form, with U.S. → NATO rank codes filled in.'],
   ['Live preview', 'Overleaf-style: the formatted page updates with every keystroke.'],
@@ -42,7 +43,7 @@ const AVAILABLE: [string, string][] = [
 ];
 
 const PLANNED: [string, string][] = [
-  ['Joint letters', 'Standard letters co-signed by multiple commands (Ch 7). Note: information/decision papers and naval messages are governed by other publications, not SECNAV M-5216.5, so they’re out of scope here.'],
+  ['Executive correspondence (Ch 12)', 'Flag-stationery letters and action memos to senior officials. Note: information/decision papers and naval messages are governed by other publications, not SECNAV M-5216.5, so they’re out of scope here.'],
 ];
 
 function Column({ title, items, planned }: { title: string; items: [string, string][]; planned?: boolean }) {
