@@ -64,6 +64,35 @@ describe('project-file round-trip (.yeomanizer.json)', () => {
     expect(back?.distribution[0].text).toBe('COMSUBFOR NORFOLK (4 copies)');
   });
 
+  it('round-trips an MOA losslessly (kind, parties, second signer survive)', () => {
+    const moa: LetterState = { ...defaultFor('moa') };
+    const back = parseProject(serializeProject(moa));
+    expect(back).toEqual(moa);
+    expect(back?.moa.partyA).toContain('Naval Air');
+    expect(back?.moa.signerB.title).toBe('Deputy');
+  });
+
+  it('round-trips a joint letter losslessly (parties + per-command signers survive)', () => {
+    const joint: LetterState = { ...defaultFor('joint-letter') };
+    const back = parseProject(serializeProject(joint));
+    expect(back).toEqual(joint);
+    expect(back?.joint.parties).toHaveLength(2);
+    expect(back?.joint.parties[0].shortTitle).toBe('NAVSEA');
+    expect(back?.joint.parties[1].signer.name).toBe('J. K. JANICKI');
+  });
+
+  it('bounds a hostile joint parties array on import (no giant arrays survive)', () => {
+    const hostile = JSON.stringify({
+      v: 1,
+      state: {
+        ...defaultState,
+        joint: { kind: 'LETTER', parties: Array.from({ length: 99 }, () => ({ command: 'X', signer: {} })) },
+      },
+    });
+    const back = parseProject(hostile);
+    expect(back?.joint.parties.length).toBeLessThanOrEqual(6);
+  });
+
   it('bounds a hostile list field on import (no giant arrays survive)', () => {
     const hostile = JSON.stringify({
       v: 1,

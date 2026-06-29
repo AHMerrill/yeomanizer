@@ -149,6 +149,17 @@ const base: LetterState = {
   };
   writeFileSync(`${OUT}/mfr.pdf`, await buildSignablePdf(mfr, today));
 
+  // Memorandum (Ch 10, From-To): plain bond, date-only ident (right, ~6th line), "MEMORANDUM" at the
+  // left margin, then From/To/Subj and numbered paragraphs; signature centered. Verifies the memo branch.
+  const memo: LetterState = {
+    ...defaultFor('memo-from-to'),
+    from: 'Director, Logistics (N4)',
+    to: 'All Department Heads',
+    subj: 'PARKING DURING THE PIER REPAIR',
+    signature: { name: 'R. T. KEEL', title: 'N4', authority: 'none' },
+  };
+  writeFileSync(`${OUT}/memo.pdf`, await buildSignablePdf(memo, today));
+
   // Business letter (Ch 11): letterhead, LEFT identification block, inside address + salutation,
   // civilian date, unnumbered main paragraphs, centered "Sincerely," + signature, end-of-letter
   // Enclosures + Separate Mailing. Verifies the business branch (must match preview + docx + Fig 11-2).
@@ -242,6 +253,7 @@ const base: LetterState = {
   await writeDocx('cui', cui);
   await writeDocx('portions', portions);
   await writeDocx('mfr', mfr);
+  await writeDocx('memo', memo);
   await writeDocx('enclosures', encls);
   await writeDocx('business', business);
   await writeDocx('multi-address-to', multiTo);
