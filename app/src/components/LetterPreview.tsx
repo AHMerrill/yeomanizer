@@ -372,11 +372,22 @@ function MoaHead({ state, ident }: { state: LetterState; ident: IdentLines }) {
       {lh.mode === 'preprinted' && (
         <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(0.86, lh.preprintedLines * 0.11)}in` }} />
       )}
-      <div className={lh.mode === 'off' ? 'ident no-letterhead' : 'ident'}>
-        {state.includeSsic && (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph ph-line">SSIC</div>)}
-        {state.includeCode &&
-          (ident.codeLine ? <div>{ident.codeLine}</div> : <div className="ph ph-line">Code</div>)}
-        {ident.date ? <div>{ident.date}</div> : <div className="ph">Date</div>}
+      {/* Dual identification blocks (fig 10-5): party A left (short title + the shared SSIC/code/date),
+          party B right (its own short title + SSIC + serial + date). */}
+      <div className={lh.mode === 'off' ? 'moa-idents no-letterhead' : 'moa-idents'}>
+        <div className="moa-ident-a">
+          {moa.shortTitleA.trim() && <div>{moa.shortTitleA}</div>}
+          {state.includeSsic && (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph ph-line">SSIC</div>)}
+          {state.includeCode &&
+            (ident.codeLine ? <div>{ident.codeLine}</div> : <div className="ph ph-line">Code</div>)}
+          {ident.date ? <div>{ident.date}</div> : <div className="ph">Date</div>}
+        </div>
+        <div className="moa-ident-b">
+          {moa.shortTitleB.trim() && <div>{moa.shortTitleB}</div>}
+          {moa.ssicB.trim() && <div>{moa.ssicB}</div>}
+          {moa.serialB.trim() && <div>Ser {moa.serialB}</div>}
+          {moa.dateB.trim() && <div>{moa.dateB}</div>}
+        </div>
       </div>
       <div className="moa-title" data-sync="head">
         <div className="moa-title-main">{title}</div>

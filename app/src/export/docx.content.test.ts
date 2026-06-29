@@ -113,9 +113,11 @@ describe('buildDocxDocument — document.xml content', () => {
       ...defaultFor('moa'),
       signature: { name: 'A. SENIOR', title: 'Deputy', authority: 'none' },
       moa: {
-        kind: 'AGREEMENT',
+        ...defaultFor('moa').moa,
         partyA: 'COMMANDER, ALPHA',
         partyB: 'COMMANDER, BRAVO',
+        shortTitleA: 'ALPHACOM',
+        shortTitleB: 'BRAVOCOM',
         signerB: { name: 'B. JUNIOR', title: 'Acting', authority: 'none' },
       },
     });
@@ -125,6 +127,8 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('COMMANDER, BRAVO');
     expect(xml).toContain('A. SENIOR'); // party A (senior)
     expect(xml).toContain('B. JUNIOR'); // party B
+    expect(xml).toContain('ALPHACOM'); // party A ident short title (dual ident block)
+    expect(xml).toContain('BRAVOCOM'); // party B ident short title
     expect(xml).not.toContain('From:'); // MOA uses the BETWEEN block, not From/To
   });
 

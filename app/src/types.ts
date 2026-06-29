@@ -33,6 +33,14 @@ export interface Moa {
   partyA: string; // senior activity — listed first under BETWEEN, signs at the right
   partyB: string; // second activity — signs at the left
   signerB: SignatureBlock; // party B's signer (party A uses the shared state.signature)
+  // Dual identification blocks (fig 10-5): each party keeps its own short title + SSIC + serial + date.
+  // Party A's block sits left and reuses the shared identification (state.ssic/originatorCode/serial/
+  // date) plus shortTitleA; party B's block sits right and is fully captured here.
+  shortTitleA: string; // party A short title above its ident block (e.g., NAVAIRSYSCOM)
+  shortTitleB: string; // party B short title (e.g., NAVINTCOM)
+  ssicB: string; // party B SSIC
+  serialB: string; // party B serial, rendered "Ser <serialB>"
+  dateB: string; // party B date
 }
 
 // Joint letter / joint memorandum (Ch 7, fig 7-4): one letter co-signed by two or more commands.

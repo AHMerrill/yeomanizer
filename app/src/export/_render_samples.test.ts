@@ -239,7 +239,7 @@ const base: LetterState = {
     ...defaultFor('moa'),
     signature: { name: 'K. O. ALLISON', title: 'Deputy', authority: 'none' },
     moa: {
-      kind: 'AGREEMENT',
+      ...defaultFor('moa').moa, // keeps the dual-ident fields (short titles, party B SSIC/serial/date)
       partyA: 'COMMANDER, NAVAL AIR SYSTEMS COMMAND',
       partyB: 'COMMANDER, NAVAL INTELLIGENCE COMMAND',
       signerB: { name: 'M. L. SIMPSON', title: 'Acting', authority: 'none' },

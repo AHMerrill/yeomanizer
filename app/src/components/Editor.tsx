@@ -1077,7 +1077,17 @@ export function Editor({
           syncId="head"
           hint="MOA/MOU (Ch 10): plain bond, the two activities listed BETWEEN, dual signatures with the senior at the right. List the senior activity first."
           onReset={() =>
-            patchMoa({ kind: 'AGREEMENT', partyA: '', partyB: '', signerB: { name: '', title: '', authority: 'none' } })
+            patchMoa({
+              kind: 'AGREEMENT',
+              partyA: '',
+              partyB: '',
+              signerB: { name: '', title: '', authority: 'none' },
+              shortTitleA: '',
+              shortTitleB: '',
+              ssicB: '',
+              serialB: '',
+              dateB: '',
+            })
           }
         >
           <Field label="Kind">
@@ -1093,12 +1103,52 @@ export function Editor({
               onChange={(e) => patchMoa({ partyA: e.target.value })}
             />
           </Field>
+          <Field label="First activity short title (its ident block, left)">
+            <input
+              value={state.moa.shortTitleA}
+              placeholder="NAVAIRSYSCOM"
+              onChange={(e) => patchMoa({ shortTitleA: e.target.value })}
+            />
+          </Field>
+          <div className="sub-label">
+            The first activity’s SSIC, serial, and date come from the Identification card above.
+          </div>
           <Field label="Second activity (signs at the left)">
             <input
               value={state.moa.partyB}
               placeholder="Commander, Naval Intelligence Command"
               onChange={(e) => patchMoa({ partyB: e.target.value })}
             />
+          </Field>
+          <div className="sub-label">Second activity’s identification block (right) — each party keeps its own.</div>
+          <Field label="Short title">
+            <input
+              value={state.moa.shortTitleB}
+              placeholder="NAVINTCOM"
+              onChange={(e) => patchMoa({ shortTitleB: e.target.value })}
+            />
+          </Field>
+          <Field label="SSIC · Serial · Date">
+            <div className="joint-triple">
+              <input
+                value={state.moa.ssicB}
+                placeholder="5216"
+                aria-label="Second activity SSIC"
+                onChange={(e) => patchMoa({ ssicB: e.target.value })}
+              />
+              <input
+                value={state.moa.serialB}
+                placeholder="N7/702"
+                aria-label="Second activity serial"
+                onChange={(e) => patchMoa({ serialB: e.target.value })}
+              />
+              <input
+                value={state.moa.dateB}
+                placeholder="23 Jan 15"
+                aria-label="Second activity date"
+                onChange={(e) => patchMoa({ dateB: e.target.value })}
+              />
+            </div>
           </Field>
           <div className="sub-label">Second activity’s signer (the senior signer is set in the Signature card below)</div>
           <Field label="Name">

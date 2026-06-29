@@ -104,6 +104,11 @@ export const defaultState: LetterState = {
     partyA: '',
     partyB: '',
     signerB: { name: '', title: '', authority: 'none' },
+    shortTitleA: '',
+    shortTitleB: '',
+    ssicB: '',
+    serialB: '',
+    dateB: '',
   },
   joint: {
     kind: 'LETTER',
@@ -252,12 +257,18 @@ export function defaultFor(type: CorrespondenceType): LetterState {
     };
   }
   if (type === 'moa') {
-    // MOA/MOU (fig 10-5): plain bond, date-only ident, BETWEEN the two activities, dual signatures.
+    // MOA/MOU (fig 10-5): plain bond, dual identification blocks (party A left, party B right),
+    // BETWEEN the two activities, dual signatures (the senior official signs at the right).
     return {
       ...base,
       letterhead: { ...base.letterhead, mode: 'off' },
-      includeSsic: false,
-      includeCode: false,
+      includeSsic: true,
+      includeCode: true,
+      ssic: '5216',
+      originatorCode: 'N02',
+      serial: '234',
+      dateMode: 'manual',
+      dateManual: '20 Jan 15',
       from: '',
       to: '',
       via: [],
@@ -269,6 +280,11 @@ export function defaultFor(type: CorrespondenceType): LetterState {
         partyA: 'Commander, Naval Air Systems Command',
         partyB: 'Commander, Naval Intelligence Command',
         signerB: { name: '', title: 'Deputy', authority: 'none' },
+        shortTitleA: 'NAVAIRSYSCOM',
+        shortTitleB: 'NAVINTCOM',
+        ssicB: '5216',
+        serialB: 'N7/702',
+        dateB: '23 Jan 15',
       },
       signature: { name: '', title: 'Acting', authority: 'none' },
       body: [

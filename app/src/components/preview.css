@@ -379,6 +379,18 @@
 
 /* ---- Memorandum of Agreement / Understanding (Ch 10, fig 10-5) ---- */
 /* Centered title block: the title, "BETWEEN", the two activities (senior first), and "AND". */
+/* MOA/MOU dual identification blocks (fig 10-5): party A at the left margin, party B at the right. */
+.moa-idents {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.16in;
+}
+.moa-idents.no-letterhead {
+  margin-top: 0.5in;
+}
+.moa-ident-b {
+  text-align: right;
+}
 .moa-title {
   text-align: center;
   margin: 0.3in 0 0.24in;

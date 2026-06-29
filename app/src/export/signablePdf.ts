@@ -162,6 +162,30 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
       x += widths[idx] + GAPC;
     });
     top = maxTop;
+  } else if (isMoa) {
+    // Dual identification blocks (fig 10-5): party A at the LEFT margin (short title + the shared
+    // SSIC/code/date), party B right-aligned at the RIGHT (its own short title + SSIC/serial/date).
+    const m = state.moa;
+    const colA = [
+      m.shortTitleA.trim() || null,
+      state.includeSsic ? state.ssic || ' ' : null,
+      state.includeCode ? ident.codeLine || ' ' : null,
+      ident.date || null,
+    ].filter((l): l is string => l !== null);
+    const colB = [
+      m.shortTitleB.trim() || null,
+      m.ssicB.trim() || null,
+      m.serialB.trim() ? `Ser ${m.serialB.trim()}` : null,
+      m.dateB.trim() || null,
+    ].filter((l): l is string => l !== null);
+    const moaStartTop = top;
+    let moaMaxTop = top;
+    colA.forEach((l) => put(l, LEFT));
+    moaMaxTop = Math.max(moaMaxTop, top);
+    top = moaStartTop;
+    const colBW = colB.length ? Math.max(...colB.map((l) => font.widthOfTextAtSize(l, SIZE))) : 0;
+    colB.forEach((l) => put(l, RIGHT - colBW));
+    top = Math.max(moaMaxTop, top);
   } else {
     // A KEPT but blank SSIC / code line reserves a blank line (a space) so an admin can fill it in by
     // hand later; an un-kept line is dropped entirely.

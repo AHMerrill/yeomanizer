@@ -252,6 +252,27 @@ export function buildDocxDocument(
     if (anyVal((p) => p.ssic)) children.push(fieldRow((p) => p.ssic));
     if (anyVal((p) => p.serial)) children.push(fieldRow((p) => p.serial));
     if (anyVal((p) => p.date)) children.push(fieldRow((p) => p.date));
+  } else if (isMoa) {
+    // Dual identification blocks (fig 10-5): party A at the left, party B right-aligned at the right
+    // margin (via a RIGHT tab stop). Rows pair the two parties so their short title / SSIC / serial /
+    // date line up; party A reuses the shared identification, party B keeps its own.
+    const m = state.moa;
+    const moaStop = { type: TabStopType.RIGHT, position: Math.round(6.5 * IN) };
+    const row = (a: string, b: string) =>
+      new Paragraph({
+        tabStops: [moaStop],
+        children: [R(a), new TextRun({ text: '\t', font: FONT, size: SZ }), R(b)],
+        spacing: { after: 0 },
+      });
+    const rows: [string, string][] = [
+      [m.shortTitleA, m.shortTitleB],
+      [state.includeSsic ? ident.ssic || ' ' : '', m.ssicB],
+      [state.includeCode ? ident.codeLine || ' ' : '', m.serialB.trim() ? `Ser ${m.serialB.trim()}` : ''],
+      [ident.date, m.dateB],
+    ];
+    rows.forEach(([a, b]) => {
+      if (a !== '' || b !== '') children.push(row(a, b));
+    });
   } else {
     identLines.forEach((line) => children.push(rightLine(line)));
   }
