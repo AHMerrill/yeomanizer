@@ -47,6 +47,13 @@ describe('buildIdent — sender symbol block (§7-2.3)', () => {
     expect(buildIdent(base({ originatorCode: 'N00J', serial: 'S20' })).codeLine).toBe('Ser N00J/S20');
   });
 
+  it('memorandums prefix the serial with "Memo" not "Ser" (fig 10-4)', () => {
+    expect(buildIdent(base({ type: 'memo-from-to', originatorCode: '00', serial: '83' })).codeLine).toBe(
+      'Memo 00/83',
+    );
+    expect(buildIdent(base({ type: 'mfr', originatorCode: '00', serial: '83' })).codeLine).toBe('Memo 00/83');
+  });
+
   it('auto date uses the abbreviated form', () => {
     expect(buildIdent(base({ dateMode: 'auto' }), sep7).date).toBe('7 Sep 06');
   });

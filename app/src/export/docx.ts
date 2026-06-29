@@ -8,6 +8,7 @@ import {
   UnderlineType,
   Header,
   Footer,
+  PageNumber,
   ImageRun,
   HorizontalPositionRelativeFrom,
   VerticalPositionRelativeFrom,
@@ -607,15 +608,50 @@ export function buildDocxDocument(
       );
 
   const letterBanner = cui.banner || 'CUI';
-  const headers = cui.enabled
-    ? { default: new Header({ children: [bannerPara(letterBanner)] }), first: new Header({ children: [bannerPara(letterBanner)] }) }
-    : undefined;
-  const footers = cui.enabled
-    ? {
-        default: new Footer({ children: [bannerPara(letterBanner)] }),
-        first: new Footer({ children: [...designationParas(), bannerPara(letterBanner)] }),
-      }
-    : undefined;
+
+  // Continuation header (pages 2+): repeat the Subj line (7-2.16) — or, for a business letter, the
+  // identification symbols (11-2.14) — to match the preview and the PDF. It rides in the section's
+  // DEFAULT header; titlePage gives page 1 its own (Subj-free) header so the repeat never shows there.
+  const contIdent = [
+    state.includeSsic ? ident.ssic : '',
+    state.includeCode ? ident.codeLine : '',
+    ident.date,
+  ].filter((l) => l.trim());
+  const contHeaderParas: Paragraph[] = isBusiness
+    ? contIdent.map(
+        (l) => new Paragraph({ alignment: AlignmentType.RIGHT, children: [R(l)], spacing: { after: 0 } }),
+      )
+    : state.subj.trim()
+      ? [heading('Subj:', state.subj.toUpperCase())]
+      : [];
+  const hasCont = contHeaderParas.length > 0;
+
+  const headers =
+    cui.enabled || hasCont
+      ? {
+          default: new Header({
+            children: [...(cui.enabled ? [bannerPara(letterBanner)] : []), ...contHeaderParas],
+          }),
+          // Page 1 carries the full heading already; show only the CUI banner there (if any).
+          ...(cui.enabled ? { first: new Header({ children: [bannerPara(letterBanner)] }) } : {}),
+        }
+      : undefined;
+  // Centered page number on continuation pages only (7-2.16 / 11-2.4: page 1 is unnumbered; numbers
+  // start at 2, centered near the bottom). It rides in the DEFAULT footer; the FIRST footer omits it,
+  // so titlePage must stay on. Matches the PDF, which numbers from page 2.
+  const pageNumberPara = new Paragraph({
+    alignment: AlignmentType.CENTER,
+    children: [new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: SZ })],
+    spacing: { after: 0 },
+  });
+  const footers = {
+    default: new Footer({
+      children: [pageNumberPara, ...(cui.enabled ? [bannerPara(letterBanner)] : [])],
+    }),
+    first: new Footer({
+      children: cui.enabled ? [...designationParas(), bannerPara(letterBanner)] : [spacer(0)],
+    }),
+  };
 
   return new Document({
     // No identifying metadata in the exported file: override the docx library's default core
@@ -633,7 +669,8 @@ export function buildDocxDocument(
       {
         properties: {
           page: { margin: { top: Math.round(0.5 * IN), right: IN, bottom: IN, left: IN } },
-          titlePage: cui.enabled,
+          // Always on: page 1 needs a distinct (Subj-free, unnumbered) header/footer from pages 2+.
+          titlePage: true,
         },
         headers,
         footers,

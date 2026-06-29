@@ -16,7 +16,9 @@ export function buildIdent(s: LetterState, today: Date = new Date()): IdentLines
   const serial = s.serial.trim();
   const code = s.originatorCode.trim();
   // 7-2.3: serialized correspondence is "Ser <code>/<serial>"; otherwise just the code.
-  const codeLine = serial ? `Ser ${code}/${serial}` : code;
+  // Memorandums prefix the serial with "Memo" instead of "Ser" (fig 10-4: "Memo 00/83").
+  const isMemo = s.type === 'memo-from-to' || s.type === 'mfr';
+  const codeLine = serial ? `${isMemo ? 'Memo' : 'Ser'} ${code}/${serial}` : code;
 
   let date = '';
   // The business letter dates in civilian month-day-year order ("January 5, 2015"); everything else

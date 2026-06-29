@@ -271,6 +271,7 @@ const base: LetterState = {
   await writeDocx('memo', memo);
   await writeDocx('enclosures', encls);
   await writeDocx('business', business);
+  await writeDocx('multipage', longBody); // multi-page: verifies the repeated Subj header + page numbers
   await writeDocx('multi-address-to', multiTo);
   await writeDocx('multi-address-dist', multiDist);
   await writeDocx('moa', moa);

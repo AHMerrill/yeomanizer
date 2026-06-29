@@ -54,9 +54,19 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   let page = doc.addPage([PAGE_W, PAGE_H]);
   let top = M_TOP; // distance from the page's top edge to the next content
   const sigRefs: ReturnType<typeof doc.context.register>[] = []; // collected into one AcroForm at the end
+  // Drawn at the top of each BODY continuation page: the Subj line (7-2.16) — or, for a business
+  // letter, the identification symbols (11-2.14). Null on page 1 (it carries the full heading) and
+  // cleared before endorsement/enclosure pages, which bring their own headers. Mirrors the preview.
+  let contHeader: (() => void) | null = null;
   const newPage = () => {
     page = doc.addPage([PAGE_W, PAGE_H]);
     top = M_BOT; // continuation/subsequent pages use the 1-inch top margin (7-2.16)
+    if (contHeader) {
+      const h = contHeader;
+      contHeader = null; // re-entrancy guard: the header draws on a fresh page with room to spare
+      h();
+      contHeader = h;
+    }
   };
   const room = (need: number) => {
     if (PAGE_H - top - need < M_BOT) newPage();
@@ -272,6 +282,29 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     headRow(i === 0 ? 'Encl:' : '', e.text, `(${i + 1})  `);
   });
   } // end of the non-business heading block
+
+  // Arm the continuation header now that the heading is laid out: every body page break from here on
+  // repeats the Subj line at the 1-inch margin (or the identification symbols for a business letter),
+  // matching the preview's continuation heads. Page 1 already shows the full heading.
+  if (isBusiness) {
+    const cont = [
+      state.includeSsic ? state.ssic || ' ' : null,
+      state.includeCode ? ident.codeLine || ' ' : null,
+      ident.date || null,
+    ].filter((l): l is string => l !== null);
+    if (cont.length) {
+      const blockW = Math.max(...cont.map((l) => font.widthOfTextAtSize(l, SIZE)));
+      contHeader = () => {
+        cont.forEach((l) => put(l, RIGHT - blockW));
+        gap(PARA_GAP);
+      };
+    }
+  } else if (state.subj.trim()) {
+    contHeader = () => {
+      headRow('Subj:', state.subj.toUpperCase());
+      gap(PARA_GAP);
+    };
+  }
 
   // ---- Body (numbered paragraphs; first line indented, continuation at the left margin) ----
   gap(PARA_GAP);
@@ -496,6 +529,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   }
 
   // ---- Endorsements — each on its own page with its own signature block + CAC field (Ch 9) ----
+  contHeader = null; // basic-letter Subj must not bleed onto endorsement/enclosure pages
   const onBasic = `ENDORSEMENT on ${basicLetterId(state, today)}`;
   state.endorsements.forEach((e, i) => {
     newPage();
