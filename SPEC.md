@@ -149,14 +149,18 @@ at paragraph boundaries (atomic blocks) — mid-paragraph line-splitting (the "�
 side" rule, 7-2.13) is a future refinement.
 
 ## Memorandum (Ch 10) — done (From-To / plain-paper / letterhead)
-Plain bond (letterhead off) or letterhead. The only ID symbol is the **date**, flush right
-on the ~6th line — no SSIC (10-2). "MEMORANDUM" at the left margin, then
+Plain bond (letterhead off) or letterhead. By default the only ID symbol is the **date**, flush right
+on the ~6th line (10-2: "the only identification symbol you need is the date, unless local practice
+calls for more" — so SSIC/code stay toggleable, off by default, and render right-aligned when on,
+consistently across preview/PDF/docx). "MEMORANDUM" at the left margin, then
 From/To/Via/Subj/Ref/Encl and numbered paragraphs exactly as a letter; signature centered.
 The MFR is done; decision memos and MOA/MOU remain as future sub-variants.
 
 ## Business letter (Ch 11) — done
 For correspondents outside the DoD. Letterhead required; identification symbols (SSIC / Ser /
-**civilian** date, "January 5, 2015") at the upper **LEFT**, not right. An **inside address** and a
+**civilian** date, "January 5, 2015") at the upper **RIGHT**, like the standard letter. (NB: ¶11-2.1's
+*text* says "upper left," but the manual's own figures 11-2 BUSINESS LETTER – FIRST PAGE and 11-6 SHORT
+BUSINESS LETTER show them upper-right with a serial — we follow the figures + real practice.) An **inside address** and a
 **salutation** ("Dear Mr. Jones:") replace From/To/Via; an optional all-caps **subject** may stand
 in for the salutation. Main paragraphs are **not numbered** (the subparagraph ladder shifts one level
 deeper); a centered **"Sincerely,"** + signature; **Enclosures:** / **Separate Mailing:** notations at

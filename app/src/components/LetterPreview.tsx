@@ -144,11 +144,8 @@ function Head({ state }: { state: LetterState }) {
       {/* Memo: date only (flush right, ~6th line). Letter: SSIC block (lines optional).
           A kept-but-blank line shows a faint screen-only placeholder (hidden in print). */}
       <div className={lh.mode === 'off' ? 'ident no-letterhead' : 'ident'}>
-        {!isMemo &&
-          state.includeSsic &&
-          (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph ph-line">SSIC</div>)}
-        {!isMemo &&
-          state.includeCode &&
+        {state.includeSsic && (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph ph-line">SSIC</div>)}
+        {state.includeCode &&
           (ident.codeLine ? <div>{ident.codeLine}</div> : <div className="ph ph-line">Code</div>)}
         {ident.date ? <div>{ident.date}</div> : <div className="ph">Date</div>}
       </div>
@@ -270,7 +267,9 @@ function BusinessHead({ state, ident }: { state: LetterState; ident: IdentLines 
       {lh.mode === 'preprinted' && (
         <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(0.86, lh.preprintedLines * 0.11)}in` }} />
       )}
-      <div className={`${lh.mode === 'off' ? 'ident no-letterhead' : 'ident'} biz-ident`}>
+      {/* Identification symbols right-aligned, like the standard letter — see the note in signablePdf:
+          the manual's business-letter figures (11-2, 11-6) show them upper-right despite ¶11-2.1's text. */}
+      <div className={lh.mode === 'off' ? 'ident no-letterhead' : 'ident'}>
         {state.includeSsic && (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph ph-line">SSIC</div>)}
         {state.includeCode &&
           (ident.codeLine ? <div>{ident.codeLine}</div> : <div className="ph ph-line">Code</div>)}

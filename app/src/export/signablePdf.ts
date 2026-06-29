@@ -137,9 +137,11 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   ].filter((l): l is string => l !== null);
   if (idLines.length) {
     const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
-    // Business letter: identification symbols at the upper LEFT (11-2.1); all else right-aligned (7-2.3).
-    const idX = isBusiness ? LEFT : RIGHT - blockW;
-    idLines.forEach((l) => put(l, idX));
+    // Identification symbols are right-aligned for every letter type. NB: SECNAV M-5216.5 ¶11-2.1
+    // *says* the business letter's go "upper left", but the manual's own canonical figures (11-2
+    // BUSINESS LETTER – FIRST PAGE and 11-6 SHORT BUSINESS LETTER) show them upper RIGHT, with a
+    // serial, exactly like the standard letter — so we follow the figures (and real practice).
+    idLines.forEach((l) => put(l, RIGHT - blockW));
   }
 
   // ---- Memo / MFR title at the left margin, one blank line above + below (.memo-title) ----

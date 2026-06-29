@@ -345,16 +345,8 @@
 }
 
 /* ---- Business letter (Ch 11) ---- */
-/* Identification symbols sit at the upper LEFT for a business letter (11-2.1), not right-aligned. */
-.biz-ident {
-  margin-left: 0;
-  text-align: left;
-}
-/* With a printed letterhead the identification symbols must clear the seal — start "just below the
-   seal" (11-2.13) rather than jammed against it. (No seal in plain-paper/pre-printed mode.) */
-.biz-ident:not(.no-letterhead) {
-  margin-top: 0.34in;
-}
+/* Identification symbols use the shared right-aligned .ident — the manual's business-letter figures
+   (11-2, 11-6) show them upper-right with a serial, despite ¶11-2.1's "upper left" text. */
 /* Inside address, attention, salutation, subject — consistent ~2-line gaps (11-2.2 through 2.5). */
 .biz-address,
 .biz-attention,
@@ -382,7 +374,7 @@
 }
 /* Continuation page repeats the identification symbols at the left margin (11-2.14). */
 .biz-cont {
-  text-align: left;
+  text-align: right; /* repeat the identification symbols upper-right, matching the first page (11-2.14) */
 }
 
 /* ---- CUI markings (DoDI 5200.48 / ISOO handbook / DON PII guidance) ----

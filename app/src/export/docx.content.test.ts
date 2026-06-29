@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Packer } from 'docx';
 import JSZip from 'jszip';
 import { buildDocxDocument } from './docx';
-import { defaultState } from '../defaultState';
+import { defaultState, defaultFor } from '../defaultState';
 import type { LetterState } from '../types';
 
 // Unzip the generated .docx and return word/document.xml as text, so we can assert the export
@@ -125,10 +125,16 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('w:val="right"'); // ident lines are right-aligned, not left-indented
   });
 
-  it('a memorandum carries MEMORANDUM and omits the SSIC (§10-2)', async () => {
-    const xml = await docxText({ type: 'memo-from-to', ssic: '9999', subj: 'memo subject' });
+  it('a memorandum defaults to date-only — no SSIC (§10-2)', async () => {
+    const xml = await docxText({ ...defaultFor('memo-from-to'), ssic: '9999', subj: 'memo subject' });
     expect(xml).toContain('MEMORANDUM');
-    expect(xml).not.toContain('9999'); // a memo's only ID symbol is the date
+    expect(xml).not.toContain('9999'); // memo default omits the SSIC (includeSsic off)
+  });
+
+  it('a memorandum shows the SSIC only when local practice enables it (§10-2)', async () => {
+    const xml = await docxText({ ...defaultFor('memo-from-to'), includeSsic: true, ssic: '9999', subj: 'memo' });
+    expect(xml).toContain('MEMORANDUM');
+    expect(xml).toContain('9999'); // "unless local practice calls for more"
   });
 
   it('appends endorsements to the Word export, matching the PDF', async () => {

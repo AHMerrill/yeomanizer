@@ -223,22 +223,17 @@ export function buildDocxDocument(
   ].filter((l): l is string => l !== null);
   const rightLine = (line: string) =>
     new Paragraph({ alignment: AlignmentType.RIGHT, children: [R(line)], spacing: { after: 0 } });
-  const leftLine = (line: string) =>
-    new Paragraph({ alignment: AlignmentType.LEFT, children: [R(line)], spacing: { after: 0 } });
+  // Identification symbols are right-aligned for EVERY type — including the business letter. (¶11-2.1
+  // says "upper left", but the manual's own canonical figures 11-2/11-6 show them upper-right with a
+  // serial, like a standard letter; we follow the figures + real practice. See signablePdf for the note.)
+  identLines.forEach((line) => children.push(rightLine(line)));
   if (isMemo) {
-    if (ident.date) children.push(rightLine(ident.date));
     children.push(new Paragraph({ children: [R('MEMORANDUM')], spacing: { before: BLANK, after: BLANK } }));
   } else if (isMfr) {
-    identLines.forEach((line) => children.push(rightLine(line)));
     children.push(
       new Paragraph({ children: [R('MEMORANDUM FOR THE RECORD')], spacing: { before: BLANK, after: BLANK } }),
     );
-  } else if (isBusiness) {
-    // Business letter: identification symbols at the upper LEFT (11-2.1).
-    identLines.forEach((line) => children.push(leftLine(line)));
-    children.push(spacer());
   } else {
-    identLines.forEach((line) => children.push(rightLine(line)));
     children.push(spacer());
   }
 

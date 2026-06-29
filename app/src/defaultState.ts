@@ -180,6 +180,11 @@ export function defaultFor(type: CorrespondenceType): LetterState {
       copyTo: [],
     };
   }
+  if (type === 'memo-from-to') {
+    // 10-2: "the only identification symbol you need is the date, unless local practice calls for more."
+    // Default to date-only; the SSIC/code toggles stay available for commands whose practice adds them.
+    return { ...base, includeSsic: false, includeCode: false };
+  }
   return base;
 }
 
