@@ -13,7 +13,7 @@ const AVAILABLE: [string, string][] = [
   ['CAC-signable PDF', 'One pixel-accurate PDF of the whole package — letter, endorsements, enclosures, CUI — with selectable, searchable text and a built-in CAC signature field. Open it to print, save, or sign (no Prepare-a-Form step).'],
   ['Word (.docx) export', 'An editable Word version of the full document — endorsements, enclosures, and CUI included.'],
   ['Editable .json copy', 'Export a small plain-text .json of your draft and drop it back into the Editor tab later to keep working — the .docx and PDF stay clean, with nothing hidden inside them.'],
-  ['Enclosures in the document', "Mark an enclosure “in the document” and drop in an image or PDF — it's appended and marked “Enclosure (n)”. Images embed; PDFs come in as real, searchable pages in the PDF."],
+  ['Enclosures in the document', "Mark an enclosure “in the document” and drop in an image or PDF — it's appended and marked “Enclosure (n)”. Images embed; a PDF comes in as real, searchable vector pages in the PDF export, and as one rasterized image per page in the .docx (so Word shows the actual pages, sized to fit, not just a reference)."],
   ['Combine into one PDF', 'Or merge an already-saved letter PDF with separate enclosure files into one packet — entirely in your browser.'],
   ['Letterhead control', 'Printed, plain paper, or pre-printed stock; the authentic DoD seal.'],
   ['Identification block', "SSIC, originator's code, serial, and date — each optional."],
@@ -41,7 +41,6 @@ const AVAILABLE: [string, string][] = [
 ];
 
 const PLANNED: [string, string][] = [
-  ['PDF pages inside Word', 'Render attached PDF pages into the .docx as images (today they embed as real pages in the PDF and are referenced by name in Word).'],
   ['More document types', 'Multiple-reply letters, MOA/MOU, information/decision papers, and naval messages.'],
 ];
 

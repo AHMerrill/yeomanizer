@@ -59,6 +59,55 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('USS ENTERPRISE');
   });
 
+  it('embeds rasterized PDF enclosure pages as Word images (not a reference note)', async () => {
+    // a 1x1 PNG stands in for a rasterized PDF page (rasterizePdf runs in the browser; here we feed
+    // the page images straight in to test the docx-embedding path exportDocx wires up)
+    const png =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    const bytes = new Uint8Array(Buffer.from(png, 'base64'));
+    const state: LetterState = {
+      ...defaultState,
+      encls: [
+        {
+          id: 'e1',
+          text: 'Attached report',
+          inDocument: true,
+          file: { name: 'report.pdf', type: 'application/pdf', dataUrl: 'data:application/pdf;base64,AAAA' },
+        },
+      ],
+    };
+    const enclImages = {
+      e1: [
+        { bytes, width: 1, height: 1 },
+        { bytes, width: 1, height: 1 },
+      ],
+    };
+    const buf = await Packer.toBuffer(buildDocxDocument(state, new Date(2006, 8, 7), undefined, enclImages));
+    const zip = await JSZip.loadAsync(buf);
+    const media = Object.keys(zip.files).filter((f) => f.startsWith('word/media/'));
+    const xml = (await zip.file('word/document.xml')?.async('string')) ?? '';
+    expect(media.length).toBeGreaterThanOrEqual(2); // both rasterized pages embedded as images
+    expect(xml).toContain('Enclosure (1)'); // still marked per §7
+    expect(xml).not.toContain('PDF attached separately'); // NOT the fallback reference note
+  });
+
+  it('falls back to a reference note when a PDF enclosure was not rasterized', async () => {
+    const state: LetterState = {
+      ...defaultState,
+      encls: [
+        {
+          id: 'e1',
+          text: 'Attached report',
+          inDocument: true,
+          file: { name: 'report.pdf', type: 'application/pdf', dataUrl: 'data:application/pdf;base64,AAAA' },
+        },
+      ],
+    };
+    const buf = await Packer.toBuffer(buildDocxDocument(state, new Date(2006, 8, 7))); // no enclImages
+    const xml = (await (await JSZip.loadAsync(buf)).file('word/document.xml')?.async('string')) ?? '';
+    expect(xml).toContain('PDF attached separately');
+  });
+
   it('embeds the seal as a media image when seal bytes are provided', async () => {
     // a 1x1 PNG stands in for the seal
     const png =
