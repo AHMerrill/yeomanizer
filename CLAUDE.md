@@ -39,8 +39,12 @@ This file is the working guide for Claude sessions in this repo.
   `soffice --headless --convert-to pdf --outdir /tmp/ynpdf/docxpdf /tmp/ynpdf/*.docx`, then read it.
 - Drive the live UI via the preview server (name **yn-ai**, port **5180**); `preview_eval` params
   are **serverId** + **expression**. Reload before evaluating — HMR can be stale.
-- Compare to canonical sources: `research/manual_raw.txt` and OPNAVINST 5400.45A
-  (`~/Desktop/5400.45A.pdf`). Fix every discrepancy you can see.
+- Compare to canonical sources — the pub's **figures are the visual truth**. All 51 are extracted to
+  `research/figures/*.png` (named by figure number, e.g. `fig-10-5_moa.png`); the **text dump
+  (`research/manual_raw.txt`) loses figure layout**, so for "does it match the picture?" read the PNGs,
+  not the text. Where prose and a figure conflict, **the figure wins**. (Figures are gitignored/local —
+  if absent, re-extract: `pdftoppm -png -r 150 -f <pg> -l <pg> -singlefile "5216.5  CH-1.pdf" <out>`.)
+  Also compare OPNAVINST 5400.45A (`~/Desktop/5400.45A.pdf`). Fix every discrepancy you can see.
 
 ## Gotchas
 

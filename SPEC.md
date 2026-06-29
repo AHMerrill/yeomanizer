@@ -89,10 +89,15 @@ after the heading. Literal space counts (for reference / .txt export only):
 ## Copy to (7-2.15)
 - `Copy to:` at the left margin, 2nd line below the signature. Single column, single-spaced.
 
-## Continuation pages (7-2.16, 7-2.17)
-- Repeat **Subj** at top (6th line / 1-in margin); text resumes 2nd line below.
+## Continuation pages (7-2.16, 7-2.17 / 11-2.14)
+- Repeat **Subj** at top (6th line / 1-in margin); text resumes 2nd line below. A **business letter**
+  repeats the **identification symbols** instead of the Subj (11-2.14).
 - **Do not number page 1.** Center page numbers **½ in from the bottom**, starting at **2**,
   no punctuation.
+- Applied identically in the **preview, PDF, and `.docx`**. The docx carries the repeated header in the
+  section's *default* header and the page number in its *default* footer, with a *different first page*
+  so page 1 stays clean; appended endorsements live in their own section so the letter's Subj header
+  never bleeds onto them.
 
 ## Dates (2-16) & time (2-15)
 - **Abbreviated** (sender's symbol): `7 Sep 06` — 1–2 digit day (no leading zero), 3-ltr month, 2-digit year.
@@ -143,26 +148,34 @@ PII"** guidance (doncio.navy.mil) — both saved to `research/`.
 ## Pagination (done)
 Measurement-based: the preview measures rendered block heights and splits content into
 discrete 8.5×11 sheets. Page 1 carries the letterhead/SSIC head; continuation pages repeat
-only the Subj line (7-2.16) and are numbered (centered, ½-in from the bottom, starting at 2
-— 7-2.17). CUI banners render on every page; the designation block is page 1 only. Breaks
-at paragraph boundaries (atomic blocks) — mid-paragraph line-splitting (the "≥2 lines each
-side" rule, 7-2.13) is a future refinement.
+the Subj line (7-2.16) — or, for a business letter, the identification symbols (11-2.14) — and
+are numbered (centered, ½-in from the bottom, starting at 2 — 7-2.17). The **PDF and `.docx`
+exports repeat the same continuation header + page numbers** (previously preview-only — the
+exports flowed content but dropped the repeated head). CUI banners render on every page; the
+designation block is page 1 only. Breaks at paragraph boundaries (atomic blocks) — mid-paragraph
+line-splitting (the "≥2 lines each side" rule, 7-2.13) is a future refinement.
 
 ## Memorandum (Ch 10) — done (From-To / plain-paper / letterhead)
 Plain bond (letterhead off) or letterhead. By default the only ID symbol is the **date**, flush right
 on the ~6th line (10-2: "the only identification symbol you need is the date, unless local practice
 calls for more" — so SSIC/code stay toggleable, off by default, and render right-aligned when on,
-consistently across preview/PDF/docx). "MEMORANDUM" at the left margin, then
+consistently across preview/PDF/docx). When a serial **is** used the line reads **`Memo <code>/<serial>`**,
+not `Ser …` (fig 10-4). "MEMORANDUM" at the left margin, then
 From/To/Via/Subj/Ref/Encl and numbered paragraphs exactly as a letter; signature centered.
-The MFR and MOA/MOU are done (see below); joint memoranda remain a future sub-variant.
+The MFR, MOA/MOU, and joint letter/memorandum are all done (see below).
 
 ## Memorandum of Agreement / Understanding (Ch 10, fig 10-5) — done
-Plain bond; date-only identification (right). A **centered** title block — "MEMORANDUM OF AGREEMENT"
-(or "…UNDERSTANDING"), then "BETWEEN", the senior activity, "AND", the second activity — replaces the
-From/To/Via block. Subj / Ref / Encl and numbered paragraphs as a standard letter. **Dual signatures**
-(10-2): the senior official (party A = `state.signature`) signs at the **right**, party B (`moa.signerB`)
-at the left, each over its own signature line. Rendered across preview · PDF · `.docx` (the docx uses a
-center tab stop for the two columns). MOU = the same with the title word swapped.
+Plain bond. **Dual identification blocks** (fig 10-5): each party keeps its own short title + SSIC +
+serial + date — **party A** (the senior activity, listed first) at the **left**, **party B** at the
+**right**. Party A reuses the shared identification (SSIC/code/serial/date) plus `moa.shortTitleA`;
+party B is captured in `moa.{shortTitleB,ssicB,serialB,dateB}`. A **centered** title block —
+"MEMORANDUM OF AGREEMENT" (or "…UNDERSTANDING"), then "BETWEEN", the senior activity, "AND", the second
+activity — replaces the From/To/Via block. Subj / Ref / Encl and numbered paragraphs as a standard
+letter. **Dual signatures** (10-2): the senior official (party A = `state.signature`) signs at the
+**right**, party B (`moa.signerB`) at the left, each over its own signature line. (Per the pub the
+senior's ident sits left while the senior signs right — a deliberate crossing, fig 10-5.) Rendered
+across preview · PDF · `.docx` (the docx uses a right tab stop for party B's column). MOU = the same
+with the title word swapped.
 
 ## Joint letter / memorandum (Ch 7, fig 7-4) — done
 One letter co-signed by **two or more commands**. The letterhead lists each command (senior first) +
@@ -209,7 +222,9 @@ the PDF (print) and the `.docx` export, and each can be signed normally or "By d
 "Acting" (same authority options as the basic signature). Per **9-2.2**, each endorsement's
 "Via:" line carries the Via addressees that remain after that endorser (unnumbered if one,
 numbered if more); the "To:" stays the action addressee — `remainingVias` in
-format/identification.ts, used by both the preview and the .docx export.
+format/identification.ts, used by both the preview and the .docx export. Each new-page endorsement
+carries its own **identification block** — the basic letter's **SSIC repeated** (9-2.2) plus the
+endorser's serial/date, right-aligned at the top — in the preview, PDF, and `.docx`.
 
 ## NATO travel order — done
 The bilingual two-page form (order + reverse instructions), with U.S.-grade → NATO (OF/OR)

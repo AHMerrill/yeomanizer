@@ -15,11 +15,16 @@ Live: **https://yeomanizer.com**
 
 - **Document types** — standard naval letter, memorandum (From-To), memorandum for the record
   (MFR), business letter (Ch 11 — inside address, salutation, civilian date, unnumbered paragraphs,
-  centered "Sincerely,"), endorsements (Ch 9, appended automatically when you add a Via addressee),
-  and the bilingual two-page NATO travel order.
-- **Pixel-faithful preview** — letterhead with the authentic DoD seal, the SSIC/identification
-  block, the From/To/Via/Subj/Ref/Encl heading, automatic paragraph numbering & indentation, the
-  signature block, and multi-page continuation (numbered from page 2) — all to the manual.
+  centered "Sincerely,"), multiple-address letters (Ch 8 — `To:` / `Distribution:`), endorsements
+  (Ch 9, appended automatically when you add a Via addressee), the **Memorandum of Agreement /
+  Understanding** (Ch 10 — dual per-party identification blocks + dual signatures), the **joint
+  letter / memorandum** (Ch 7 — co-signed by two or more commands), and the bilingual two-page NATO
+  travel order.
+- **Pixel-faithful preview** — letterhead with the authentic DoD/DoW seal, the SSIC/identification
+  block, the From/To/Via/Subj/Ref/Encl heading, automatic paragraph numbering & indentation (the
+  full 8-level Fig 7-8 ladder), the signature block, and multi-page continuation (the Subj — or the
+  identification symbols for a business letter — repeated at the top of each page, numbered from
+  page 2) — all to the manual, and **identical in the preview, PDF, and `.docx`**.
 - **Section titles** — an optional underlined lead-in per paragraph ("1. <u>Purpose</u>. …"), per
   OPNAVINST 5400.45A.
 - **Inline emphasis** — type `**bold**`, `*italic*`, or `__underline__` for occasional emphasis; it
