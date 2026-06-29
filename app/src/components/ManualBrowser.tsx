@@ -153,15 +153,29 @@ export function ManualBrowser() {
         <article className="manual-read" ref={readRef} aria-live="polite">
           {active ? (
             <>
-              <div className="manual-read-crumb">
-                {chapterLabel(active.chapter.num)} · {active.chapter.title}
+              {/* Sticky header keeps the section ref/title visible while a long section scrolls. */}
+              <div className="manual-read-head">
+                <div className="manual-read-crumb">
+                  {chapterLabel(active.chapter.num)} · {active.chapter.title}
+                </div>
+                <h3>
+                  <span className="manual-sec-ref">{active.sec.id}</span> {active.sec.title}
+                </h3>
               </div>
-              <h3>
-                <span className="manual-sec-ref">{active.sec.id}</span> {active.sec.title}
-              </h3>
-              {active.sec.paras.map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
+              <div className="manual-read-body">
+                {active.sec.paras
+                  // Drop ingestion artifacts (bare page numbers like "B-1", "7-2", "12") and blanks.
+                  .filter((p) => {
+                    const t = p.trim();
+                    return t && !/^([A-Z]|\d{1,2})-\d{1,3}$/.test(t) && !/^\d{1,3}$/.test(t);
+                  })
+                  // A leading "1." / "a." / "(1)" marker starts a new top-level point — give it air.
+                  .map((p, i) => (
+                    <p key={i} className={/^(\d{1,2}\.|[a-z]\.|\(\d+\)|\([a-z]\))\s/.test(p.trim()) ? 'mr-point' : undefined}>
+                      {p}
+                    </p>
+                  ))}
+              </div>
             </>
           ) : (
             <p className="manual-read-empty">
