@@ -154,7 +154,15 @@ on the ~6th line (10-2: "the only identification symbol you need is the date, un
 calls for more" — so SSIC/code stay toggleable, off by default, and render right-aligned when on,
 consistently across preview/PDF/docx). "MEMORANDUM" at the left margin, then
 From/To/Via/Subj/Ref/Encl and numbered paragraphs exactly as a letter; signature centered.
-The MFR is done; decision memos and MOA/MOU remain as future sub-variants.
+The MFR and MOA/MOU are done (see below); joint memoranda remain a future sub-variant.
+
+## Memorandum of Agreement / Understanding (Ch 10, fig 10-5) — done
+Plain bond; date-only identification (right). A **centered** title block — "MEMORANDUM OF AGREEMENT"
+(or "…UNDERSTANDING"), then "BETWEEN", the senior activity, "AND", the second activity — replaces the
+From/To/Via block. Subj / Ref / Encl and numbered paragraphs as a standard letter. **Dual signatures**
+(10-2): the senior official (party A = `state.signature`) signs at the **right**, party B (`moa.signerB`)
+at the left, each over its own signature line. Rendered across preview · PDF · `.docx` (the docx uses a
+center tab stop for the two columns). MOU = the same with the title word swapped.
 
 ## Business letter (Ch 11) — done
 For correspondents outside the DoD. Letterhead required; identification symbols (SSIC / Ser /
@@ -246,5 +254,7 @@ A non-blocking "to review" count (warnings + sensitive-data hits) shows as a bad
   loose enclosure files) does **not** yet re-mark "Enclosure (n)" on the merged pages — that's still TODO.
 - Mid-paragraph page splitting (currently breaks only at paragraph boundaries; the "≥2 lines each side"
   rule, 7-2.13).
-- Other types: decision memos and MOA/MOU sub-variants; naval messages (GENADMIN/MARADMIN/ALMAR).
+- Other types still to add from M-5216.5: joint letters/memoranda (Ch 7, fig 7-4). NB: information/
+  decision papers and naval messages (GENADMIN/MARADMIN/ALMAR) are governed by OTHER pubs (staff-action
+  guides; NTP-3 / USMTF), not this manual — out of scope to avoid fabricating a format.
 - A deeper advisor / style-suggestion layer beyond the Ch 2 ¶19 proofread checklist (done).

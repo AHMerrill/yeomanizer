@@ -128,6 +128,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   // ---- Identification block: lines left-aligned within a right-positioned block ----
   const ident = buildIdent(state, today);
   const isBusiness = state.type === 'business-letter';
+  const isMoa = state.type === 'moa';
   // A KEPT but blank SSIC / code line reserves a blank line (a space) so an admin can fill it in by
   // hand later; an un-kept line is dropped entirely.
   const idLines = [
@@ -174,6 +175,23 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     room(SIZE * BODY_LH);
     put(memoTitle, LEFT);
     gap(PARA_GAP);
+  } else if (isMoa) {
+    // Centered title block: "MEMORANDUM OF AGREEMENT/UNDERSTANDING" / BETWEEN / party A / AND / party B.
+    gap(PARA_GAP);
+    const m = state.moa;
+    const titleLines = [
+      `MEMORANDUM OF ${m.kind === 'UNDERSTANDING' ? 'UNDERSTANDING' : 'AGREEMENT'}`,
+      'BETWEEN',
+      m.partyA.trim(),
+      'AND',
+      m.partyB.trim(),
+    ].filter(Boolean);
+    titleLines.forEach((l) => {
+      room(SIZE * BODY_LH);
+      const w = font.widthOfTextAtSize(l, SIZE);
+      put(l, LEFT + (RIGHT - LEFT - w) / 2); // centered within the (equal) margins = page center
+    });
+    gap(PARA_GAP);
   } else {
     gap(0.3 * PT - PARA_GAP < 0 ? 0.14 * PT : 0.3 * PT); // .headings margin-top (~0.3in from ident)
   }
@@ -194,8 +212,8 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   };
   // The business letter is addressed by the inside address above — no From/To/Via/Subj/Ref/Encl heading.
   if (!isBusiness) {
-  // MFR is "for the record" — no addressee, so no From/To/Via.
-  if (!isMfr) {
+  // MFR is "for the record" and the MOA uses its BETWEEN block — neither has a From/To/Via.
+  if (!isMfr && !isMoa) {
     if (state.from) headRow('From:', state.from);
     if (state.to) headRow('To:', state.to);
     // Multiple-address letter (Ch 8): additional action addressees stack under the To: line.
@@ -367,9 +385,32 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
     }
   };
 
+  // MOA/MOU closing: dual signatures over signature lines — senior (party A) at the right (sigX),
+  // party B at the left margin (10-2, fig 10-5).
+  const drawMoaClose = () => {
+    gap(PARA_GAP * 3); // leave room to wet-sign above the lines
+    room(SIZE * BODY_LH * 4);
+    const SIG_LINE = '________________________';
+    const startTop = top;
+    const drawCol = (x: number, s: { name: string; title: string; authority?: string }) => {
+      top = startTop;
+      put(SIG_LINE, x);
+      if (s.name) put(s.name, x);
+      if (s.title) put(s.title, x);
+      if (s.authority === 'by-direction') put('By direction', x);
+      if (s.authority === 'acting') put('Acting', x);
+    };
+    drawCol(LEFT, state.moa.signerB); // party B (left)
+    const leftEnd = top;
+    drawCol(sigX, state.signature); // party A — senior (right)
+    top = Math.max(leftEnd, top);
+  };
+
   drawBody(state.body, 0, state.cui.enabled && anyCui(state.body), isBusiness);
   if (isBusiness) {
     drawBizClose();
+  } else if (isMoa) {
+    drawMoaClose();
   } else {
     signatureBlock(state.signature.name, state.signature.title, state.signature.authority, 'Signature1');
   }

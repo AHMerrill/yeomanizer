@@ -1,5 +1,12 @@
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import type { LetterState, Paragraph, EndorsementEntry, EnclosureEntry, ListEntry } from '../types';
+import type {
+  LetterState,
+  Paragraph,
+  EndorsementEntry,
+  EnclosureEntry,
+  ListEntry,
+  SignatureBlock,
+} from '../types';
 import { parseInline } from '../format/inline';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 import { anyCui } from '../format/tree';
@@ -135,6 +142,7 @@ function Head({ state }: { state: LetterState }) {
   const refs = state.refs.filter((r) => r.text.trim());
   const encls = state.encls.filter((e) => e.text.trim());
   if (state.type === 'business-letter') return <BusinessHead state={state} ident={ident} />;
+  if (state.type === 'moa') return <MoaHead state={state} ident={ident} />;
   return (
     <>
       {lh.mode === 'on' && <Letterhead state={state} />}
@@ -345,6 +353,95 @@ function BusinessContinuationHead({ state }: { state: LetterState }) {
       {state.includeSsic && ident.ssic && <div>{ident.ssic}</div>}
       {state.includeCode && ident.codeLine && <div>{ident.codeLine}</div>}
       {ident.date && <div>{ident.date}</div>}
+    </div>
+  );
+}
+
+// MOA/MOU (Ch 10, fig 10-5): plain bond, date-only ident (right), a centered title + "BETWEEN" the
+// two activities (senior first), then Subj / Ref / Encl and numbered paragraphs.
+function MoaHead({ state, ident }: { state: LetterState; ident: IdentLines }) {
+  const lh = state.letterhead;
+  const moa = state.moa;
+  const title = `MEMORANDUM OF ${moa.kind === 'UNDERSTANDING' ? 'UNDERSTANDING' : 'AGREEMENT'}`;
+  const refs = state.refs.filter((r) => r.text.trim());
+  const encls = state.encls.filter((e) => e.text.trim());
+  return (
+    <>
+      {lh.mode === 'on' && <Letterhead state={state} />}
+      {lh.mode === 'preprinted' && (
+        <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(0.86, lh.preprintedLines * 0.11)}in` }} />
+      )}
+      <div className={lh.mode === 'off' ? 'ident no-letterhead' : 'ident'}>
+        {state.includeSsic && (ident.ssic ? <div>{ident.ssic}</div> : <div className="ph ph-line">SSIC</div>)}
+        {state.includeCode &&
+          (ident.codeLine ? <div>{ident.codeLine}</div> : <div className="ph ph-line">Code</div>)}
+        {ident.date ? <div>{ident.date}</div> : <div className="ph">Date</div>}
+      </div>
+      <div className="moa-title" data-sync="head">
+        <div className="moa-title-main">{title}</div>
+        <div>BETWEEN</div>
+        <div className={moa.partyA.trim() ? '' : 'ph'}>
+          {moa.partyA.trim() || 'COMMANDER, FIRST ACTIVITY (the senior)'}
+        </div>
+        <div>AND</div>
+        <div className={moa.partyB.trim() ? '' : 'ph'}>
+          {moa.partyB.trim() || 'COMMANDER, SECOND ACTIVITY'}
+        </div>
+      </div>
+      <div className="headings">
+        <div className="hrow h-gap">
+          <span className="label">Subj:</span>
+          <span className={state.subj ? 'content subj' : 'content subj ph'}>
+            {state.subj || 'SUBJECT IN ALL CAPS, NO PUNCTUATION'}
+          </span>
+        </div>
+        {refs.length > 0 && (
+          <div className="hrow h-gap">
+            <span className="label">Ref:</span>
+            <span className="content hlist">
+              {refs.map((r, i) => (
+                <span className="hitem" key={r.id}>
+                  <span>({refLetter(i)})</span>
+                  <span>{r.text}</span>
+                </span>
+              ))}
+            </span>
+          </div>
+        )}
+        {encls.length > 0 && (
+          <div className="hrow h-gap">
+            <span className="label">Encl:</span>
+            <span className="content hlist">
+              {encls.map((e, i) => (
+                <span className="hitem" key={e.id}>
+                  <span>({i + 1})</span>
+                  <span>{e.text}</span>
+                </span>
+              ))}
+            </span>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// MOA/MOU closing — dual signatures arranged so the senior official (party A, state.signature) is at
+// the RIGHT and party B (moa.signerB) at the left, each over its own signature line (10-2, fig 10-5).
+function MoaClose({ state }: { state: LetterState }) {
+  const block = (s: SignatureBlock) => (
+    <div className="moa-sig">
+      <div className="moa-sig-line" />
+      <div className={s.name ? '' : 'ph'}>{s.name || 'I. M. LASTNAME'}</div>
+      {s.title && <div>{s.title}</div>}
+      {s.authority === 'by-direction' && <div>By direction</div>}
+      {s.authority === 'acting' && <div>Acting</div>}
+    </div>
+  );
+  return (
+    <div className="moa-close" data-sync="sig">
+      {block(state.moa.signerB)}
+      {block(state.signature)}
     </div>
   );
 }
@@ -562,12 +659,22 @@ function LetterDoc({ state }: { state: LetterState }) {
   const flat: FlatPara[] = [];
   flattenForFlow(state.body, 0, flat);
   const isBusiness = state.type === 'business-letter';
+  const isMoa = state.type === 'moa';
   const items: FlowItem[] = [
     ...flat.map((fp) => ({
       key: `p_${fp.key}`,
       node: <ParaFlow fp={fp} portionActive={portionActive} business={isBusiness} />,
     })),
-    { key: 'sig', node: isBusiness ? <BusinessClose state={state} /> : <Signature state={state} /> },
+    {
+      key: 'sig',
+      node: isMoa ? (
+        <MoaClose state={state} />
+      ) : isBusiness ? (
+        <BusinessClose state={state} />
+      ) : (
+        <Signature state={state} />
+      ),
+    },
     ...(distribution.length ? [{ key: 'dist', node: <Distribution items={distribution} /> }] : []),
     ...(copyTo.length ? [{ key: 'copy', node: <CopyTo items={copyTo} /> }] : []),
   ];

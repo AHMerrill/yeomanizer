@@ -377,6 +377,30 @@
   text-align: right; /* repeat the identification symbols upper-right, matching the first page (11-2.14) */
 }
 
+/* ---- Memorandum of Agreement / Understanding (Ch 10, fig 10-5) ---- */
+/* Centered title block: the title, "BETWEEN", the two activities (senior first), and "AND". */
+.moa-title {
+  text-align: center;
+  margin: 0.3in 0 0.24in;
+  line-height: 1.5;
+}
+/* Dual signatures — senior official (party A) at the RIGHT, party B at the left (10-2). */
+.moa-close {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5in;
+  margin-top: 0.4in;
+}
+.moa-sig {
+  width: 44%;
+}
+/* The signature line: blank space to sign in, with a rule beneath; the typed name sits below it. */
+.moa-sig-line {
+  height: 0.5in;
+  border-bottom: 1px solid #000;
+  margin-bottom: 3px;
+}
+
 /* ---- CUI markings (DoDI 5200.48 / ISOO handbook / DON PII guidance) ----
    Banner top & bottom of every page; designation indicator block on the
    first page, lower-right. Bold, capitalized, centered, black, 12pt. */

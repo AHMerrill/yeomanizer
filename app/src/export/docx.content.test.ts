@@ -108,6 +108,32 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('PDF attached separately');
   });
 
+  it('renders an MOA — centered title, BETWEEN parties, dual signatures, no From/To (Ch 10)', async () => {
+    const xml = await docxText({
+      ...defaultFor('moa'),
+      signature: { name: 'A. SENIOR', title: 'Deputy', authority: 'none' },
+      moa: {
+        kind: 'AGREEMENT',
+        partyA: 'COMMANDER, ALPHA',
+        partyB: 'COMMANDER, BRAVO',
+        signerB: { name: 'B. JUNIOR', title: 'Acting', authority: 'none' },
+      },
+    });
+    expect(xml).toContain('MEMORANDUM OF AGREEMENT');
+    expect(xml).toContain('BETWEEN');
+    expect(xml).toContain('COMMANDER, ALPHA');
+    expect(xml).toContain('COMMANDER, BRAVO');
+    expect(xml).toContain('A. SENIOR'); // party A (senior)
+    expect(xml).toContain('B. JUNIOR'); // party B
+    expect(xml).not.toContain('From:'); // MOA uses the BETWEEN block, not From/To
+  });
+
+  it('renders an MOU when kind is UNDERSTANDING', async () => {
+    const base = defaultFor('moa');
+    const xml = await docxText({ ...base, moa: { ...base.moa, kind: 'UNDERSTANDING' } });
+    expect(xml).toContain('MEMORANDUM OF UNDERSTANDING');
+  });
+
   it('embeds the seal as a media image when seal bytes are provided', async () => {
     // a 1x1 PNG stands in for the seal
     const png =

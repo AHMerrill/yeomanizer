@@ -182,6 +182,7 @@ export function buildDocxDocument(
   const isMfr = state.type === 'mfr';
   const isEndorsement = state.type === 'endorsement';
   const isBusiness = state.type === 'business-letter';
+  const isMoa = state.type === 'moa';
   const children: Paragraph[] = [];
 
   // Letterhead: on = print it (text only in v1); preprinted = reserve blank lines; off = none.
@@ -233,6 +234,21 @@ export function buildDocxDocument(
     children.push(
       new Paragraph({ children: [R('MEMORANDUM FOR THE RECORD')], spacing: { before: BLANK, after: BLANK } }),
     );
+  } else if (isMoa) {
+    // Centered title block (fig 10-5): title / BETWEEN / party A (senior) / AND / party B.
+    const m = state.moa;
+    const titleLines = [
+      `MEMORANDUM OF ${m.kind === 'UNDERSTANDING' ? 'UNDERSTANDING' : 'AGREEMENT'}`,
+      'BETWEEN',
+      m.partyA.trim(),
+      'AND',
+      m.partyB.trim(),
+    ].filter(Boolean);
+    children.push(spacer());
+    titleLines.forEach((l) =>
+      children.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [R(l)], spacing: { after: 0 } })),
+    );
+    children.push(spacer());
   } else {
     children.push(spacer());
   }
@@ -291,9 +307,10 @@ export function buildDocxDocument(
     );
   }
   // MFR is "for the record" — no addressee, so no From/To/Via.
-  if (!isMfr) {
+  if (!isMfr && !isMoa) {
     // Omit an empty From:/To: line (matches the PDF) — a Distribution-only multiple-address letter
     // (Ch 8-2, Fig 8-2) drops the To: line entirely and lists addressees after the signature.
+    // (The MFR has no addressee; the MOA uses its BETWEEN block instead.)
     if (state.from) children.push(heading('From:', state.from));
     if (state.to) children.push(heading('To:', state.to));
     // Multiple-address letter (Ch 8): additional action addressees stack under the To: line.
@@ -332,19 +349,39 @@ export function buildDocxDocument(
         spacing: { before: BLANK, after: 0 },
       }),
     );
-  const sigLines = [state.signature.name];
-  if (state.signature.title) sigLines.push(state.signature.title);
-  if (state.signature.authority === 'by-direction') sigLines.push('By direction');
-  if (state.signature.authority === 'acting') sigLines.push('Acting');
-  sigLines.forEach((line, i) =>
-    children.push(
+  if (isMoa) {
+    // Dual signatures (fig 10-5): senior (party A) at the RIGHT column, party B at the left, each over a
+    // signature line. Two columns via a left tab stop at the page center.
+    const a = state.signature;
+    const b = state.moa.signerB;
+    const authOf = (s: { authority?: string }) =>
+      s.authority === 'by-direction' ? 'By direction' : s.authority === 'acting' ? 'Acting' : '';
+    const row = (left: string, right: string, before = 0) =>
       new Paragraph({
-        children: [R(line)],
-        indent: { left: sigIndent },
-        spacing: { before: i === 0 ? 3 * BLANK : 0, after: 0 },
-      }),
-    ),
-  );
+        tabStops: [{ type: TabStopType.LEFT, position: sigIndent }],
+        children: [R(left), new TextRun({ text: '\t', font: FONT, size: SZ }), R(right)],
+        spacing: { before, after: 0 },
+      });
+    const SIG_LINE = '____________________';
+    children.push(row(SIG_LINE, SIG_LINE, 3 * BLANK)); // sign above the lines
+    children.push(row(b.name, a.name));
+    if (b.title || a.title) children.push(row(b.title, a.title));
+    if (authOf(b) || authOf(a)) children.push(row(authOf(b), authOf(a)));
+  } else {
+    const sigLines = [state.signature.name];
+    if (state.signature.title) sigLines.push(state.signature.title);
+    if (state.signature.authority === 'by-direction') sigLines.push('By direction');
+    if (state.signature.authority === 'acting') sigLines.push('Acting');
+    sigLines.forEach((line, i) =>
+      children.push(
+        new Paragraph({
+          children: [R(line)],
+          indent: { left: sigIndent },
+          spacing: { before: i === 0 ? 3 * BLANK : 0, after: 0 },
+        }),
+      ),
+    );
+  }
 
   // Business letter: Enclosures + Separate-Mailing notations at the left margin (11-2.10/2.11).
   if (isBusiness) {

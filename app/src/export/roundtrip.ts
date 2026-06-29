@@ -118,6 +118,11 @@ export function parseProject(text: string): LetterState | null {
       s.cui && typeof s.cui === 'object'
         ? { ...defaultState.cui, ...(s.cui as object) }
         : defaultState.cui;
+    // Deep-fill the MOA object too (so a pre-MOA file still carries every field a renderer reads).
+    const moa =
+      s.moa && typeof s.moa === 'object'
+        ? { ...defaultState.moa, ...(s.moa as object) }
+        : defaultState.moa;
     return sanitizeEnclosures({
       ...defaultState,
       ...s,
@@ -125,6 +130,7 @@ export function parseProject(text: string): LetterState | null {
       business,
       letterhead,
       cui,
+      moa,
       // Bound + coerce every list field so a hostile/corrupt file can't smuggle a giant array.
       toAddrs: sanitizeEntries(s.toAddrs),
       via: sanitizeEntries(s.via),

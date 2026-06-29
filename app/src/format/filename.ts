@@ -7,6 +7,7 @@ const TYPE_SLUG: Record<LetterState['type'], string> = {
   mfr: 'memorandum-for-record',
   'business-letter': 'business-letter',
   endorsement: 'endorsement',
+  moa: 'memorandum-of-agreement',
   nato: 'travel-order',
 };
 

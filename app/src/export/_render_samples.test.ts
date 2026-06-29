@@ -207,6 +207,20 @@ const base: LetterState = {
   };
   writeFileSync(`${OUT}/multi-address-dist.pdf`, await buildSignablePdf(multiDist, today));
 
+  // Memorandum of Agreement (Ch 10, fig 10-5): plain bond, date-only ident, centered title + BETWEEN
+  // the two activities (senior first), dual signatures with the senior (party A) at the RIGHT.
+  const moa: LetterState = {
+    ...defaultFor('moa'),
+    signature: { name: 'K. O. ALLISON', title: 'Deputy', authority: 'none' },
+    moa: {
+      kind: 'AGREEMENT',
+      partyA: 'COMMANDER, NAVAL AIR SYSTEMS COMMAND',
+      partyB: 'COMMANDER, NAVAL INTELLIGENCE COMMAND',
+      signerB: { name: 'M. L. SIMPSON', title: 'Acting', authority: 'none' },
+    },
+  };
+  writeFileSync(`${OUT}/moa.pdf`, await buildSignablePdf(moa, today));
+
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
   const { Packer } = await import('docx');
@@ -227,4 +241,5 @@ const base: LetterState = {
   await writeDocx('business', business);
   await writeDocx('multi-address-to', multiTo);
   await writeDocx('multi-address-dist', multiDist);
+  await writeDocx('moa', moa);
 });

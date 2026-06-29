@@ -587,6 +587,8 @@ export function Editor({
     setState((s) => ({ ...s, nato: { ...s.nato, ...p } }));
   const patchBiz = (p: Partial<LetterState['business']>) =>
     setState((s) => ({ ...s, business: { ...s.business, ...p } }));
+  const patchMoa = (p: Partial<LetterState['moa']>) =>
+    setState((s) => ({ ...s, moa: { ...s.moa, ...p } }));
 
   // Each Via addressee auto-creates its endorsement (see syncViaEndorsements). This button adds
   // an EXTRA endorsement not tied to a Via (e.g. an additional endorser). Both append as pages.
@@ -621,6 +623,7 @@ export function Editor({
           <option value="endorsement">Endorsement</option>
           <option value="nato">NATO Travel Order</option>
           <option value="business-letter">Business Letter (to firms/agencies outside DoD)</option>
+          <option value="moa">Memorandum of Agreement / Understanding (MOA/MOU)</option>
         </select>
       </Card>
 
@@ -1059,8 +1062,67 @@ export function Editor({
         </Card>
       )}
 
+      {state.type === 'moa' && (
+        <Card
+          title="Agreement"
+          syncId="head"
+          hint="MOA/MOU (Ch 10): plain bond, the two activities listed BETWEEN, dual signatures with the senior at the right. List the senior activity first."
+          onReset={() =>
+            patchMoa({ kind: 'AGREEMENT', partyA: '', partyB: '', signerB: { name: '', title: '', authority: 'none' } })
+          }
+        >
+          <Field label="Kind">
+            <select value={state.moa.kind} onChange={(e) => patchMoa({ kind: e.target.value as 'AGREEMENT' | 'UNDERSTANDING' })}>
+              <option value="AGREEMENT">Memorandum of Agreement (MOA)</option>
+              <option value="UNDERSTANDING">Memorandum of Understanding (MOU)</option>
+            </select>
+          </Field>
+          <Field label="First activity (senior — signs at the right)">
+            <input
+              value={state.moa.partyA}
+              placeholder="Commander, Naval Air Systems Command"
+              onChange={(e) => patchMoa({ partyA: e.target.value })}
+            />
+          </Field>
+          <Field label="Second activity (signs at the left)">
+            <input
+              value={state.moa.partyB}
+              placeholder="Commander, Naval Intelligence Command"
+              onChange={(e) => patchMoa({ partyB: e.target.value })}
+            />
+          </Field>
+          <div className="sub-label">Second activity’s signer (the senior signer is set in the Signature card below)</div>
+          <Field label="Name">
+            <input
+              value={state.moa.signerB.name}
+              placeholder="K. O. ALLISON"
+              onChange={(e) => patchMoa({ signerB: { ...state.moa.signerB, name: e.target.value } })}
+            />
+          </Field>
+          <Field label="Title / billet (optional)">
+            <input
+              value={state.moa.signerB.title}
+              placeholder="Deputy"
+              onChange={(e) => patchMoa({ signerB: { ...state.moa.signerB, title: e.target.value } })}
+            />
+          </Field>
+          <Field label="Authority">
+            <select
+              value={state.moa.signerB.authority}
+              onChange={(e) =>
+                patchMoa({ signerB: { ...state.moa.signerB, authority: e.target.value as LetterState['signature']['authority'] } })
+              }
+            >
+              <option value="none">By signature only</option>
+              <option value="by-direction">By direction</option>
+              <option value="acting">Acting</option>
+            </select>
+          </Field>
+        </Card>
+      )}
+
       {/* MFR is "for the record"; the business letter uses an inside address — neither has From/To/Via. */}
-      {state.type !== 'mfr' && state.type !== 'business-letter' && (
+      {state.type !== 'mfr' && state.type !== 'business-letter' && state.type !== 'moa' && (
       <Card
         title="Routing"
         syncId="head"

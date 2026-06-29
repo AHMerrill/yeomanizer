@@ -99,6 +99,12 @@ export const defaultState: LetterState = {
     complimentaryClose: 'Sincerely,',
     separateMailing: '',
   },
+  moa: {
+    kind: 'AGREEMENT',
+    partyA: '',
+    partyB: '',
+    signerB: { name: '', title: '', authority: 'none' },
+  },
 };
 
 // Per-type starting draft. Most types share `defaultState`; some need faithful defaults that match
@@ -185,6 +191,45 @@ export function defaultFor(type: CorrespondenceType): LetterState {
     // Default to date-only; the SSIC/code toggles stay available for commands whose practice adds them.
     return { ...base, includeSsic: false, includeCode: false };
   }
+  if (type === 'moa') {
+    // MOA/MOU (fig 10-5): plain bond, date-only ident, BETWEEN the two activities, dual signatures.
+    return {
+      ...base,
+      letterhead: { ...base.letterhead, mode: 'off' },
+      includeSsic: false,
+      includeCode: false,
+      from: '',
+      to: '',
+      via: [],
+      subj: 'MEMORANDUM OF AGREEMENT',
+      refs: [],
+      encls: [],
+      moa: {
+        kind: 'AGREEMENT',
+        partyA: 'Commander, Naval Air Systems Command',
+        partyB: 'Commander, Naval Intelligence Command',
+        signerB: { name: '', title: 'Deputy', authority: 'none' },
+      },
+      signature: { name: '', title: 'Acting', authority: 'none' },
+      body: [
+        {
+          id: uid(),
+          text: 'This Memorandum of Agreement establishes the responsibilities of the parties named above. Use a Memorandum of Understanding instead when the parties are recording a shared understanding rather than binding commitments.',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'On plain bond, list the activity titles so the senior is first. Center the title and the word BETWEEN; arrange the signature lines so the senior official signs at the right.',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'When your activity is the last to sign, send a copy of the signed agreement to every cosigner.',
+          children: [],
+        },
+      ],
+    };
+  }
   return base;
 }
 
@@ -214,6 +259,7 @@ export function blankFor(type: CorrespondenceType): LetterState {
     cui: { ...defaultState.cui },
     business: { ...defaultState.business },
     nato: { ...defaultState.nato },
+    moa: { ...defaultState.moa, signerB: { ...defaultState.moa.signerB } },
   };
 }
 

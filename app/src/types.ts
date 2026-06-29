@@ -7,6 +7,7 @@ export type CorrespondenceType =
   | 'mfr'
   | 'business-letter'
   | 'endorsement'
+  | 'moa'
   | 'nato';
 
 // Business letter (Ch 11) — used to correspond with agencies/businesses/individuals outside DoD.
@@ -20,6 +21,17 @@ export interface BusinessLetter {
   subjectReplacesSalutation: boolean; // 11-2.5: an all-caps subject line may stand in for the salutation
   complimentaryClose: string; // "Sincerely," (11-2.8) — editable but defaults to the prescribed close
   separateMailing: string; // optional "Separate Mailing:" note (11-2.11) for separately-mailed enclosures
+}
+
+// Memorandum of Agreement / Understanding (Ch 10, fig 10-5). Plain bond; a centered title
+// ("MEMORANDUM OF AGREEMENT" / "…UNDERSTANDING"), then "BETWEEN" the two activities (senior first),
+// numbered paragraphs like a standard letter, and DUAL signatures arranged so the senior official is
+// at the RIGHT (10-2). `state.signature` is party A (senior, signs right); `signerB` is party B (left).
+export interface Moa {
+  kind: 'AGREEMENT' | 'UNDERSTANDING';
+  partyA: string; // senior activity — listed first under BETWEEN, signs at the right
+  partyB: string; // second activity — signs at the left
+  signerB: SignatureBlock; // party B's signer (party A uses the shared state.signature)
 }
 
 // NATO travel order (a bilingual form, not a naval letter). DoD/FCG template.
@@ -183,4 +195,7 @@ export interface LetterState {
 
   // Business letter parts (used when type === 'business-letter')
   business: BusinessLetter;
+
+  // Memorandum of Agreement/Understanding parts (used when type === 'moa')
+  moa: Moa;
 }
