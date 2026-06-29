@@ -483,36 +483,57 @@ export function buildDocxDocument(
     copyTo.forEach((c) => children.push(new Paragraph({ children: [R(c)], spacing: { after: 0 } })));
   }
 
-  // Appended endorsements (Ch 9): each starts a new page and mirrors the preview — endorsement
-  // line, From/To/Subj, body, signature — so the Word export includes them just like the PDF.
+  // Appended endorsements (Ch 9): collected into their OWN section (added below) so the basic letter's
+  // continuation Subj header never bleeds onto an endorsement page. Mirrors the preview + PDF: the
+  // endorsement ident block, "Nth ENDORSEMENT on …" line, From/To/Via/Subj, body, signature.
+  const endoChildren: Paragraph[] = [];
   if (!isEndorsement && state.endorsements.length) {
     const endoSigIndent = Math.round(3.25 * IN);
     const onBasic = `ENDORSEMENT on ${basicLetterId(state, today)}`; // same for every endorsement
     state.endorsements.forEach((e, i) => {
       const ord = ENDORSE_ORD[i] ?? String(i + 1);
-      children.push(
+      // New-page endorsement identification block (9-2.2: repeat the basic letter's SSIC; the endorser
+      // adds its own serial + date). Right-aligned, matching the preview + PDF. The section break starts
+      // the first endorsement on a fresh page; later endorsements break the page themselves.
+      const eIdent = buildIdent({ ...state, type: 'endorsement', serial: e.serial }, today);
+      const eIdLines = [
+        eIdent.ssic || ' ',
+        e.serial.trim() ? eIdent.codeLine : null,
+        eIdent.date || null,
+      ].filter((l): l is string => l !== null);
+      eIdLines.forEach((line, k) =>
+        endoChildren.push(
+          new Paragraph({
+            alignment: AlignmentType.RIGHT,
+            pageBreakBefore: k === 0 && i > 0,
+            children: [R(line)],
+            spacing: { after: 0 },
+          }),
+        ),
+      );
+      endoChildren.push(
         new Paragraph({
-          pageBreakBefore: true,
+          pageBreakBefore: eIdLines.length === 0 && i > 0,
           children: [R(`${ord} ${onBasic}`)],
-          spacing: { after: BLANK },
+          spacing: { before: eIdLines.length ? BLANK : 0, after: BLANK },
         }),
       );
-      children.push(heading('From:', e.endorser));
-      children.push(heading('To:', state.to));
+      endoChildren.push(heading('From:', e.endorser));
+      endoChildren.push(heading('To:', state.to));
       const evias = remainingVias(state, e.viaId); // Ch 9-2.2: remaining Via addressees
-      if (evias.length === 1) children.push(heading('Via:', evias[0].text));
+      if (evias.length === 1) endoChildren.push(heading('Via:', evias[0].text));
       else if (evias.length >= 2)
         evias.forEach((v, k) =>
-          children.push(heading(k === 0 ? 'Via:' : '', `(${k + 1}) ${v.text}`)),
+          endoChildren.push(heading(k === 0 ? 'Via:' : '', `(${k + 1}) ${v.text}`)),
         );
-      children.push(heading('Subj:', state.subj.toUpperCase(), true));
-      children.push(spacer());
-      flattenBody(e.body, 0, children, cui.enabled && anyCui(e.body));
+      endoChildren.push(heading('Subj:', state.subj.toUpperCase(), true));
+      endoChildren.push(spacer());
+      flattenBody(e.body, 0, endoChildren, cui.enabled && anyCui(e.body));
       const eSigLines = [e.sigName, e.sigTitle].filter(Boolean);
       if (e.authority === 'by-direction') eSigLines.push('By direction');
       if (e.authority === 'acting') eSigLines.push('Acting');
       eSigLines.forEach((line, j) =>
-        children.push(
+        endoChildren.push(
           new Paragraph({
             children: [R(line)],
             indent: { left: endoSigIndent },
@@ -639,14 +660,15 @@ export function buildDocxDocument(
   // Centered page number on continuation pages only (7-2.16 / 11-2.4: page 1 is unnumbered; numbers
   // start at 2, centered near the bottom). It rides in the DEFAULT footer; the FIRST footer omits it,
   // so titlePage must stay on. Matches the PDF, which numbers from page 2.
-  const pageNumberPara = new Paragraph({
-    alignment: AlignmentType.CENTER,
-    children: [new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: SZ })],
-    spacing: { after: 0 },
-  });
+  const pageNumberPara = () =>
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: SZ })],
+      spacing: { after: 0 },
+    });
   const footers = {
     default: new Footer({
-      children: [pageNumberPara, ...(cui.enabled ? [bannerPara(letterBanner)] : [])],
+      children: [pageNumberPara(), ...(cui.enabled ? [bannerPara(letterBanner)] : [])],
     }),
     first: new Footer({
       children: cui.enabled ? [...designationParas(), bannerPara(letterBanner)] : [spacer(0)],
@@ -676,6 +698,30 @@ export function buildDocxDocument(
         footers,
         children,
       },
+      // Endorsements in their own section so the letter's continuation Subj header doesn't apply to
+      // them. No continuation header here; page numbers continue from the letter, centered in the footer.
+      ...(endoChildren.length
+        ? [
+            {
+              properties: {
+                page: { margin: { top: Math.round(0.5 * IN), right: IN, bottom: IN, left: IN } },
+              },
+              // Explicit header (empty when no CUI) — an undefined header would INHERIT the letter
+              // section's Subj continuation header, bleeding it onto the endorsement pages.
+              headers: {
+                default: new Header({
+                  children: cui.enabled ? [bannerPara(letterBanner)] : [spacer(0)],
+                }),
+              },
+              footers: {
+                default: new Footer({
+                  children: [pageNumberPara(), ...(cui.enabled ? [bannerPara(letterBanner)] : [])],
+                }),
+              },
+              children: endoChildren,
+            },
+          ]
+        : []),
       ...enclSections,
     ],
   });

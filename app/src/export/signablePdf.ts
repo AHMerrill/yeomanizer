@@ -533,6 +533,19 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   const onBasic = `ENDORSEMENT on ${basicLetterId(state, today)}`;
   state.endorsements.forEach((e, i) => {
     newPage();
+    // New-page endorsement identification block (9-2.2: repeat the basic letter's SSIC; the endorser
+    // adds its own serial + date). Right-aligned, matching the preview's endorsement ident.
+    const eIdent = buildIdent({ ...state, type: 'endorsement', serial: e.serial }, today);
+    const eIdLines = [
+      eIdent.ssic || ' ',
+      e.serial.trim() ? eIdent.codeLine : null,
+      eIdent.date || null,
+    ].filter((l): l is string => l !== null);
+    if (eIdLines.length) {
+      const blockW = Math.max(...eIdLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
+      eIdLines.forEach((l) => put(l, RIGHT - blockW));
+      gap(PARA_GAP);
+    }
     wrap(`${ENDORSE_ORD[i] ?? String(i + 1)} ${onBasic}`, font, SIZE, RIGHT - LEFT).forEach((ln) =>
       put(ln, LEFT),
     );
