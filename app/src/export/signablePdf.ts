@@ -42,7 +42,14 @@ const baselineDrop = (size: number, lh: number) => (size * lh - size * 1.107) / 
 type PdfFont = Awaited<ReturnType<Awaited<ReturnType<typeof import('pdf-lib').PDFDocument.create>>['embedFont']>>;
 type Ctx = Awaited<ReturnType<typeof import('pdf-lib').PDFDocument.create>>;
 
-export async function buildSignablePdf(state: LetterState, today: Date = new Date()): Promise<Uint8Array> {
+export async function buildSignablePdf(
+  state: LetterState,
+  today: Date = new Date(),
+  // Optional pre-loaded seal bytes. The browser fetches the seal from its bundled URL; the headless
+  // test harness can't fetch a Vite asset, so it passes the PNG read from disk — letting automated
+  // checks actually verify seal embedding (otherwise the seal silently never embeds in tests).
+  sealBytes?: Uint8Array | ArrayBuffer,
+): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb, PDFName, PDFString } = await import('pdf-lib');
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.TimesRoman);
@@ -102,7 +109,7 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
 
   // ---- Seal (1in, at left 0.62in / top 0.5in), aspect-fit like object-fit: contain ----
   if (lh.mode === 'on' && lh.seal !== 'none') {
-    const bytes = await loadSealBytes(state);
+    const bytes = sealBytes ?? (await loadSealBytes(state));
     if (bytes) {
       const img = await doc.embedPng(bytes);
       const s = PT / Math.max(img.width, img.height);
@@ -335,7 +342,8 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
   const drawBody = (list: Paragraph[], depth: number, portionActive: boolean, business = false) => {
     list.forEach((p, i) => {
       // Business letter: main paragraphs are unnumbered; the ladder shifts one level deeper (11-2.6).
-      const marker = business && depth === 0 ? '' : markerText(paragraphMarker(depth, i));
+      const mk = business && depth === 0 ? null : paragraphMarker(depth, i);
+      const marker = mk ? markerText(mk) : '';
       const indent = (business ? depthIndentIn(depth + 1) : depthIndentIn(depth)) * PT;
       const markerX = LEFT + indent;
       const textX = markerX + (marker ? font.widthOfTextAtSize(marker, SIZE) + PGAP : 0);
@@ -392,7 +400,21 @@ export async function buildSignablePdf(state: LetterState, today: Date = new Dat
         room(SIZE * BODY_LH);
         const baseY = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
         if (li === 0) {
-          if (marker) page.drawText(marker, { x: markerX, y: baseY, font, size: SIZE });
+          if (marker) {
+            page.drawText(marker, { x: markerX, y: baseY, font, size: SIZE });
+            // Levels 5-8 (fig 7-8) underline the marker's digit/letter to mark the second cycle —
+            // matching the preview (<u>) and the .docx (R(core, {underline})).
+            if (mk?.underline) {
+              const preW = font.widthOfTextAtSize(mk.prefix, SIZE);
+              const coreW = font.widthOfTextAtSize(mk.core, SIZE);
+              page.drawLine({
+                start: { x: markerX + preW, y: baseY - 1.6 },
+                end: { x: markerX + preW + coreW, y: baseY - 1.6 },
+                thickness: 0.6,
+                color: black,
+              });
+            }
+          }
           if (portion) page.drawText(portion, { x: textX, y: baseY, font, size: SIZE });
           if (p.title) {
             page.drawText(p.title + '.', { x: titleX, y: baseY, font, size: SIZE });

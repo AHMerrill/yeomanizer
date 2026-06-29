@@ -252,6 +252,27 @@ const base: LetterState = {
   const joint: LetterState = { ...defaultFor('joint-letter') };
   writeFileSync(`${OUT}/joint.pdf`, await buildSignablePdf(joint, today));
 
+  // Deep paragraph nesting (fig 7-8): 6 levels so the underline-at-level-5 markers are exercised
+  // (levels 5-8 underline the digit/letter to distinguish the second 1./a./(1)/(a) cycle).
+  const deepnest: LetterState = {
+    ...base,
+    subj: 'DEEP PARAGRAPH NESTING',
+    body: [
+      { id: 'd0', text: 'Level one (depth 0): marker "1." — not underlined.', children: [
+        { id: 'd1', text: 'Level two (depth 1): marker "a.".', children: [
+          { id: 'd2', text: 'Level three (depth 2): marker "(1)".', children: [
+            { id: 'd3', text: 'Level four (depth 3): marker "(a)".', children: [
+              { id: 'd4', text: 'Level five (depth 4): marker "1." with the digit UNDERLINED.', children: [
+                { id: 'd5', text: 'Level six (depth 5): marker "a." with the letter underlined.', children: [] },
+              ] },
+            ] },
+          ] },
+        ] },
+      ] },
+    ],
+  };
+  writeFileSync(`${OUT}/deepnest.pdf`, await buildSignablePdf(deepnest, today));
+
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
   const { Packer } = await import('docx');
