@@ -25,14 +25,19 @@ import { printLetter } from './export/print';
 import { recordVisit, recordDownload, type Counts } from './api/counter';
 import './App.css';
 
-const ALL_TYPES: CorrespondenceType[] = [
-  'standard-letter',
-  'memo-from-to',
-  'mfr',
-  'business-letter',
-  'endorsement',
-  'nato',
-];
+// Keyed as a Record (not a bare array) so TypeScript ERRORS if a CorrespondenceType is left out — a
+// bare array silently let 'moa'/'joint-letter' slip out of the per-type state map, breaking those tabs.
+const TYPE_SET: Record<CorrespondenceType, true> = {
+  'standard-letter': true,
+  'memo-from-to': true,
+  mfr: true,
+  'business-letter': true,
+  endorsement: true,
+  moa: true,
+  'joint-letter': true,
+  nato: true,
+};
+const ALL_TYPES = Object.keys(TYPE_SET) as CorrespondenceType[];
 const makeStates = (): Record<CorrespondenceType, LetterState> =>
   Object.fromEntries(ALL_TYPES.map((t) => [t, defaultFor(t)])) as Record<
     CorrespondenceType,
