@@ -1,0 +1,161 @@
+/* Shared styles for the static, crawlable guide pages (served from /public). Light, readable, print-
+   friendly — the content is the point. Inline-free so it works under the locked CSP (style-src 'self'). */
+:root {
+  --ink: #1b1d24;
+  --muted: #59607094;
+  --muted2: #5a6072;
+  --accent: #1f3a93;
+  --line: #e3e6ee;
+  --bg: #ffffff;
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  font-family: -apple-system, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.62;
+}
+.wrap {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 8px 20px 72px;
+}
+header.site,
+footer.site {
+  border-bottom: 1px solid var(--line);
+}
+footer.site {
+  border-bottom: none;
+  border-top: 1px solid var(--line);
+  color: var(--muted2);
+  font-size: 13px;
+}
+header.site .bar,
+footer.site .bar {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.brand {
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 18px;
+}
+.brand span {
+  color: var(--muted2);
+  font-weight: 400;
+  font-size: 13px;
+}
+.cta {
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 15px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.cta:hover {
+  background: #16307e;
+}
+nav.crumbs {
+  font-size: 13px;
+  color: var(--muted2);
+  margin: 18px 0 0;
+}
+nav.crumbs a {
+  color: var(--muted2);
+}
+h1 {
+  font-size: 31px;
+  line-height: 1.18;
+  margin: 14px 0 8px;
+  letter-spacing: -0.01em;
+}
+h2 {
+  font-size: 21px;
+  margin: 34px 0 8px;
+}
+h3 {
+  font-size: 16px;
+  margin: 22px 0 6px;
+}
+.lede {
+  font-size: 19px;
+  color: var(--muted2);
+  margin: 0 0 8px;
+}
+a {
+  color: var(--accent);
+}
+p,
+li {
+  font-size: 16.5px;
+}
+ul,
+ol {
+  padding-left: 22px;
+}
+li {
+  margin: 5px 0;
+}
+.disclaimer {
+  background: #fbf7e9;
+  border: 1px solid #ecdca5;
+  border-radius: 8px;
+  padding: 11px 15px;
+  font-size: 13.5px;
+  color: #5a4a18;
+  margin: 20px 0;
+}
+.example {
+  background: #f6f7f9;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px 18px;
+  font-family: 'Times New Roman', Georgia, serif;
+  white-space: pre-wrap;
+  font-size: 14.5px;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+.related {
+  border-top: 1px solid var(--line);
+  margin-top: 44px;
+  padding-top: 14px;
+}
+.related h2 {
+  margin-top: 6px;
+}
+.related a {
+  display: inline-block;
+  margin: 4px 0;
+}
+.btn-row {
+  margin: 22px 0;
+}
+.types {
+  list-style: none;
+  padding: 0;
+}
+.types li {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.types b {
+  color: var(--accent);
+}

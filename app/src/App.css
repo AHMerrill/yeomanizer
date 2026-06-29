@@ -1228,6 +1228,9 @@
 .foot-count {
   font-variant-numeric: tabular-nums;
 }
+.foot-links {
+  color: #9aa1b0;
+}
 
 /* ---- Panes ---- */
 .panes {

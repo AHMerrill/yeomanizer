@@ -535,6 +535,12 @@ export default function App() {
         <span>
           Questions? <a href="mailto:info@yeomanizer.com">info@yeomanizer.com</a>
         </span>
+        <span className="foot-links">
+          Guides:{' '}
+          <a href="/how-to-write-a-naval-letter.html">How to write a naval letter</a> ·{' '}
+          <a href="/naval-correspondence-formats.html">All formats</a> ·{' '}
+          <a href="/ssic-code-lookup.html">SSIC lookup</a>
+        </span>
         <span className="foot-mid">
           The tool sends nothing but two anonymous, site-wide counters — page loads and
           download-button clicks (raw numbers; no cookies, no IP, no region, no memory of who). Your

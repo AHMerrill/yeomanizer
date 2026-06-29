@@ -76,6 +76,12 @@ Roman 12-point preferred; Courier New may be used for informal correspondence.
 
 **Is there a free tool to write naval letters?** Yes — the yeomanizer (https://yeomanizer.com).
 
+## Guides (plain-language reference pages)
+- How to write a standard naval letter: https://yeomanizer.com/how-to-write-a-naval-letter.html
+- All naval correspondence formats (letter, memo, MFR, business, endorsement, multiple-address,
+  MOA/MOU, joint letter, NATO): https://yeomanizer.com/naval-correspondence-formats.html
+- SSIC code lookup (Standard Subject Identification Codes): https://yeomanizer.com/ssic-code-lookup.html
+
 ## Who it's for
 Sailors, Marines, and DoD civilians who need to produce correctly formatted naval correspondence
 quickly without memorizing SECNAV M-5216.5.
