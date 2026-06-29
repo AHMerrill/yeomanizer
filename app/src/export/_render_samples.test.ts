@@ -87,6 +87,21 @@ const base: LetterState = {
   const cui: LetterState = { ...base, cui: { ...base.cui, enabled: true } };
   writeFileSync(`${OUT}/cui.pdf`, await buildSignablePdf(cui, today));
 
+  // CUI on a MULTI-PAGE letter: the designation block stays on page 1 (lower-right) and must NOT
+  // overlap the body; the banner repeats top+bottom on every page.
+  const cuiLong: LetterState = {
+    ...base,
+    cui: { ...base.cui, enabled: true, controlledBy1: 'Department of the Navy', category: 'PRVCY', poc: 'CDR J. Doe, 703-555-5555' },
+    body: Array.from({ length: 16 }, (_, i) => ({
+      id: `cl${i}`,
+      text:
+        `Paragraph ${i + 1}. ` +
+        'Filler text to push the CUI letter onto a second page so the designation-block placement can be verified against the body. '.repeat(3),
+      children: [],
+    })),
+  };
+  writeFileSync(`${OUT}/cui-multipage.pdf`, await buildSignablePdf(cuiLong, today));
+
   // CUI portion markings: paras 1 & 3 marked CUI → "(CUI)", para 2 unmarked → "(U)". Tests the mark
   // sitting before a section title and ahead of inline emphasis (must match preview + docx).
   const portions: LetterState = {
