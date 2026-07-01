@@ -69,6 +69,14 @@ This file is the working guide for Claude sessions in this repo.
 - The `.json` round-trip is a **separate** file — do **not** re-embed draft data inside the `.docx`
   or `.pdf` (it was built and deliberately backed out; embedded data is a government sanitization/DLP
   problem).
+- **A standalone type that early-returns in an exporter must still run the shared finalization.** The
+  coordination page returns early in `signablePdf.ts`/`docx.ts` (it's a table, not a letter). That path
+  originally skipped the CUI banner (`applyCui`) **and** `stripPdfMetadata`, so enabling CUI silently did
+  nothing *and* the PDF shipped a pdf-lib `Producer` + a real creation-timestamp (a privacy-tenet leak the
+  preview didn't reveal, since the preview marks every type via its page wrapper). Any new early-return type
+  must call `applyCui()` + `stripPdfMetadata(doc)` (PDF) and set a CUI header/footer + empty doc metadata
+  (docx) before returning. Verify with `pdfinfo` (dates must read 1969/epoch-0, `Producer` empty) and by
+  grepping the exported text for the banner — not just the preview.
 
 ## Before every commit
 
