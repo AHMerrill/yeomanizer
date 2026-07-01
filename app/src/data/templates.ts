@@ -125,6 +125,40 @@ export const TEMPLATES: Template[] = [
     }),
   },
   {
+    id: 'flag',
+    name: 'Flag stationery (informal)',
+    blurb: 'Personal note for a flag officer’s pre-printed flag stationery (Ch 12, figs 12-7/12-8).',
+    build: () => ({
+      ...defaultFor('business-letter'),
+      includeSsic: false,
+      includeCode: false,
+      subj: '',
+      // Flag stationery is pre-printed with the officer’s personal flag + title; the flag is physical,
+      // so render just the centered navy title (the letterhead line) and type the note beneath it.
+      letterhead: {
+        ...defaultFor('business-letter').letterhead,
+        mode: 'on',
+        seal: 'none',
+        line1: 'CHIEF OF NAVAL OPERATIONS',
+        activityName: '',
+        addressLine: '',
+        cityStateZip: '',
+      },
+      body: [
+        para('b1', 'Thank you for [hosting the event / speaking on my behalf] yesterday in my absence. I trust it went well.'),
+        para('b2', 'Your [remarks / support] received many positive compliments, and I appreciate your valuable time.'),
+        para('b3', 'I appreciate your support and wish you all the best.'),
+      ],
+      signature: { name: '[Full Name]', title: '[Rank], U.S. Navy', authority: 'none' },
+      business: {
+        ...defaultFor('business-letter').business,
+        insideAddress: '[Rank Full Name, USN]\n[Title]\n[Street Address]\n[City, State ZIP]',
+        salutation: 'Dear [Admiral Name]:',
+        complimentaryClose: 'Sincerely,', // informal notes may use "Warm Regards," etc. (fig 12-7)
+      },
+    }),
+  },
+  {
     id: 'interim',
     name: 'Interim reply',
     blurb: 'Acknowledge incoming correspondence you can’t yet answer fully (Ch 12, fig 12-2).',

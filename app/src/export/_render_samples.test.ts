@@ -205,6 +205,8 @@ const base: LetterState = {
   writeFileSync(`${OUT}/tmpl-congressional.pdf`, await buildSignablePdf(congressional, today));
   const interim = TEMPLATES.find((t) => t.id === 'interim')!.build();
   writeFileSync(`${OUT}/tmpl-interim.pdf`, await buildSignablePdf(interim, today));
+  const flag = TEMPLATES.find((t) => t.id === 'flag')!.build();
+  writeFileSync(`${OUT}/tmpl-flag.pdf`, await buildSignablePdf(flag, today));
 
   // Multiple-address letter (Ch 8): To: line with three addressees (Fig 8-1) and, separately, a
   // Distribution: block with copy counts and no To: line (Fig 8-2). Verifies stacked To: addressees
