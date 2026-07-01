@@ -355,6 +355,12 @@ const base: LetterState = {
     },
   };
   writeFileSync(`${OUT}/coord-stress.pdf`, await buildSignablePdf(coordStress, today));
+  // CUI on the new Ch 12 types: the banner must print top + bottom of every page (the CUI card is
+  // offered for both, so enabling it must actually mark the document — not silently do nothing).
+  const coordCui: LetterState = { ...defaultFor('coordination-page'), cui: { ...coordPage.cui, enabled: true } };
+  writeFileSync(`${OUT}/coord-cui.pdf`, await buildSignablePdf(coordCui, today));
+  const execCui: LetterState = { ...defaultFor('exec-memo'), cui: { ...execMemo.cui, enabled: true } };
+  writeFileSync(`${OUT}/exec-cui.pdf`, await buildSignablePdf(execCui, today));
 
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
@@ -381,6 +387,7 @@ const base: LetterState = {
   await writeDocx('exec-memofor', execMemoFor); // Ch 12 Memorandum For — addressing, indented, centered sig
   await writeDocx('coord-page', coordPage); // Ch 12 Coordination Page — title + concurrence table
   await writeDocx('coord-stress', coordStress); // multi-page concurrence table — pagination + header repeat
+  await writeDocx('coord-cui', coordCui); // CUI on a coordination page — banner must mark, not silently skip
   await writeDocx('multi-address-to', multiTo);
   await writeDocx('multi-address-dist', multiDist);
   await writeDocx('moa', moa);

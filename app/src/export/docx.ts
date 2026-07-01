@@ -212,6 +212,30 @@ export function buildDocxDocument(
           children: [e.office, e.poc, e.phone, e.date, e.remarks].map((c) => cell([R(c)])),
         }),
     );
+    // CUI marking, if enabled: a banner top + bottom of every page (the CUI card is offered for the
+    // coordination page too, so it must actually mark), and the designation block in the page-1
+    // footer. titlePage routes page 1 to the `first` header/footer, pages 2+ to `default`.
+    const ccui = state.cui;
+    const ccBanner = (ccui.banner || 'CUI').toUpperCase();
+    const ccBannerPara = () =>
+      new Paragraph({ alignment: AlignmentType.CENTER, children: [R(ccBanner, { bold: true })], spacing: { after: 0 } });
+    const ccDesig = [
+      `Controlled by: ${ccui.controlledBy1}`,
+      ccui.controlledBy2 ? `Controlled by: ${ccui.controlledBy2}` : '',
+      `CUI Category: ${ccui.category}`,
+      `Limited Dissemination Control: ${ccui.dissemination}`,
+      ccui.poc ? `POC: ${ccui.poc}` : '',
+      ccui.transmittalNote.trim(),
+    ]
+      .filter(Boolean)
+      .map(
+        (line) =>
+          new Paragraph({
+            alignment: AlignmentType.RIGHT,
+            children: [new TextRun({ text: line, font: FONT, size: 16 })],
+            spacing: { after: 0 },
+          }),
+      );
     return new Document({
       creator: '',
       title: '',
@@ -221,7 +245,19 @@ export function buildDocxDocument(
       lastModifiedBy: '',
       sections: [
         {
-          properties: { page: { margin: { top: IN, right: IN, bottom: IN, left: IN } } },
+          properties: {
+            page: { margin: { top: IN, right: IN, bottom: IN, left: IN } },
+            ...(ccui.enabled ? { titlePage: true } : {}),
+          },
+          headers: ccui.enabled
+            ? { default: new Header({ children: [ccBannerPara()] }), first: new Header({ children: [ccBannerPara()] }) }
+            : undefined,
+          footers: ccui.enabled
+            ? {
+                default: new Footer({ children: [ccBannerPara()] }),
+                first: new Footer({ children: [ccBannerPara(), ...ccDesig] }),
+              }
+            : undefined,
           children: [
             new Paragraph({
               alignment: AlignmentType.CENTER,

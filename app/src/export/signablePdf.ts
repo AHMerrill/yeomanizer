@@ -58,6 +58,35 @@ export async function buildSignablePdf(
   const black = rgb(0, 0, 0);
   const navy = rgb(...NAVY);
 
+  // CUI chrome — the banner (top + bottom of every page) plus the page-1 designation block. Shared
+  // by the coordination-page path and the normal letter path so neither can silently skip marking
+  // when the user enables CUI. pageBannerOverride lets enclosure pages carry their own banner.
+  const applyCui = (pageBannerOverride: Map<number, string> = new Map()) => {
+    const cui = state.cui;
+    if (!cui.enabled) return;
+    const letterBanner = (cui.banner || 'CUI').toUpperCase();
+    const pages = doc.getPages();
+    pages.forEach((pg, i) => {
+      const banner = pageBannerOverride.get(i) || letterBanner;
+      const bw = bold.widthOfTextAtSize(banner, 12);
+      const { width: pw, height: ph } = pg.getSize();
+      pg.drawText(banner, { x: (pw - bw) / 2, y: ph - 0.22 * PT - 10.7, size: 12, font: bold });
+      pg.drawText(banner, { x: (pw - bw) / 2, y: 0.22 * PT + 2.6, size: 12, font: bold });
+    });
+    const desig = [
+      `Controlled by: ${cui.controlledBy1}`,
+      cui.controlledBy2 ? `Controlled by: ${cui.controlledBy2}` : '',
+      `CUI Category: ${cui.category}`,
+      `Limited Dissemination Control: ${cui.dissemination}`,
+      cui.poc ? `POC: ${cui.poc}` : '',
+      cui.transmittalNote.trim(),
+    ].filter(Boolean);
+    const dW = Math.max(...desig.map((l) => font.widthOfTextAtSize(l, 8)));
+    desig.forEach((l, i) =>
+      pages[0].drawText(l, { x: RIGHT - dW, y: 0.46 * PT + (desig.length - 1 - i) * 10, size: 8, font }),
+    );
+  };
+
   let page = doc.addPage([PAGE_W, PAGE_H]);
   let top = M_TOP; // distance from the page's top edge to the next content
   const sigRefs: ReturnType<typeof doc.context.register>[] = []; // collected into one AcroForm at the end
@@ -148,6 +177,18 @@ export async function buildSignablePdf(
       );
       top += SIZE * BODY_LH * rowLines + PGAP * 2;
     });
+    // Page numbers for a multi-page table (page 2 onward), then the shared CUI chrome and the
+    // metadata wipe — the same finalization the letter path gets, so the coord page can't skip them.
+    const cpPages = doc.getPages();
+    if (cpPages.length > 1) {
+      cpPages.forEach((pg, i) => {
+        if (i === 0) return;
+        const num = String(i + 1);
+        pg.drawText(num, { x: (PAGE_W - font.widthOfTextAtSize(num, SIZE)) / 2, y: 0.5 * PT, size: SIZE, font });
+      });
+    }
+    applyCui();
+    stripPdfMetadata(doc);
     return await doc.save();
   }
 
@@ -820,30 +861,8 @@ export async function buildSignablePdf(
   }
 
   // ---- CUI banners (every page, top + bottom) + designation block (page 1, lower-right) ----
-  const cui = state.cui;
+  applyCui(pageBannerOverride);
   const pages = doc.getPages();
-  if (cui.enabled) {
-    const letterBanner = (cui.banner || 'CUI').toUpperCase();
-    pages.forEach((pg, i) => {
-      const banner = pageBannerOverride.get(i) || letterBanner; // enclosure pages may carry their own
-      const bw = bold.widthOfTextAtSize(banner, 12);
-      const { width: pw, height: ph } = pg.getSize();
-      pg.drawText(banner, { x: (pw - bw) / 2, y: ph - 0.22 * PT - 10.7, size: 12, font: bold });
-      pg.drawText(banner, { x: (pw - bw) / 2, y: 0.22 * PT + 2.6, size: 12, font: bold });
-    });
-    const desig = [
-      `Controlled by: ${cui.controlledBy1}`,
-      cui.controlledBy2 ? `Controlled by: ${cui.controlledBy2}` : '',
-      `CUI Category: ${cui.category}`,
-      `Limited Dissemination Control: ${cui.dissemination}`,
-      cui.poc ? `POC: ${cui.poc}` : '',
-      cui.transmittalNote.trim(), // transmittal-document status note (e.g. "…UNCONTROLLED when separated")
-    ].filter(Boolean);
-    const dW = Math.max(...desig.map((l) => font.widthOfTextAtSize(l, 8)));
-    desig.forEach((l, i) =>
-      pages[0].drawText(l, { x: RIGHT - dW, y: 0.46 * PT + (desig.length - 1 - i) * 10, size: 8, font }),
-    );
-  }
 
   // ---- Page numbers — centered, 0.5in from the bottom, page 2 onward; enclosure pages are
   // excluded (they carry the "Enclosure (n)" mark instead) (7-2.17) ----
