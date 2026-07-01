@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { serializeProject, parseProject } from './roundtrip';
 import { defaultState, defaultFor } from '../defaultState';
+import { TEMPLATES } from '../data/templates';
 import type { LetterState, CorrespondenceType } from '../types';
 
 const state: LetterState = {
@@ -205,6 +206,23 @@ describe('every correspondence type survives 20 serialize→parse round-trips un
         const back = parseProject(serializeProject(cur));
         expect(back, `${t} round-trip #${i + 1} returned null`).not.toBeNull();
         expect(back, `${t} drifted on round-trip #${i + 1}`).toEqual(original);
+        cur = back!;
+      }
+    });
+  }
+});
+
+// The starter templates carry the trickier field combinations (copyTo, inside address, editable
+// close, titleOnly letterhead, congressional/interim/flag content) — round-trip each 20× too.
+describe('every starter template survives 20 serialize→parse round-trips unchanged', () => {
+  for (const tmpl of TEMPLATES) {
+    it(`template "${tmpl.id}": 20 round-trips are a lossless fixpoint`, () => {
+      const original = tmpl.build();
+      let cur: LetterState = original;
+      for (let i = 0; i < 20; i++) {
+        const back = parseProject(serializeProject(cur));
+        expect(back, `${tmpl.id} round-trip #${i + 1} returned null`).not.toBeNull();
+        expect(back, `${tmpl.id} drifted on round-trip #${i + 1}`).toEqual(original);
         cur = back!;
       }
     });
