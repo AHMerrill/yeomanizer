@@ -240,8 +240,21 @@ No signature block — the principal acts by initialing the decision line. Reuse
 across preview · PDF · `.docx`, verified vs figs 12-9/12-14. **`MEMORANDUM-FOR`** is the plain
 "Memorandum For" (fig 12-14): `MEMORANDUM FOR <recipient>` addressing (no title/FROM/control), a
 Title-Case `SUBJECT:`, **indented** (unnumbered, not bulleted) paragraphs, a **centered signature**,
-then `Attachments:` and `cc:`. The SECDEF/DEPSECDEF variants (12-10/12-12/12-15) and the coordination
-page (12-13) remain future sub-variants.
+then `Attachments:` and `cc:`. The SECDEF/DEPSECDEF variants (12-10/12-12/12-15) need no new type —
+the flexible letterhead + control-symbol line already produces them. Multi-page exec memos hang the
+bullets (wrapped lines align under the text after the `•`, fig 12-9), wrap the FOR/FROM/SUBJECT
+headings, and carry centered page numbers.
+
+## Coordination page (Ch 12, fig 12-13) — done
+The plain-bond concurrence table that rides with an action memo. Type `coordination-page`,
+`coordPage.entries[]` (one row per reviewing office: Office/Dept · Point of Contact/Title · Phone ·
+Date · Remarks). A centered **`COORDINATION PAGE`** title over an underlined-header table; no
+letterhead, ident, From/To, or signature (its editor shows only the Coordination-page, Letterhead,
+and CUI cards). Rendered across preview · PDF (an aligned vector table) · `.docx` (a borderless Word
+table, `tableHeader` + `cantSplit` rows). A table that spills onto a second page **repeats its column
+headers** (PDF via the continuation header; Word via the header row) and keeps each office's row
+intact. CUI marks the page (banner top/bottom + designation) like any other type, and the export is
+metadata-clean — both the CUI banner and the metadata wipe run on the early-return path.
 
 ## NATO travel order — done
 The bilingual two-page form (order + reverse instructions), with U.S.-grade → NATO (OF/OR)
@@ -285,9 +298,13 @@ A non-blocking "to review" count (warnings + sensitive-data hits) shows as a bad
   (`data/ssic.ts`, all 13 major groups + common second-level codes) — filter by number *or* keyword,
   click to fill. It is **not** the full ~2,200-code catalog (SECNAV M-5210.2); unknown codes are typed
   directly and never fabricated.
-- **Starter templates (impl):** one-click examples (appreciation / request / MFR / business,
-  `data/templates.ts`) load a correctly-structured draft into the editor with `[BRACKETS]` for the
-  parts to replace; loading one is undoable. Static bundled content — nothing fetched.
+- **Starter templates (impl):** one-click examples (appreciation / request / MFR / business /
+  congressional response / interim reply / flag stationery, `data/templates.ts`) load a
+  correctly-structured draft into the editor with `[BRACKETS]` for the parts to replace; loading one
+  is undoable. Static bundled content — nothing fetched. The congressional (fig 12-4), interim reply
+  (fig 12-2), and flag-stationery (figs 12-7/12-8) formats are business-letter-structured, so they
+  ship as templates rather than distinct types; flag stationery uses a `letterhead.titleOnly`
+  (centered navy title only) since the physical flag is pre-printed on the stationery.
 
 ## Known gaps / TODO
 - In-document enclosures are tied to a specific enclosure entry and auto-marked "Enclosure (n)" on
@@ -296,7 +313,11 @@ A non-blocking "to review" count (warnings + sensitive-data hits) shows as a bad
   loose enclosure files) does **not** yet re-mark "Enclosure (n)" on the merged pages — that's still TODO.
 - Mid-paragraph page splitting (currently breaks only at paragraph boundaries; the "≥2 lines each side"
   rule, 7-2.13).
-- Other types still to add from M-5216.5: executive correspondence (Ch 12 — flag stationery / action
-  memos). NB: information/decision papers and naval messages (GENADMIN/MARADMIN/ALMAR) are governed by
-  OTHER pubs (staff-action guides; NTP-3 / USMTF), not this manual — out of scope to avoid fabricating a format.
+- Every correspondence format in M-5216.5 is now in the tool (standard / multi-address / joint /
+  endorsement / MFR / memo / MOA-MOU / business + attention / executive memo — Action, Info,
+  Memorandum For, SECDEF/DEPSECDEF / coordination page / NATO, plus congressional, interim, and flag
+  stationery as templates). **Deliberately excluded:** classification markings (the classified-letter
+  figs 7-5/7-6 — an unclassified tool must not emit SECRET/CONFIDENTIAL banners) and OSD fillable forms
+  (SD 391, fig 12-1). NB: information/decision papers and naval messages (GENADMIN/MARADMIN/ALMAR) are
+  governed by OTHER pubs (staff-action guides; NTP-3 / USMTF), not this manual — out of scope.
 - A deeper advisor / style-suggestion layer beyond the Ch 2 ¶19 proofread checklist (done).

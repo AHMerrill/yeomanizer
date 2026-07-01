@@ -77,7 +77,7 @@ const NODES: TLNode[] = [
     license: 'Apache-2.0',
     side: 'up',
     x: 1138,
-    blurb: 'This one. Pixel-faithful, private, and a little obsessive.',
+    blurb: 'This one. Pixel-faithful to the manual, private by design, and rigorously verified.',
     us: true,
   },
 ];
