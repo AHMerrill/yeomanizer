@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { serializeProject, parseProject } from './roundtrip';
 import { defaultState, defaultFor } from '../defaultState';
-import type { LetterState } from '../types';
+import type { LetterState, CorrespondenceType } from '../types';
 
 const state: LetterState = {
   ...defaultState,
@@ -179,4 +179,34 @@ describe('parseProject — body-tree hardening', () => {
     }
     expect(depth).toBeLessThanOrEqual(12);
   });
+});
+
+// "Upload 20 times each": every type must be a lossless FIXPOINT under repeated export→import —
+// each of 20 round-trips reproduces the original state exactly, so re-importing a downloaded .json
+// (and re-exporting, and re-importing…) never drifts or silently drops a type-specific field.
+describe('every correspondence type survives 20 serialize→parse round-trips unchanged', () => {
+  const TYPES: CorrespondenceType[] = [
+    'standard-letter',
+    'memo-from-to',
+    'mfr',
+    'business-letter',
+    'endorsement',
+    'moa',
+    'joint-letter',
+    'exec-memo',
+    'coordination-page',
+    'nato',
+  ];
+  for (const t of TYPES) {
+    it(`${t}: 20 round-trips are a lossless fixpoint`, () => {
+      const original = defaultFor(t);
+      let cur: LetterState = original;
+      for (let i = 0; i < 20; i++) {
+        const back = parseProject(serializeProject(cur));
+        expect(back, `${t} round-trip #${i + 1} returned null`).not.toBeNull();
+        expect(back, `${t} drifted on round-trip #${i + 1}`).toEqual(original);
+        cur = back!;
+      }
+    });
+  }
 });
