@@ -18,7 +18,9 @@ Live: **https://yeomanizer.com**
   centered "Sincerely,"), multiple-address letters (Ch 8 — `To:` / `Distribution:`), endorsements
   (Ch 9, appended automatically when you add a Via addressee), the **Memorandum of Agreement /
   Understanding** (Ch 10 — dual per-party identification blocks + dual signatures), the **joint
-  letter / memorandum** (Ch 7 — co-signed by two or more commands), and the bilingual two-page NATO
+  letter / memorandum** (Ch 7 — co-signed by two or more commands), the **executive memo** (Ch 12 —
+  Action / Info memo for HqDON/OSD staff work: `ACTION MEMO`/`INFO MEMO`, `FOR:`/`FROM:`/`SUBJECT:`,
+  bulleted paragraphs, and an Approve/Disapprove decision block), and the bilingual two-page NATO
   travel order.
 - **Pixel-faithful preview** — letterhead with the authentic DoD/DoW seal, the SSIC/identification
   block, the From/To/Via/Subj/Ref/Encl heading, automatic paragraph numbering & indentation (the

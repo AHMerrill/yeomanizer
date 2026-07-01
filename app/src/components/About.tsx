@@ -9,6 +9,7 @@ const AVAILABLE: [string, string][] = [
   ['Memorandum of Agreement / Understanding', 'MOA/MOU (Ch 10): plain bond, dual identification blocks (each party’s short title, SSIC, serial, and date — party A left, party B right), a centered title and “BETWEEN” the two activities (senior first), then dual signatures with the senior at the right — each over its own signature line, in the preview, PDF, and Word.'],
   ['Joint letter / memorandum', 'Co-signed by two or more commands (Ch 7): each command listed in the letterhead (senior first), its own SSIC/serial/date identification column (senior at the right), a “JOINT LETTER” title, a From per command, and one signature per command arranged senior-right.'],
   ['Endorsements', 'Add a Via and the endorsement appends as its own page — with its own signature block, and its own CAC-signable field in the PDF.'],
+  ['Executive memo (Action / Info)', 'The HqDON/OSD staff memo (Ch 12, figs 12-9/12-11): a centered “ACTION MEMO” or “INFO MEMO”, FOR:/FROM:/SUBJECT: (Title Case) addressing, bulleted paragraphs, and — for an action memo — a RECOMMENDATION with an Approve/Disapprove decision block, plus COORDINATION, Attachments, and “Prepared by.”'],
   ['NATO travel order', 'The bilingual two-page form, with U.S. → NATO rank codes filled in.'],
   ['Live preview', 'Overleaf-style: the formatted page updates with every keystroke.'],
   ['Start from an example', 'One click fills the editor with a correctly-structured letter — appreciation, request, memo for the record, or business letter — that you then edit. Undoable.'],

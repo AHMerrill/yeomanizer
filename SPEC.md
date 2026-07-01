@@ -226,6 +226,20 @@ format/identification.ts, used by both the preview and the .docx export. Each ne
 carries its own **identification block** — the basic letter's **SSIC repeated** (9-2.2) plus the
 endorser's serial/date, right-aligned at the top — in the preview, PDF, and `.docx`.
 
+## Executive memorandum (Ch 12, figs 12-9 / 12-11) — done (Action / Info)
+The OSD/SecDef staff memo that carries a decision or information **up** to a principal — a distinct
+family from the naval letter/memo. Type `exec-memo`, `execMemo.kind` = `ACTION` | `INFORMATION`.
+Letterhead of the signing office; a right-aligned **date + control symbol** (`UNSECNAV ____` — a
+principal's memo is dated when signed, so the date may be blank); a **centered `ACTION MEMO` /
+`INFO MEMO`** title; **`FOR:` / `FROM:` / `SUBJECT:`** (Title Case, *not* upper) with a wider label
+column; an optional `Reference:` / `References:` line; **bulleted** main paragraphs (`•`, the ladder
+shifts one level deeper for subparagraphs); then the close — an **ACTION** memo's `RECOMMENDATION:` +
+`Approve ___ / Disapprove ___` decision block, then `COORDINATION:`, `Attachments:`, and `Prepared by:`.
+No signature block — the principal acts by initialing the decision line. Reuses the shared `to` (FOR:),
+`subj`, `refs`, `body`, `letterhead`; the editor hides the standard Routing card. Rendered identically
+across preview · PDF · `.docx`, verified vs fig 12-9. The plain "Memorandum For" (12-14) and the
+SECDEF/DEPSECDEF variants (12-10/12-12/12-15) + coordination page (12-13) remain future sub-variants.
+
 ## NATO travel order — done
 The bilingual two-page form (order + reverse instructions), with U.S.-grade → NATO (OF/OR)
 rank-code translation and the arms / dispatch / SOFA options.
