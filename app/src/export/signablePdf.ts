@@ -107,6 +107,44 @@ export async function buildSignablePdf(
 
   const lh = state.letterhead;
 
+  // Coordination page (Ch 12, fig 12-13): a standalone plain-bond concurrence TABLE, not a letter.
+  // Render the title + table and return early — no seal / letterhead / ident / signature.
+  if (state.type === 'coordination-page') {
+    top = M_TOP + 0.5 * PT;
+    const title = 'COORDINATION PAGE';
+    put(title, LEFT + (RIGHT - LEFT - bold.widthOfTextAtSize(title, SIZE)) / 2, bold);
+    gap(PARA_GAP * 2);
+    const cols = [LEFT, LEFT + 1.2 * PT, LEFT + 3.3 * PT, LEFT + 4.5 * PT, LEFT + 5.6 * PT];
+    const colW = [1.1 * PT, 1.9 * PT, 1.1 * PT, 1.0 * PT, 0.85 * PT];
+    const headers = ['Office/Dept', 'Point of Contact/Title', 'Phone', 'Date', 'Remarks'];
+    const hy = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
+    headers.forEach((h, i) => {
+      page.drawText(h, { x: cols[i], y: hy, font, size: SIZE });
+      page.drawLine({
+        start: { x: cols[i], y: hy - 1.6 },
+        end: { x: cols[i] + font.widthOfTextAtSize(h, SIZE), y: hy - 1.6 },
+        thickness: 0.6,
+        color: black,
+      });
+    });
+    top += SIZE * BODY_LH;
+    gap(PARA_GAP);
+    state.coordPage.entries.forEach((e) => {
+      const cells = [e.office, e.poc, e.phone, e.date, e.remarks];
+      const wrapped = cells.map((c, i) => wrap(c, font, SIZE, colW[i]));
+      const rowLines = Math.max(1, ...wrapped.map((w) => w.length));
+      room(SIZE * BODY_LH * rowLines);
+      const ry = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
+      wrapped.forEach((lines, i) =>
+        lines.forEach((ln, li) =>
+          page.drawText(ln, { x: cols[i], y: ry - li * SIZE * BODY_LH, font, size: SIZE }),
+        ),
+      );
+      top += SIZE * BODY_LH * rowLines + PGAP * 2;
+    });
+    return await doc.save();
+  }
+
   // ---- Seal (1in, at left 0.62in / top 0.5in), aspect-fit like object-fit: contain ----
   if (lh.mode === 'on' && lh.seal !== 'none') {
     const bytes = sealBytes ?? (await loadSealBytes(state));

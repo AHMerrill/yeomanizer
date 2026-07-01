@@ -304,6 +304,9 @@ const base: LetterState = {
     ],
   };
   writeFileSync(`${OUT}/exec-memofor.pdf`, await buildSignablePdf(execMemoFor, today));
+  // Coordination page (fig 12-13): plain bond, a centered title over a concurrence table.
+  const coordPage: LetterState = { ...defaultFor('coordination-page') };
+  writeFileSync(`${OUT}/coord-page.pdf`, await buildSignablePdf(coordPage, today));
 
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
@@ -327,6 +330,7 @@ const base: LetterState = {
   await writeDocx('multipage', longBody); // multi-page: verifies the repeated Subj header + page numbers
   await writeDocx('exec-memo', execMemo); // Ch 12 Action Memo — title, FOR/FROM/SUBJECT, bullets, decision
   await writeDocx('exec-memofor', execMemoFor); // Ch 12 Memorandum For — addressing, indented, centered sig
+  await writeDocx('coord-page', coordPage); // Ch 12 Coordination Page — title + concurrence table
   await writeDocx('multi-address-to', multiTo);
   await writeDocx('multi-address-dist', multiDist);
   await writeDocx('moa', moa);

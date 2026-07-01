@@ -594,6 +594,23 @@ export function Editor({
     setState((s) => ({ ...s, joint: { ...s.joint, ...p } }));
   const patchExecMemo = (p: Partial<LetterState['execMemo']>) =>
     setState((s) => ({ ...s, execMemo: { ...s.execMemo, ...p } }));
+  const addCoordEntry = () =>
+    setState((s) => ({
+      ...s,
+      coordPage: {
+        entries: [
+          ...s.coordPage.entries,
+          { id: crypto.randomUUID(), office: '', poc: '', phone: '', date: '', remarks: '' },
+        ],
+      },
+    }));
+  const patchCoordEntry = (id: string, p: Partial<LetterState['coordPage']['entries'][number]>) =>
+    setState((s) => ({
+      ...s,
+      coordPage: { entries: s.coordPage.entries.map((e) => (e.id === id ? { ...e, ...p } : e)) },
+    }));
+  const removeCoordEntry = (id: string) =>
+    setState((s) => ({ ...s, coordPage: { entries: s.coordPage.entries.filter((e) => e.id !== id) } }));
   const patchJointParty = (i: number, p: Partial<JointParty>) =>
     setState((s) => ({
       ...s,
@@ -636,6 +653,7 @@ export function Editor({
           <option value="moa">Memorandum of Agreement / Understanding (MOA/MOU)</option>
           <option value="joint-letter">Joint Letter / Memorandum (co-signed by 2+ commands)</option>
           <option value="exec-memo">Executive memo — Action / Info (Ch 12, HqDON/OSD staff)</option>
+          <option value="coordination-page">Coordination page (Ch 12 — concurrence table)</option>
         </select>
       </Card>
 
@@ -938,7 +956,55 @@ export function Editor({
         </Card>
       )}
 
-      {state.type !== 'nato' && (
+      {state.type === 'coordination-page' && (
+        <Card
+          title="Coordination page"
+          syncId="head"
+          hint="Ch 12 (fig 12-13): the plain-bond concurrence table that rides with an action memo. One row per office that reviewed or concurred."
+          onReset={() => setState((s) => ({ ...s, coordPage: { entries: [] } }))}
+        >
+          {state.coordPage.entries.length === 0 && (
+            <p className="hint">No offices yet — add one below.</p>
+          )}
+          {state.coordPage.entries.map((e, i) => (
+            <div key={e.id} className="joint-party">
+              <div className="joint-party-head">
+                <span className="sub-label">Office {i + 1}</span>
+                <button
+                  type="button"
+                  className="joint-rm"
+                  title="Remove this office"
+                  onClick={() => removeCoordEntry(e.id)}
+                >
+                  ✕
+                </button>
+              </div>
+              <Field label="Office / Dept">
+                <input value={e.office} placeholder="OGC" onChange={(ev) => patchCoordEntry(e.id, { office: ev.target.value })} />
+              </Field>
+              <Field label="Point of Contact / Title">
+                <input
+                  value={e.poc}
+                  placeholder="Ms. Anne Brennan, Acting"
+                  onChange={(ev) => patchCoordEntry(e.id, { poc: ev.target.value })}
+                />
+              </Field>
+              <Field label="Phone / Date / Remarks">
+                <div className="joint-triple">
+                  <input value={e.phone} placeholder="(703) xxx-xxxx" aria-label="Phone" onChange={(ev) => patchCoordEntry(e.id, { phone: ev.target.value })} />
+                  <input value={e.date} placeholder="16 Feb 2018" aria-label="Date" onChange={(ev) => patchCoordEntry(e.id, { date: ev.target.value })} />
+                  <input value={e.remarks} placeholder="Concur" aria-label="Remarks" onChange={(ev) => patchCoordEntry(e.id, { remarks: ev.target.value })} />
+                </div>
+              </Field>
+            </div>
+          ))}
+          <button type="button" className="add-btn" onClick={addCoordEntry}>
+            + Add office
+          </button>
+        </Card>
+      )}
+
+      {state.type !== 'nato' && state.type !== 'coordination-page' && (
         <>
       <Card
         title="Identification"

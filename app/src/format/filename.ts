@@ -10,6 +10,7 @@ const TYPE_SLUG: Record<LetterState['type'], string> = {
   moa: 'memorandum-of-agreement',
   'joint-letter': 'joint-letter',
   'exec-memo': 'action-memo',
+  'coordination-page': 'coordination-page',
   nato: 'travel-order',
 };
 

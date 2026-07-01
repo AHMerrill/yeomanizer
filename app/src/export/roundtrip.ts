@@ -178,6 +178,21 @@ export function parseProject(text: string): LetterState | null {
             cc: typeof rawExec.cc === 'string' ? rawExec.cc.slice(0, 300) : '',
           }
         : defaultState.execMemo;
+    // Coordination page (Ch 12): bound + coerce the entries table from a hostile/corrupt file.
+    const rawCoord = s.coordPage as { entries?: unknown } | undefined;
+    const coordPage = {
+      entries: (rawCoord && Array.isArray(rawCoord.entries) ? rawCoord.entries : [])
+        .slice(0, 40)
+        .filter((e): e is Record<string, unknown> => !!e && typeof e === 'object')
+        .map((e, i) => ({
+          id: typeof e.id === 'string' ? e.id : `c${i}`,
+          office: typeof e.office === 'string' ? e.office.slice(0, 120) : '',
+          poc: typeof e.poc === 'string' ? e.poc.slice(0, 200) : '',
+          phone: typeof e.phone === 'string' ? e.phone.slice(0, 40) : '',
+          date: typeof e.date === 'string' ? e.date.slice(0, 40) : '',
+          remarks: typeof e.remarks === 'string' ? e.remarks.slice(0, 120) : '',
+        })),
+    };
     return sanitizeEnclosures({
       ...defaultState,
       ...s,
@@ -188,6 +203,7 @@ export function parseProject(text: string): LetterState | null {
       moa,
       joint,
       execMemo,
+      coordPage,
       // Bound + coerce every list field so a hostile/corrupt file can't smuggle a giant array.
       toAddrs: sanitizeEntries(s.toAddrs),
       via: sanitizeEntries(s.via),

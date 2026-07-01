@@ -10,6 +10,7 @@ export type CorrespondenceType =
   | 'moa'
   | 'joint-letter'
   | 'exec-memo'
+  | 'coordination-page'
   | 'nato';
 
 // Business letter (Ch 11) — used to correspond with agencies/businesses/individuals outside DoD.
@@ -80,6 +81,21 @@ export interface ExecMemo {
   attachments: string; // Attachments: value (defaults to "As stated")
   preparedBy: string; // "Prepared by:" — name, organization, phone
   cc: string; // MEMORANDUM-FOR: the cc: line (fig 12-14)
+}
+
+// Coordination page (Ch 12, fig 12-13): the plain-bond concurrence tab that rides with an action memo,
+// tracking which offices reviewed/concurred. A centered "COORDINATION PAGE" title over a table:
+// Office/Dept | Point of Contact/Title | Phone | Date | Remarks.
+export interface CoordEntry {
+  id: string;
+  office: string; // Office/Dept, e.g. "OGC"
+  poc: string; // Point of Contact/Title (may be two lines: name + title)
+  phone: string;
+  date: string;
+  remarks: string; // "Reviewed" | "Concur" | "Concur w/comments" | "Nonconcur" | …
+}
+export interface CoordPage {
+  entries: CoordEntry[];
 }
 
 // NATO travel order (a bilingual form, not a naval letter). DoD/FCG template.
@@ -252,4 +268,7 @@ export interface LetterState {
 
   // Executive memorandum parts (Ch 12, used when type === 'exec-memo')
   execMemo: ExecMemo;
+
+  // Coordination page parts (Ch 12, used when type === 'coordination-page')
+  coordPage: CoordPage;
 }

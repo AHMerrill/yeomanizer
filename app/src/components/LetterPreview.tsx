@@ -151,6 +151,7 @@ function Head({ state }: { state: LetterState }) {
   if (state.type === 'moa') return <MoaHead state={state} ident={ident} />;
   if (state.type === 'joint-letter') return <JointHead state={state} />;
   if (state.type === 'exec-memo') return <ExecMemoHead state={state} ident={ident} />;
+  if (state.type === 'coordination-page') return <CoordPageHead state={state} />;
   return (
     <>
       {lh.mode === 'on' && <Letterhead state={state} />}
@@ -584,6 +585,47 @@ function ExecMemoClose({ state }: { state: LetterState }) {
   );
 }
 
+// Coordination page (Ch 12, fig 12-13): plain bond, a centered "COORDINATION PAGE" title over a table
+// of the offices that reviewed/concurred (Office/Dept · POC/Title · Phone · Date · Remarks).
+function CoordPageHead({ state }: { state: LetterState }) {
+  const entries = state.coordPage.entries;
+  return (
+    <div className="coord-page" data-sync="head">
+      <div className="coord-title">COORDINATION PAGE</div>
+      <table className="coord-table">
+        <thead>
+          <tr>
+            <th>Office/Dept</th>
+            <th>Point of Contact/Title</th>
+            <th>Phone</th>
+            <th>Date</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="ph">
+                Add offices in the editor — each row is one coordinating office.
+              </td>
+            </tr>
+          ) : (
+            entries.map((e) => (
+              <tr key={e.id}>
+                <td>{e.office}</td>
+                <td>{e.poc}</td>
+                <td>{e.phone}</td>
+                <td>{e.date}</td>
+                <td>{e.remarks}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // Joint letter / memorandum (Ch 7, fig 7-4): co-signed by multiple commands. The letterhead lists each
 // command (senior first); each command keeps its own identification column (senior at the right); a
 // "JOINT LETTER" title precedes the multi-command From block.
@@ -912,6 +954,8 @@ function LetterDoc({ state }: { state: LetterState }) {
   // A "Memorandum For" (Ch 12, fig 12-14) uses INDENTED (unnumbered) paragraphs like a business letter;
   // the Action/Info memos use bullets.
   const isExecMemoFor = isExec && state.execMemo.kind === 'MEMORANDUM-FOR';
+  // The coordination page is a standalone table (rendered by Head); it has no body/signature/copy-to.
+  const isCoord = state.type === 'coordination-page';
   const items: FlowItem[] = [
     ...flat.map((fp) => ({
       key: `p_${fp.key}`,
@@ -924,20 +968,24 @@ function LetterDoc({ state }: { state: LetterState }) {
         />
       ),
     })),
-    {
-      key: 'sig',
-      node: isJoint ? (
-        <JointClose state={state} />
-      ) : isMoa ? (
-        <MoaClose state={state} />
-      ) : isBusiness ? (
-        <BusinessClose state={state} />
-      ) : isExec ? (
-        <ExecMemoClose state={state} />
-      ) : (
-        <Signature state={state} />
-      ),
-    },
+    ...(isCoord
+      ? []
+      : [
+          {
+            key: 'sig',
+            node: isJoint ? (
+              <JointClose state={state} />
+            ) : isMoa ? (
+              <MoaClose state={state} />
+            ) : isBusiness ? (
+              <BusinessClose state={state} />
+            ) : isExec ? (
+              <ExecMemoClose state={state} />
+            ) : (
+              <Signature state={state} />
+            ),
+          },
+        ]),
     ...(distribution.length ? [{ key: 'dist', node: <Distribution items={distribution} /> }] : []),
     ...(copyTo.length ? [{ key: 'copy', node: <CopyTo items={copyTo} /> }] : []),
   ];

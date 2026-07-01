@@ -428,6 +428,27 @@
 .exec-cc {
   margin-top: 0.14in;
 }
+/* Coordination page (Ch 12, fig 12-13): a centered title over a 5-column concurrence table. */
+.coord-title {
+  text-align: center;
+  font-weight: bold;
+  margin: 0.2in 0 0.3in;
+}
+.coord-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.coord-table th {
+  text-align: left;
+  font-weight: normal;
+  text-decoration: underline;
+  padding: 0 0.15in 0.14in 0;
+  vertical-align: top;
+}
+.coord-table td {
+  padding: 0.06in 0.15in 0.06in 0;
+  vertical-align: top;
+}
 .moa-title {
   text-align: center;
   margin: 0.3in 0 0.24in;

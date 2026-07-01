@@ -9,6 +9,11 @@ import {
   Header,
   Footer,
   PageNumber,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
   ImageRun,
   HorizontalPositionRelativeFrom,
   VerticalPositionRelativeFrom,
@@ -181,6 +186,46 @@ export function buildDocxDocument(
   sealBytes?: ArrayBuffer | Uint8Array,
   enclImages: Record<string, RasterPage[]> = {},
 ): Document {
+  // Coordination page (Ch 12, fig 12-13): a standalone plain-bond concurrence table, not a letter.
+  if (state.type === 'coordination-page') {
+    const NB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' } as const;
+    const noBorders = { top: NB, bottom: NB, left: NB, right: NB, insideHorizontal: NB, insideVertical: NB };
+    const cell = (runs: TextRun[]) =>
+      new TableCell({ children: [new Paragraph({ children: runs, spacing: { after: 40 } })], borders: noBorders });
+    const headerRow = new TableRow({
+      children: ['Office/Dept', 'Point of Contact/Title', 'Phone', 'Date', 'Remarks'].map((h) =>
+        cell([R(h, { underline: true })]),
+      ),
+    });
+    const rows = state.coordPage.entries.map(
+      (e) => new TableRow({ children: [e.office, e.poc, e.phone, e.date, e.remarks].map((c) => cell([R(c)])) }),
+    );
+    return new Document({
+      creator: '',
+      title: '',
+      subject: '',
+      description: '',
+      keywords: '',
+      lastModifiedBy: '',
+      sections: [
+        {
+          properties: { page: { margin: { top: IN, right: IN, bottom: IN, left: IN } } },
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [R('COORDINATION PAGE', { bold: true })],
+              spacing: { after: 2 * BLANK },
+            }),
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              borders: noBorders,
+              rows: [headerRow, ...rows],
+            }),
+          ],
+        },
+      ],
+    });
+  }
   const ident = buildIdent(state, today);
   const lh = state.letterhead;
   const cui = state.cui;

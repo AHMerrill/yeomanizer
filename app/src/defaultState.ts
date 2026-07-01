@@ -125,6 +125,9 @@ export const defaultState: LetterState = {
     preparedBy: '',
     cc: '',
   },
+  coordPage: {
+    entries: [],
+  },
 };
 
 // Per-type starting draft. Most types share `defaultState`; some need faithful defaults that match
@@ -363,6 +366,32 @@ export function defaultFor(type: CorrespondenceType): LetterState {
       ],
     };
   }
+  if (type === 'coordination-page') {
+    // Coordination page (fig 12-13): plain bond, a centered "COORDINATION PAGE" title over a table of
+    // the offices that reviewed/concurred on an action-memo package.
+    return {
+      ...base,
+      letterhead: { ...base.letterhead, mode: 'off' },
+      includeSsic: false,
+      includeCode: false,
+      dateMode: 'none',
+      from: '',
+      to: '',
+      via: [],
+      subj: '',
+      refs: [],
+      encls: [],
+      signature: { name: '', title: '', authority: 'none' },
+      body: [],
+      coordPage: {
+        entries: [
+          { id: uid(), office: 'DNS', poc: 'VADM Kevin Donegan', phone: '(703) xxx-xxxx', date: '30 Jan 2018', remarks: 'Reviewed' },
+          { id: uid(), office: 'ASN (RD&A)', poc: 'HON James Geurts', phone: '(703) xxx-xxxx', date: '13 Feb 2018', remarks: 'Concur' },
+          { id: uid(), office: 'OGC', poc: 'Ms. Anne Brennan, Acting', phone: '(703) xxx-xxxx', date: '16 Feb 2018', remarks: 'Nonconcur' },
+        ],
+      },
+    };
+  }
   return base;
 }
 
@@ -395,6 +424,7 @@ export function blankFor(type: CorrespondenceType): LetterState {
     moa: { ...defaultState.moa, signerB: { ...defaultState.moa.signerB } },
     joint: { ...defaultState.joint, parties: [] },
     execMemo: { ...defaultState.execMemo },
+    coordPage: { entries: [] },
   };
 }
 
