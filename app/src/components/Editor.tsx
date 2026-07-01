@@ -592,6 +592,8 @@ export function Editor({
     setState((s) => ({ ...s, moa: { ...s.moa, ...p } }));
   const patchJoint = (p: Partial<LetterState['joint']>) =>
     setState((s) => ({ ...s, joint: { ...s.joint, ...p } }));
+  const patchExecMemo = (p: Partial<LetterState['execMemo']>) =>
+    setState((s) => ({ ...s, execMemo: { ...s.execMemo, ...p } }));
   const patchJointParty = (i: number, p: Partial<JointParty>) =>
     setState((s) => ({
       ...s,
@@ -633,6 +635,7 @@ export function Editor({
           <option value="business-letter">Business Letter (to firms/agencies outside DoD)</option>
           <option value="moa">Memorandum of Agreement / Understanding (MOA/MOU)</option>
           <option value="joint-letter">Joint Letter / Memorandum (co-signed by 2+ commands)</option>
+          <option value="exec-memo">Executive memo — Action / Info (Ch 12, HqDON/OSD staff)</option>
         </select>
       </Card>
 
@@ -1265,11 +1268,103 @@ export function Editor({
         </Card>
       )}
 
+      {state.type === 'exec-memo' && (
+        <Card
+          title="Executive memo"
+          syncId="head"
+          hint="Ch 12 (figs 12-9/12-11): the OSD/SecDef staff memo. An Action memo asks the principal to approve/sign (with the Approve/Disapprove block); an Info memo just informs. Edit the Title-Case SUBJECT, references, and the bulleted body in the cards below."
+          onReset={() =>
+            patchExecMemo({
+              kind: 'ACTION',
+              controlLine: '',
+              from: '',
+              recommendation: '',
+              decisionLines: true,
+              coordination: '',
+              attachments: 'As stated',
+              preparedBy: '',
+            })
+          }
+        >
+          <Field label="Kind">
+            <select
+              value={state.execMemo.kind}
+              onChange={(e) => patchExecMemo({ kind: e.target.value as 'ACTION' | 'INFORMATION' })}
+            >
+              <option value="ACTION">Action memo — asks the principal to decide/sign</option>
+              <option value="INFORMATION">Info memo — informs, no action</option>
+            </select>
+          </Field>
+          <Field label="FOR (recipient)">
+            <input
+              value={state.to}
+              placeholder="SECRETARY OF THE NAVY"
+              onChange={(e) => patch({ to: e.target.value })}
+            />
+          </Field>
+          <Field label="FROM (originator — full name, title)">
+            <input
+              value={state.execMemo.from}
+              placeholder="Full Name, Title"
+              onChange={(e) => patchExecMemo({ from: e.target.value })}
+            />
+          </Field>
+          <Field label="Control symbol (upper right)">
+            <input
+              value={state.execMemo.controlLine}
+              placeholder="UNSECNAV ______"
+              onChange={(e) => patchExecMemo({ controlLine: e.target.value })}
+            />
+          </Field>
+          {state.execMemo.kind === 'ACTION' && (
+            <>
+              <Field label="Recommendation">
+                <input
+                  value={state.execMemo.recommendation}
+                  placeholder="That SECNAV sign the action at TAB A."
+                  onChange={(e) => patchExecMemo({ recommendation: e.target.value })}
+                />
+              </Field>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={state.execMemo.decisionLines}
+                  onChange={(e) => patchExecMemo({ decisionLines: e.target.checked })}
+                />
+                Show the Approve _____ / Disapprove _____ decision block
+              </label>
+            </>
+          )}
+          <Field label="Coordination">
+            <input
+              value={state.execMemo.coordination}
+              placeholder="TAB D (or None)"
+              onChange={(e) => patchExecMemo({ coordination: e.target.value })}
+            />
+          </Field>
+          <Field label="Attachments">
+            <input
+              value={state.execMemo.attachments}
+              placeholder="As stated"
+              onChange={(e) => patchExecMemo({ attachments: e.target.value })}
+            />
+          </Field>
+          <Field label="Prepared by (name, org, phone)">
+            <input
+              value={state.execMemo.preparedBy}
+              placeholder="A. Officer, OGC, (703) 555-0100"
+              onChange={(e) => patchExecMemo({ preparedBy: e.target.value })}
+            />
+          </Field>
+        </Card>
+      )}
+
       {/* MFR is "for the record"; the business letter uses an inside address — neither has From/To/Via. */}
       {state.type !== 'mfr' &&
         state.type !== 'business-letter' &&
         state.type !== 'moa' &&
-        state.type !== 'joint-letter' && (
+        state.type !== 'joint-letter' &&
+        state.type !== 'exec-memo' && (
       <Card
         title="Routing"
         syncId="head"

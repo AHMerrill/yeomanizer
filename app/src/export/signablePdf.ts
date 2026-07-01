@@ -273,6 +273,13 @@ export async function buildSignablePdf(
     room(SIZE * BODY_LH);
     put(`JOINT ${state.joint.kind === 'MEMORANDUM' ? 'MEMORANDUM' : 'LETTER'}`, LEFT);
     gap(PARA_GAP);
+  } else if (isExec) {
+    // Centered "ACTION MEMO" / "INFO MEMO" title (fig 12-9 / 12-11).
+    gap(PARA_GAP);
+    room(SIZE * BODY_LH);
+    const t = state.execMemo.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO';
+    put(t, LEFT + (RIGHT - LEFT - bold.widthOfTextAtSize(t, SIZE)) / 2, bold);
+    gap(PARA_GAP);
   } else {
     gap(0.3 * PT - PARA_GAP < 0 ? 0.14 * PT : 0.3 * PT); // .headings margin-top (~0.3in from ident)
   }
@@ -291,8 +298,29 @@ export async function buildSignablePdf(
     put(lines[0] ?? '', textX);
     lines.slice(1).forEach((ln) => put(ln, textX));
   };
+  // Executive memo (Ch 12): FOR:/FROM:/SUBJECT: (Title Case) / Reference(s):, with a wider label column
+  // than a naval letter ("SUBJECT:"/"Reference:" don't fit LABEL_COL).
+  if (isExec) {
+    const em = state.execMemo;
+    const EXEC_LBL = 0.92 * PT;
+    const erow = (label: string, value: string) => {
+      const textX = LEFT + EXEC_LBL;
+      const lines = wrap(value, font, SIZE, RIGHT - textX);
+      room(SIZE * BODY_LH);
+      const baseY = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
+      if (label) page.drawText(label, { x: LEFT, y: baseY, font, size: SIZE });
+      put(lines[0] ?? '', textX);
+      lines.slice(1).forEach((ln) => put(ln, textX));
+    };
+    if (state.to) erow('FOR:', state.to);
+    if (em.from.trim()) erow('FROM:', em.from.trim());
+    if (state.subj.trim()) erow('SUBJECT:', state.subj.trim());
+    const erefs = state.refs.filter((r) => r.text.trim());
+    if (erefs.length === 1) erow('Reference:', erefs[0].text);
+    else erefs.forEach((r, i) => erow(i === 0 ? 'References:' : '', `(${String.fromCharCode(97 + i)}) ${r.text}`));
+  }
   // The business letter is addressed by the inside address above — no From/To/Via/Subj/Ref/Encl heading.
-  if (!isBusiness) {
+  else if (!isBusiness) {
   // MFR is "for the record"; MOA uses its BETWEEN block — neither has a From/To/Via.
   if (isJoint) {
     // Joint letter: a From line per command (senior first), then the single To.
@@ -340,7 +368,7 @@ export async function buildSignablePdf(
         gap(PARA_GAP);
       };
     }
-  } else if (state.subj.trim()) {
+  } else if (state.subj.trim() && !isExec) {
     contHeader = () => {
       headRow('Subj:', state.subj.toUpperCase());
       gap(PARA_GAP);
@@ -349,12 +377,19 @@ export async function buildSignablePdf(
 
   // ---- Body (numbered paragraphs; first line indented, continuation at the left margin) ----
   gap(PARA_GAP);
-  const drawBody = (list: Paragraph[], depth: number, portionActive: boolean, business = false) => {
+  const drawBody = (
+    list: Paragraph[],
+    depth: number,
+    portionActive: boolean,
+    business = false,
+    execBullet = false,
+  ) => {
     list.forEach((p, i) => {
-      // Business letter: main paragraphs are unnumbered; the ladder shifts one level deeper (11-2.6).
-      const mk = business && depth === 0 ? null : paragraphMarker(depth, i);
-      const marker = mk ? markerText(mk) : '';
-      const indent = (business ? depthIndentIn(depth + 1) : depthIndentIn(depth)) * PT;
+      // Business main paras are unnumbered; exec-memo main paras are bulleted ("•"). Both shift the
+      // ladder one level deeper for subparagraphs (11-2.6 / Ch 12).
+      const mk = (business || execBullet) && depth === 0 ? null : paragraphMarker(depth, i);
+      const marker = mk ? markerText(mk) : execBullet && depth === 0 ? '•' : '';
+      const indent = (business || execBullet ? depthIndentIn(depth + 1) : depthIndentIn(depth)) * PT;
       const markerX = LEFT + indent;
       const textX = markerX + (marker ? font.widthOfTextAtSize(marker, SIZE) + PGAP : 0);
       // Portion marking when active: "(CUI)" on a marked paragraph, else "(U)" — sits before the title.
@@ -456,7 +491,7 @@ export async function buildSignablePdf(
         top += SIZE * BODY_LH;
       });
       gap(PARA_GAP);
-      if (p.children.length) drawBody(p.children, depth + 1, portionActive, business);
+      if (p.children.length) drawBody(p.children, depth + 1, portionActive, business, execBullet);
     });
   };
   // ---- Signature block (page center, left edge 3.25in past the margin). Reusable so each
@@ -555,13 +590,50 @@ export async function buildSignablePdf(
     top = maxTop;
   };
 
-  drawBody(state.body, 0, state.cui.enabled && anyCui(state.body), isBusiness);
+  // Executive-memo close (Ch 12): RECOMMENDATION + Approve/Disapprove decision block (ACTION only),
+  // then COORDINATION, Attachments, and "Prepared by". No traditional signature block — the principal
+  // acts by initialing the decision line (figs 12-9 / 12-11).
+  const drawExecClose = () => {
+    const em = state.execMemo;
+    gap(PARA_GAP);
+    if (em.kind === 'ACTION') {
+      const recLabel = 'RECOMMENDATION:  ';
+      const recX = LEFT + font.widthOfTextAtSize(recLabel, SIZE);
+      const recLines = wrap(
+        em.recommendation.trim() || 'That SECNAV sign the action at TAB A.',
+        font,
+        SIZE,
+        RIGHT - recX,
+      );
+      room(SIZE * BODY_LH);
+      page.drawText(recLabel, { x: LEFT, y: PAGE_H - top - baselineDrop(SIZE, BODY_LH), font, size: SIZE });
+      put(recLines[0] ?? '', recX);
+      recLines.slice(1).forEach((ln) => put(ln, LEFT));
+      if (em.decisionLines) {
+        gap(PARA_GAP);
+        put(`Approve  ${'_'.repeat(18)}      Disapprove  ${'_'.repeat(18)}`, LEFT);
+      }
+    }
+    gap(PARA_GAP);
+    put(`COORDINATION:  ${em.coordination.trim() || 'None'}`, LEFT);
+    gap(PARA_GAP);
+    put('Attachments:', LEFT);
+    put(em.attachments.trim() || 'As stated', LEFT);
+    if (em.preparedBy.trim()) {
+      gap(PARA_GAP);
+      put(`Prepared by:  ${em.preparedBy.trim()}`, LEFT);
+    }
+  };
+
+  drawBody(state.body, 0, state.cui.enabled && anyCui(state.body), isBusiness, isExec);
   if (isBusiness) {
     drawBizClose();
   } else if (isMoa) {
     drawMoaClose();
   } else if (isJoint) {
     drawJointClose();
+  } else if (isExec) {
+    drawExecClose();
   } else {
     signatureBlock(state.signature.name, state.signature.title, state.signature.authority, 'Signature1');
   }

@@ -143,19 +143,24 @@ function flattenBody(
   out: Paragraph[],
   portionActive: boolean,
   business = false,
+  execBullet = false,
 ): void {
   list.forEach((p, i) => {
     const m = paragraphMarker(depth, i);
-    // Business letter: main paragraphs are unnumbered; the ladder shifts one level deeper (11-2.6).
+    // Business main paras are unnumbered; exec-memo main paras are bulleted ("•"). Both shift the
+    // ladder one level deeper for subparagraphs (11-2.6 / Ch 12).
     const noMark = business && depth === 0;
+    const bulletTop = execBullet && depth === 0;
     const mark = portionActive ? (p.cui ? '(CUI) ' : '(U) ') : '';
-    const indentIn = business ? depthIndentIn(depth + 1) : depthIndentIn(depth);
+    const indentIn = business || execBullet ? depthIndentIn(depth + 1) : depthIndentIn(depth);
     out.push(
       new Paragraph({
         children: [
           ...(noMark
             ? [R(mark)]
-            : [R(m.prefix), R(m.core, { underline: m.underline }), R(m.suffix), R('  ' + mark)]),
+            : bulletTop
+              ? [R('•  ' + mark)]
+              : [R(m.prefix), R(m.core, { underline: m.underline }), R(m.suffix), R('  ' + mark)]),
           ...(p.title ? [R(p.title, { underline: true }), R('.  ')] : []),
           ...parseInline(p.text).map((r) =>
             R(r.text, { bold: r.bold, italics: r.italic, underline: r.underline }),
@@ -165,7 +170,7 @@ function flattenBody(
         spacing: { after: BLANK },
       }),
     );
-    if (p.children.length) flattenBody(p.children, depth + 1, out, portionActive, business);
+    if (p.children.length) flattenBody(p.children, depth + 1, out, portionActive, business, execBullet);
   });
 }
 
@@ -185,6 +190,7 @@ export function buildDocxDocument(
   const isBusiness = state.type === 'business-letter';
   const isMoa = state.type === 'moa';
   const isJoint = state.type === 'joint-letter';
+  const isExec = state.type === 'exec-memo';
   const children: Paragraph[] = [];
 
   // Letterhead: on = print it (text only in v1); preprinted = reserve blank lines; off = none.
@@ -273,6 +279,10 @@ export function buildDocxDocument(
     rows.forEach(([a, b]) => {
       if (a !== '' || b !== '') children.push(row(a, b));
     });
+  } else if (isExec) {
+    // Executive memo (Ch 12): a right-aligned date + control symbol ("UNSECNAV ____").
+    const em = state.execMemo;
+    [ident.date, em.controlLine.trim()].filter((l) => l).forEach((l) => children.push(rightLine(l)));
   } else {
     identLines.forEach((line) => children.push(rightLine(line)));
   }
@@ -301,6 +311,15 @@ export function buildDocxDocument(
     children.push(
       new Paragraph({
         children: [R(`JOINT ${state.joint.kind === 'MEMORANDUM' ? 'MEMORANDUM' : 'LETTER'}`)],
+        spacing: { before: BLANK, after: BLANK },
+      }),
+    );
+  } else if (isExec) {
+    // Centered "ACTION MEMO" / "INFO MEMO" title (fig 12-9 / 12-11).
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [R(state.execMemo.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO', { bold: true })],
         spacing: { before: BLANK, after: BLANK },
       }),
     );
@@ -352,6 +371,24 @@ export function buildDocxDocument(
           }),
         );
     }
+  } else if (isExec) {
+    // Executive memo (Ch 12): FOR:/FROM:/SUBJECT: (Title Case) / Reference(s):, with a wider label
+    // column than a naval letter ("SUBJECT:"/"Reference:" don't fit the narrow one).
+    const em = state.execMemo;
+    const EXEC_LBL = Math.round(0.92 * IN);
+    const erow = (label: string, content: string) =>
+      new Paragraph({
+        children: [R(label), new TextRun({ text: '\t', font: FONT, size: SZ }), R(content)],
+        tabStops: [{ type: TabStopType.LEFT, position: EXEC_LBL }],
+        indent: { left: EXEC_LBL, hanging: EXEC_LBL },
+        spacing: { after: 0 },
+      });
+    if (state.to) children.push(erow('FOR:', state.to));
+    if (em.from.trim()) children.push(erow('FROM:', em.from.trim()));
+    if (state.subj.trim()) children.push(erow('SUBJECT:', state.subj.trim()));
+    const erefs = state.refs.filter((r) => r.text.trim());
+    if (erefs.length === 1) children.push(erow('Reference:', erefs[0].text));
+    else erefs.forEach((r, i) => children.push(erow(i === 0 ? 'References:' : '', `(${refLetter(i)}) ${r.text}`)));
   } else {
   if (isEndorsement) {
     children.push(
@@ -396,7 +433,7 @@ export function buildDocxDocument(
   } // end of the non-business heading block
 
   children.push(spacer());
-  flattenBody(state.body, 0, children, cui.enabled && anyCui(state.body), isBusiness);
+  flattenBody(state.body, 0, children, cui.enabled && anyCui(state.body), isBusiness, isExec);
 
   // Signature — left edge at page center. The export leaves the signature space blank so the
   // signer can wet-sign or CAC-sign the PDF in Adobe (no script-font placeholder).
@@ -450,6 +487,23 @@ export function buildDocxDocument(
     children.push(sigRow((p) => p.signer.name));
     if (order.some((p) => p.signer.title.trim())) children.push(sigRow((p) => p.signer.title));
     if (order.some((p) => authOf(p.signer))) children.push(sigRow((p) => authOf(p.signer)));
+  } else if (isExec) {
+    // Executive-memo close (Ch 12): RECOMMENDATION + Approve/Disapprove (ACTION only), then
+    // COORDINATION, Attachments, and "Prepared by". No signature block — the principal initials.
+    const em = state.execMemo;
+    const line = (text: string, before = 0) =>
+      new Paragraph({ children: [R(text)], spacing: { before, after: 0 } });
+    if (em.kind === 'ACTION') {
+      children.push(
+        line(`RECOMMENDATION:  ${em.recommendation.trim() || 'That SECNAV sign the action at TAB A.'}`, BLANK),
+      );
+      if (em.decisionLines)
+        children.push(line(`Approve  ${'_'.repeat(18)}      Disapprove  ${'_'.repeat(18)}`, BLANK));
+    }
+    children.push(line(`COORDINATION:  ${em.coordination.trim() || 'None'}`, BLANK));
+    children.push(line('Attachments:', BLANK));
+    children.push(line(em.attachments.trim() || 'As stated'));
+    if (em.preparedBy.trim()) children.push(line(`Prepared by:  ${em.preparedBy.trim()}`, BLANK));
   } else {
     const sigLines = [state.signature.name];
     if (state.signature.title) sigLines.push(state.signature.title);

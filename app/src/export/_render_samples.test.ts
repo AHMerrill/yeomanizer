@@ -273,6 +273,17 @@ const base: LetterState = {
   };
   writeFileSync(`${OUT}/deepnest.pdf`, await buildSignablePdf(deepnest, today));
 
+  // Executive memorandum (Ch 12, fig 12-9 Action Memo): ACTION MEMO title, FOR:/FROM:/SUBJECT:,
+  // bulleted body, RECOMMENDATION + Approve/Disapprove, COORDINATION, Attachments, Prepared by.
+  const execMemo: LetterState = { ...defaultFor('exec-memo') };
+  writeFileSync(`${OUT}/exec-memo.pdf`, await buildSignablePdf(execMemo, today));
+  const execInfo: LetterState = {
+    ...defaultFor('exec-memo'),
+    subj: 'Info Memo Format',
+    execMemo: { ...defaultFor('exec-memo').execMemo, kind: 'INFORMATION' },
+  };
+  writeFileSync(`${OUT}/exec-info.pdf`, await buildSignablePdf(execInfo, today));
+
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
   const { Packer } = await import('docx');
@@ -293,6 +304,7 @@ const base: LetterState = {
   await writeDocx('enclosures', encls);
   await writeDocx('business', business);
   await writeDocx('multipage', longBody); // multi-page: verifies the repeated Subj header + page numbers
+  await writeDocx('exec-memo', execMemo); // Ch 12 Action Memo — title, FOR/FROM/SUBJECT, bullets, decision
   await writeDocx('multi-address-to', multiTo);
   await writeDocx('multi-address-dist', multiDist);
   await writeDocx('moa', moa);
