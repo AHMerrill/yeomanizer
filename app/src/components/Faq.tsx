@@ -147,6 +147,16 @@ export function Faq() {
           your CUI never leaves the machine. It cannot make an unauthorized device OK for CUI.
         </QA>
 
+        <QA q="Can I use it for classified letters?" sources={[SRC.cuiProgram]}>
+          No. This is an <em>unclassified</em> tool, and it deliberately does not produce classification
+          markings (CONFIDENTIAL / SECRET banners, portion marks, or a classification-authority block).
+          Classified correspondence must be prepared on an accredited classified system — never on an
+          internet-connected device. The classified letter format in the manual (figs 7-5 / 7-6) is
+          otherwise a standard letter; you may format the unclassified skeleton here, but never enter
+          classified content. For the same reason, OSD-specific fillable forms like the SD 391 (fig 12-1)
+          are out of scope — this tool formats correspondence, not agency forms.
+        </QA>
+
         <QA q="My enclosures are different CUI categories — can each be marked separately?" sources={[SRC.dodi]}>
           Yes. When CUI is on, each enclosure you render <em>in the document</em> can carry its own
           banner (top &amp; bottom of its page(s)) — so a package assembled from enclosures of differing

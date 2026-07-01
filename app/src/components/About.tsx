@@ -13,7 +13,7 @@ const AVAILABLE: [string, string][] = [
   ['Coordination page', 'The plain-bond concurrence table that rides with an action memo (Ch 12, fig 12-13): a centered “COORDINATION PAGE” over one row per reviewing office — Office/Dept, Point of Contact/Title, Phone, Date, and Remarks (Concur / Nonconcur / Reviewed). Add or remove offices; the same aligned table renders in the preview, PDF, and Word.'],
   ['NATO travel order', 'The bilingual two-page form, with U.S. → NATO rank codes filled in.'],
   ['Live preview', 'Overleaf-style: the formatted page updates with every keystroke.'],
-  ['Start from an example', 'One click fills the editor with a correctly-structured letter — appreciation, request, memo for the record, or business letter — that you then edit. Undoable.'],
+  ['Start from an example', 'One click fills the editor with a correctly-structured letter — appreciation, request, memo for the record, business letter, congressional response, interim reply, or flag stationery (Ch 12) — that you then edit. Undoable.'],
   ['CAC-signable PDF', 'One pixel-accurate PDF of the whole package — letter, endorsements, enclosures, CUI — with selectable, searchable text and a built-in CAC signature field. Open it to print, save, or sign (no Prepare-a-Form step).'],
   ['Word (.docx) export', 'An editable Word version of the full document — endorsements, enclosures, and CUI included.'],
   ['Editable .json copy', 'Export a small plain-text .json of your draft and drop it back into the Editor tab later to keep working — the .docx and PDF stay clean, with nothing hidden inside them.'],
