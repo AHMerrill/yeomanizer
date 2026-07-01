@@ -156,6 +156,22 @@ export function parseProject(text: string): LetterState | null {
               }),
           }
         : defaultState.joint;
+    // Executive memorandum (Ch 12): coerce every field so a corrupt/hostile file can't smuggle a
+    // non-string into a renderer that calls .trim() / wraps it.
+    const rawExec = s.execMemo as unknown as Record<string, unknown> | undefined;
+    const execMemo =
+      rawExec && typeof rawExec === 'object'
+        ? {
+            kind: rawExec.kind === 'INFORMATION' ? ('INFORMATION' as const) : ('ACTION' as const),
+            controlLine: typeof rawExec.controlLine === 'string' ? rawExec.controlLine.slice(0, 120) : '',
+            from: typeof rawExec.from === 'string' ? rawExec.from.slice(0, 300) : '',
+            recommendation: typeof rawExec.recommendation === 'string' ? rawExec.recommendation.slice(0, 2000) : '',
+            decisionLines: rawExec.decisionLines !== false,
+            coordination: typeof rawExec.coordination === 'string' ? rawExec.coordination.slice(0, 300) : '',
+            attachments: typeof rawExec.attachments === 'string' ? rawExec.attachments.slice(0, 300) : 'As stated',
+            preparedBy: typeof rawExec.preparedBy === 'string' ? rawExec.preparedBy.slice(0, 300) : '',
+          }
+        : defaultState.execMemo;
     return sanitizeEnclosures({
       ...defaultState,
       ...s,
@@ -165,6 +181,7 @@ export function parseProject(text: string): LetterState | null {
       cui,
       moa,
       joint,
+      execMemo,
       // Bound + coerce every list field so a hostile/corrupt file can't smuggle a giant array.
       toAddrs: sanitizeEntries(s.toAddrs),
       via: sanitizeEntries(s.via),

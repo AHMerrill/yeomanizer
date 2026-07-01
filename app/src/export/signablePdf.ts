@@ -150,6 +150,7 @@ export async function buildSignablePdf(
   const isBusiness = state.type === 'business-letter';
   const isMoa = state.type === 'moa';
   const isJoint = state.type === 'joint-letter';
+  const isExec = state.type === 'exec-memo';
   if (isJoint) {
     // Joint letter: each command its own identification column (shortTitle/SSIC/Ser/date); the columns
     // sit at the right, senior command (parties[0]) rightmost (fig 7-4).
@@ -193,6 +194,15 @@ export async function buildSignablePdf(
     const colBW = colB.length ? Math.max(...colB.map((l) => font.widthOfTextAtSize(l, SIZE))) : 0;
     colB.forEach((l) => put(l, RIGHT - colBW));
     top = Math.max(moaMaxTop, top);
+  } else if (isExec) {
+    // Executive memo (Ch 12): a right-aligned date + control symbol ("UNSECNAV ____"). A principal's
+    // memo is dated when signed, so the date may be blank.
+    const em = state.execMemo;
+    const idLines = [ident.date || null, em.controlLine.trim() || null].filter((l): l is string => l !== null);
+    if (idLines.length) {
+      const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
+      idLines.forEach((l) => put(l, RIGHT - blockW));
+    }
   } else {
     // A KEPT but blank SSIC / code line reserves a blank line (a space) so an admin can fill it in by
     // hand later; an un-kept line is dropped entirely.

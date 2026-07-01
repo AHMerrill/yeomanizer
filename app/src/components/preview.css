@@ -391,6 +391,32 @@
 .moa-ident-b {
   text-align: right;
 }
+/* Executive memorandum (Ch 12, figs 12-9/12-11): centered ACTION/INFO MEMO title, a wider FOR/FROM/
+   SUBJECT label column, and a decision/coordination close. */
+.exec-title {
+  text-align: center;
+  font-weight: bold;
+  margin: 0.16in 0 0.2in;
+}
+.headings.exec {
+  --label-col: 1in;
+  margin-top: 0.2in;
+}
+.exec-close {
+  margin-top: 0.3in;
+}
+.exec-rec {
+  margin-bottom: 0.16in;
+}
+.exec-decision {
+  margin-top: 0.12in;
+}
+.exec-attach {
+  margin-top: 0.14in;
+}
+.exec-prepared {
+  margin-top: 0.14in;
+}
 .moa-title {
   text-align: center;
   margin: 0.3in 0 0.24in;

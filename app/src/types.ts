@@ -9,6 +9,7 @@ export type CorrespondenceType =
   | 'endorsement'
   | 'moa'
   | 'joint-letter'
+  | 'exec-memo'
   | 'nato';
 
 // Business letter (Ch 11) — used to correspond with agencies/businesses/individuals outside DoD.
@@ -59,6 +60,22 @@ export interface JointParty {
 export interface Joint {
   kind: 'LETTER' | 'MEMORANDUM';
   parties: JointParty[]; // senior first; rendered with the senior at the right (ident + signature)
+}
+
+// Executive memorandum (Ch 12, figs 12-9 / 12-11): the OSD/SecDef staff memo that carries a decision
+// or information UP to a principal. "ACTION MEMO" asks the principal to approve/sign (with an
+// Approve/Disapprove initialing block); "INFO MEMO" informs, no action. Distinct from a naval memo:
+// a centered title, FOR:/FROM: addressing, a Title-Case SUBJECT, BULLETED paragraphs, and a
+// COORDINATION line. Reuses the shared `to` (FOR:), `subj`, `refs`, `body`, `signature`, `letterhead`.
+export interface ExecMemo {
+  kind: 'ACTION' | 'INFORMATION';
+  controlLine: string; // top-right control symbol under the date, e.g. "UNSECNAV ______"
+  from: string; // FROM: originator (full name, title)
+  recommendation: string; // ACTION memo: the "RECOMMENDATION:" text (unused on an INFO memo)
+  decisionLines: boolean; // ACTION memo: render "Approve _____  Disapprove _____" for the principal
+  coordination: string; // COORDINATION: value, e.g. "TAB D" or "None"
+  attachments: string; // Attachments: value (defaults to "As stated")
+  preparedBy: string; // "Prepared by:" — name, organization, phone
 }
 
 // NATO travel order (a bilingual form, not a naval letter). DoD/FCG template.
@@ -228,4 +245,7 @@ export interface LetterState {
 
   // Joint letter / joint memorandum parts (used when type === 'joint-letter')
   joint: Joint;
+
+  // Executive memorandum parts (Ch 12, used when type === 'exec-memo')
+  execMemo: ExecMemo;
 }

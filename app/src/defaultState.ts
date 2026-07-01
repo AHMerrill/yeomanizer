@@ -114,6 +114,16 @@ export const defaultState: LetterState = {
     kind: 'LETTER',
     parties: [],
   },
+  execMemo: {
+    kind: 'ACTION',
+    controlLine: '',
+    from: '',
+    recommendation: '',
+    decisionLines: true,
+    coordination: '',
+    attachments: 'As stated',
+    preparedBy: '',
+  },
 };
 
 // Per-type starting draft. Most types share `defaultState`; some need faithful defaults that match
@@ -306,6 +316,51 @@ export function defaultFor(type: CorrespondenceType): LetterState {
       ],
     };
   }
+  if (type === 'exec-memo') {
+    // Executive memorandum (Ch 12, fig 12-9 Action Memo): letterhead of the signing office, a centered
+    // "ACTION MEMO" title, FOR:/FROM: addressing, a Title-Case SUBJECT, bulleted paragraphs, a
+    // RECOMMENDATION with an Approve/Disapprove decision block, COORDINATION, and "Prepared by".
+    return {
+      ...base,
+      includeSsic: false,
+      includeCode: false,
+      dateMode: 'none', // "Date (After signed)" — a principal's memo is dated when signed
+      from: '',
+      to: 'SECRETARY OF THE NAVY',
+      via: [],
+      subj: 'Action Memo Format',
+      refs: [],
+      encls: [],
+      signature: { name: '', title: '', authority: 'none' },
+      execMemo: {
+        kind: 'ACTION',
+        controlLine: 'UNSECNAV ______',
+        from: 'Paul S. Rogers, General Counsel of the Navy',
+        recommendation: 'That SECNAV sign the memorandum at TAB A.',
+        decisionLines: true,
+        coordination: 'TAB D',
+        attachments: 'As stated',
+        preparedBy: 'A. Officer, OGC, (703) 555-0100',
+      },
+      body: [
+        {
+          id: uid(),
+          text: 'What should the Secretary do? This bullet explains what action is required — different from the entry for the recommendation (TAB A).',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'Due date for action. This bullet is used for incoming correspondence at TAB B.',
+          children: [],
+        },
+        {
+          id: uid(),
+          text: 'Why it is necessary and acceptable for the Secretary to approve or sign the recommended action. This bullet identifies key points, contentious issues, and problem areas (TAB C).',
+          children: [],
+        },
+      ],
+    };
+  }
   return base;
 }
 
@@ -337,6 +392,7 @@ export function blankFor(type: CorrespondenceType): LetterState {
     nato: { ...defaultState.nato },
     moa: { ...defaultState.moa, signerB: { ...defaultState.moa.signerB } },
     joint: { ...defaultState.joint, parties: [] },
+    execMemo: { ...defaultState.execMemo },
   };
 }
 

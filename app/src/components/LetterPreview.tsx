@@ -78,17 +78,23 @@ function ParaFlow({
   fp,
   portionActive,
   business,
+  exec,
 }: {
   fp: FlatPara;
   portionActive: boolean;
   business?: boolean;
+  exec?: boolean;
 }) {
   // Business letter (Ch 11-2.6): main paragraphs are NOT numbered (just indented); subparagraphs are
-  // lettered/numbered the same as a standard letter, so the whole ladder shifts one level deeper.
-  const indent = business ? depthIndentIn(fp.depth + 1) : depthIndentIn(fp.depth);
-  const showMarker = !(business && fp.depth === 0);
+  // lettered/numbered the same as a standard letter, so the ladder shifts one level deeper. Exec memo
+  // (Ch 12, figs 12-9/12-11): main paragraphs are BULLETED ("•"); subparagraphs use the same ladder.
+  const indent = business || exec ? depthIndentIn(fp.depth + 1) : depthIndentIn(fp.depth);
+  const bulletTop = exec && fp.depth === 0;
+  const showMarker = !((business && fp.depth === 0) || bulletTop);
   return (
     <p className="para" data-sync={`p:${fp.key}`} style={{ textIndent: `${indent}in` }}>
+      {bulletTop && <span className="pmark">•</span>}
+      {bulletTop && <span className="pgap" />}
       {showMarker && <MarkerSpan depth={fp.depth} index={fp.index} />}
       {showMarker && <span className="pgap" />}
       {portionActive ? (fp.cui ? '(CUI) ' : '(U) ') : ''}
@@ -144,6 +150,7 @@ function Head({ state }: { state: LetterState }) {
   if (state.type === 'business-letter') return <BusinessHead state={state} ident={ident} />;
   if (state.type === 'moa') return <MoaHead state={state} ident={ident} />;
   if (state.type === 'joint-letter') return <JointHead state={state} />;
+  if (state.type === 'exec-memo') return <ExecMemoHead state={state} ident={ident} />;
   return (
     <>
       {lh.mode === 'on' && <Letterhead state={state} />}
@@ -454,6 +461,96 @@ function MoaClose({ state }: { state: LetterState }) {
     <div className="moa-close" data-sync="sig">
       {block(state.moa.signerB)}
       {block(state.signature)}
+    </div>
+  );
+}
+
+// Executive memorandum head (Ch 12, figs 12-9/12-11): the signing office's letterhead, a top-right
+// date + control symbol, a centered "ACTION MEMO" / "INFO MEMO" title, FOR:/FROM: addressing, a
+// Title-Case SUBJECT, and an optional Reference(s): line. The body is bulleted; the decision block
+// lives in the close.
+function ExecMemoHead({ state, ident }: { state: LetterState; ident: IdentLines }) {
+  const lh = state.letterhead;
+  const em = state.execMemo;
+  const title = em.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO';
+  const refs = state.refs.filter((r) => r.text.trim());
+  return (
+    <>
+      {lh.mode === 'on' && <Letterhead state={state} />}
+      {lh.mode === 'preprinted' && (
+        <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(0.86, lh.preprintedLines * 0.11)}in` }} />
+      )}
+      {/* Date + control symbol, upper right. A principal's memo is dated when signed. */}
+      <div className={lh.mode === 'off' ? 'ident no-letterhead' : 'ident'}>
+        {ident.date ? <div>{ident.date}</div> : <div className="ph">Date (added when signed)</div>}
+        {em.controlLine.trim() && <div>{em.controlLine}</div>}
+      </div>
+      <div className="exec-title" data-sync="head">{title}</div>
+      <div className="headings exec">
+        <div className="hrow">
+          <span className="label">FOR:</span>
+          <span className={state.to ? 'content' : 'content ph'}>{state.to || 'SECRETARY OF THE NAVY'}</span>
+        </div>
+        <div className="hrow">
+          <span className="label">FROM:</span>
+          <span className={em.from.trim() ? 'content' : 'content ph'}>{em.from.trim() || 'Full Name, Title'}</span>
+        </div>
+        <div className="hrow">
+          <span className="label">SUBJECT:</span>
+          <span className={state.subj.trim() ? 'content' : 'content ph'}>
+            {state.subj.trim() || 'Subject in Title Case'}
+          </span>
+        </div>
+        {refs.length > 0 && (
+          <div className="hrow">
+            <span className="label">{refs.length === 1 ? 'Reference:' : 'References:'}</span>
+            <span className="content">
+              {refs.length === 1
+                ? refs[0].text
+                : refs.map((r, i) => (
+                    <div key={r.id}>
+                      ({String.fromCharCode(97 + i)}) {r.text}
+                    </div>
+                  ))}
+            </span>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// Executive-memo close (Ch 12): the RECOMMENDATION + Approve/Disapprove decision block (ACTION only),
+// then COORDINATION, Attachments, and "Prepared by".
+function ExecMemoClose({ state }: { state: LetterState }) {
+  const em = state.execMemo;
+  const blank = '_'.repeat(14);
+  return (
+    <div className="exec-close" data-sync="sig">
+      {em.kind === 'ACTION' && (
+        <div className="exec-rec">
+          <div>
+            <span className="label">RECOMMENDATION:</span>{' '}
+            <span className={em.recommendation.trim() ? '' : 'ph'}>
+              {em.recommendation.trim() || 'That SECNAV sign the action at TAB A.'}
+            </span>
+          </div>
+          {em.decisionLines && (
+            <div className="exec-decision">
+              Approve {blank}&emsp;&emsp;Disapprove {blank}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="exec-meta">
+        <div>
+          <span className="label">COORDINATION:</span>{' '}
+          <span className={em.coordination.trim() ? '' : 'ph'}>{em.coordination.trim() || 'TAB D (or None)'}</span>
+        </div>
+        <div className="exec-attach">Attachments:</div>
+        <div>{em.attachments.trim() || 'As stated'}</div>
+        {em.preparedBy.trim() && <div className="exec-prepared">Prepared by: {em.preparedBy}</div>}
+      </div>
     </div>
   );
 }
@@ -782,10 +879,11 @@ function LetterDoc({ state }: { state: LetterState }) {
   const isBusiness = state.type === 'business-letter';
   const isMoa = state.type === 'moa';
   const isJoint = state.type === 'joint-letter';
+  const isExec = state.type === 'exec-memo';
   const items: FlowItem[] = [
     ...flat.map((fp) => ({
       key: `p_${fp.key}`,
-      node: <ParaFlow fp={fp} portionActive={portionActive} business={isBusiness} />,
+      node: <ParaFlow fp={fp} portionActive={portionActive} business={isBusiness} exec={isExec} />,
     })),
     {
       key: 'sig',
@@ -795,6 +893,8 @@ function LetterDoc({ state }: { state: LetterState }) {
         <MoaClose state={state} />
       ) : isBusiness ? (
         <BusinessClose state={state} />
+      ) : isExec ? (
+        <ExecMemoClose state={state} />
       ) : (
         <Signature state={state} />
       ),
