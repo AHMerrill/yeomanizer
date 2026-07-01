@@ -133,6 +133,9 @@ export interface Letterhead {
   // last address line) — used in 'preprinted' mode to reserve that much top space so the ident /
   // body start cleanly below it. A tall multi-line command name needs more.
   preprintedLines: number;
+  // Title-only letterhead (flag/personal stationery, Ch 12 figs 12-7/12-8): render just line1 (a
+  // centered navy title) with no activity/address lines or their placeholder hints.
+  titleOnly: boolean;
 }
 
 export interface ListEntry {

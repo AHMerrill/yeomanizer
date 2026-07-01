@@ -139,6 +139,7 @@ export const TEMPLATES: Template[] = [
         ...defaultFor('business-letter').letterhead,
         mode: 'on',
         seal: 'none',
+        titleOnly: true,
         line1: 'CHIEF OF NAVAL OPERATIONS',
         activityName: '',
         addressLine: '',

@@ -122,6 +122,9 @@ function Letterhead({ state }: { state: LetterState }) {
       {sealSrc && <img className="seal" src={sealSrc} alt="" />}
       <div className="letterhead">
         <div className="lh-dept">{lh.line1}</div>
+        {/* Flag/personal stationery: render just the centered title, no activity/address lines. */}
+        {!lh.titleOnly && (
+        <>
         {lh.activityName ? (
           lh.activityName.split('\n').map((l, i) => (
             <div key={i} className="lh-sub">
@@ -137,6 +140,8 @@ function Letterhead({ state }: { state: LetterState }) {
         <div className={lh.cityStateZip ? 'lh-sub' : 'lh-sub ph'}>
           {lh.cityStateZip || 'CITY STATE ZIP+4'}
         </div>
+        </>
+        )}
       </div>
     </>
   );

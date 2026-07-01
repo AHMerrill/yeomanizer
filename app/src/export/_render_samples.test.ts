@@ -189,6 +189,7 @@ const base: LetterState = {
       replyRefPrinted: false,
       mode: 'on',
       preprintedLines: 4,
+      titleOnly: false,
     },
     signature: { name: 'E. SCOTT HOWARD', title: 'Executive Officer', authority: 'by-direction' },
     encls: [
