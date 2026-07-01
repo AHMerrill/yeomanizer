@@ -926,11 +926,19 @@ export function neutralizeCoreXml(xml: string): string {
     .replace(/(<dcterms:modified[^>]*>)[^<]*(<\/dcterms:modified>)/, `$1${EPOCH}$2`);
 }
 
-async function silenceDocx(blob: Blob): Promise<Blob> {
+// exported for testing — this is the real export's final privacy pass over the packed zip.
+export async function silenceDocx(blob: Blob): Promise<Blob> {
   const JSZip = (await import('jszip')).default;
   const zip = await JSZip.loadAsync(await blob.arrayBuffer());
   const core = zip.file('docProps/core.xml');
   if (core) zip.file('docProps/core.xml', neutralizeCoreXml(await core.async('string')));
+  // JSZip preserves each entry's mod-time from the packed zip — the real generation time — so the ZIP
+  // local-file-header dates would leak it even though core.xml is neutralized. Pin every entry to the
+  // DOS epoch (1980-01-01, the earliest a ZIP date can encode) so nothing carries the build time.
+  const fixedDate = new Date('1980-01-01T00:00:00Z');
+  Object.values(zip.files).forEach((f) => {
+    f.date = fixedDate;
+  });
   return zip.generateAsync({
     type: 'blob',
     mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

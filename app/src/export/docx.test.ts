@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import JSZip from 'jszip';
 import { Packer } from 'docx';
-import { buildDocxDocument } from './docx';
+import { buildDocxDocument, silenceDocx } from './docx';
 import { defaultState } from '../defaultState';
 import type { LetterState } from '../types';
 
@@ -47,5 +48,20 @@ describe('buildDocxDocument — Word export assembles without crashing', () => {
       base({ signature: { name: 'I. M. LASTNAME', title: 'Deputy', authority: 'by-direction' } }),
     );
     expect(buf.length).toBeGreaterThan(1000);
+  });
+});
+
+describe('silenceDocx — the exported .docx carries no generation timestamp', () => {
+  it('zeroes core.xml dates and pins every zip entry to the DOS epoch', async () => {
+    const silenced = await silenceDocx(new Blob([new Uint8Array(await pack(base()))]));
+    const zip = await JSZip.loadAsync(await silenced.arrayBuffer());
+    // core.xml: created/modified must read the 1970 epoch, and no real (21st-century) time survives.
+    const core = await zip.file('docProps/core.xml')!.async('string');
+    expect(core).toContain('1970-01-01T00:00:00Z');
+    expect(core).not.toMatch(/20\d\d-\d\d-\d\dT/);
+    // Zip local-header mod-times: every entry pinned to 1980, so none leaks the build time.
+    const years = Object.values(zip.files).map((f) => f.date.getUTCFullYear());
+    expect(years.length).toBeGreaterThan(3);
+    expect(years.every((y) => y === 1980)).toBe(true);
   });
 });
