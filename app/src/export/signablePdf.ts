@@ -604,11 +604,18 @@ export async function buildSignablePdf(
   const drawExecClose = () => {
     const em = state.execMemo;
     if (isMemoFor) {
-      // Plain "Memorandum For" (fig 12-14): a centered signature, then Attachments and cc.
+      // Plain "Memorandum For" (fig 12-14): a CAC-signable centered signature, then Attachments + cc.
       gap(3 * PARA_GAP);
+      const fieldTopY = PAGE_H - top - 2;
+      const fieldH = 30;
+      top += fieldH;
       const center = (t: string) => put(t, LEFT + (RIGHT - LEFT - font.widthOfTextAtSize(t, SIZE)) / 2);
       if (state.signature.name.trim()) center(state.signature.name.trim());
       if (state.signature.title.trim()) center(state.signature.title.trim());
+      const fx = (PAGE_W - 3 * PT) / 2;
+      sigRefs.push(
+        addSignatureField(doc, page, [fx, fieldTopY - fieldH, fx + 3 * PT, fieldTopY], 'Signature1', PDFName, PDFString),
+      );
       gap(PARA_GAP);
       put('Attachments:', LEFT);
       put(em.attachments.trim() || 'As stated', LEFT);
@@ -634,7 +641,13 @@ export async function buildSignablePdf(
       recLines.slice(1).forEach((ln) => put(ln, LEFT));
       if (em.decisionLines) {
         gap(PARA_GAP);
+        const fieldTopY = PAGE_H - top - 2;
         put(`Approve  ${'_'.repeat(18)}      Disapprove  ${'_'.repeat(18)}`, LEFT);
+        // A CAC field over the "Approve" blank so the principal can sign the approval.
+        const approveX = LEFT + font.widthOfTextAtSize('Approve  ', SIZE);
+        sigRefs.push(
+          addSignatureField(doc, page, [approveX, fieldTopY - 22, approveX + 1.6 * PT, fieldTopY], 'Signature1', PDFName, PDFString),
+        );
       }
     }
     gap(PARA_GAP);
