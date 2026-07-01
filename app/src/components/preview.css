@@ -417,6 +417,17 @@
 .exec-prepared {
   margin-top: 0.14in;
 }
+/* Plain "Memorandum For" (fig 12-14): "MEMORANDUM FOR <recipient>" line + a centered signature. */
+.exec-memofor {
+  margin: 0.16in 0 0.2in;
+}
+.exec-memofor-sig {
+  text-align: center;
+  margin-bottom: 0.3in;
+}
+.exec-cc {
+  margin-top: 0.14in;
+}
 .moa-title {
   text-align: center;
   margin: 0.3in 0 0.24in;

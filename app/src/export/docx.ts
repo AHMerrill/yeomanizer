@@ -191,6 +191,7 @@ export function buildDocxDocument(
   const isMoa = state.type === 'moa';
   const isJoint = state.type === 'joint-letter';
   const isExec = state.type === 'exec-memo';
+  const isMemoFor = isExec && state.execMemo.kind === 'MEMORANDUM-FOR';
   const children: Paragraph[] = [];
 
   // Letterhead: on = print it (text only in v1); preprinted = reserve blank lines; off = none.
@@ -280,9 +281,10 @@ export function buildDocxDocument(
       if (a !== '' || b !== '') children.push(row(a, b));
     });
   } else if (isExec) {
-    // Executive memo (Ch 12): a right-aligned date + control symbol ("UNSECNAV ____").
+    // Executive memo (Ch 12): a right-aligned date + control symbol ("UNSECNAV ____"). A plain
+    // "Memorandum For" (fig 12-14) has no control symbol — just the date.
     const em = state.execMemo;
-    [ident.date, em.controlLine.trim()].filter((l) => l).forEach((l) => children.push(rightLine(l)));
+    [ident.date, isMemoFor ? '' : em.controlLine.trim()].filter((l) => l).forEach((l) => children.push(rightLine(l)));
   } else {
     identLines.forEach((line) => children.push(rightLine(line)));
   }
@@ -311,6 +313,14 @@ export function buildDocxDocument(
     children.push(
       new Paragraph({
         children: [R(`JOINT ${state.joint.kind === 'MEMORANDUM' ? 'MEMORANDUM' : 'LETTER'}`)],
+        spacing: { before: BLANK, after: BLANK },
+      }),
+    );
+  } else if (isExec && isMemoFor) {
+    // Plain "Memorandum For" (fig 12-14): left-aligned "MEMORANDUM FOR <recipient>" addressing.
+    children.push(
+      new Paragraph({
+        children: [R(`MEMORANDUM FOR ${state.to || 'SECRETARY OF DEFENSE'}`)],
         spacing: { before: BLANK, after: BLANK },
       }),
     );
@@ -383,8 +393,8 @@ export function buildDocxDocument(
         indent: { left: EXEC_LBL, hanging: EXEC_LBL },
         spacing: { after: 0 },
       });
-    if (state.to) children.push(erow('FOR:', state.to));
-    if (em.from.trim()) children.push(erow('FROM:', em.from.trim()));
+    if (!isMemoFor && state.to) children.push(erow('FOR:', state.to));
+    if (!isMemoFor && em.from.trim()) children.push(erow('FROM:', em.from.trim()));
     if (state.subj.trim()) children.push(erow('SUBJECT:', state.subj.trim()));
     const erefs = state.refs.filter((r) => r.text.trim());
     if (erefs.length === 1) children.push(erow('Reference:', erefs[0].text));
@@ -433,7 +443,7 @@ export function buildDocxDocument(
   } // end of the non-business heading block
 
   children.push(spacer());
-  flattenBody(state.body, 0, children, cui.enabled && anyCui(state.body), isBusiness, isExec);
+  flattenBody(state.body, 0, children, cui.enabled && anyCui(state.body), isBusiness || isMemoFor, isExec && !isMemoFor);
 
   // Signature — left edge at page center. The export leaves the signature space blank so the
   // signer can wet-sign or CAC-sign the PDF in Adobe (no script-font placeholder).
@@ -493,17 +503,28 @@ export function buildDocxDocument(
     const em = state.execMemo;
     const line = (text: string, before = 0) =>
       new Paragraph({ children: [R(text)], spacing: { before, after: 0 } });
-    if (em.kind === 'ACTION') {
-      children.push(
-        line(`RECOMMENDATION:  ${em.recommendation.trim() || 'That SECNAV sign the action at TAB A.'}`, BLANK),
-      );
-      if (em.decisionLines)
-        children.push(line(`Approve  ${'_'.repeat(18)}      Disapprove  ${'_'.repeat(18)}`, BLANK));
+    if (isMemoFor) {
+      // Plain "Memorandum For" (fig 12-14): a centered signature, then Attachments and cc.
+      const center = (text: string, before = 0) =>
+        new Paragraph({ alignment: AlignmentType.CENTER, children: [R(text)], spacing: { before, after: 0 } });
+      if (state.signature.name.trim()) children.push(center(state.signature.name.trim(), 3 * BLANK));
+      if (state.signature.title.trim()) children.push(center(state.signature.title.trim()));
+      children.push(line('Attachments:', BLANK));
+      children.push(line(em.attachments.trim() || 'As stated'));
+      if (em.cc?.trim()) children.push(line(`cc:  ${em.cc.trim()}`, BLANK));
+    } else {
+      if (em.kind === 'ACTION') {
+        children.push(
+          line(`RECOMMENDATION:  ${em.recommendation.trim() || 'That SECNAV sign the action at TAB A.'}`, BLANK),
+        );
+        if (em.decisionLines)
+          children.push(line(`Approve  ${'_'.repeat(18)}      Disapprove  ${'_'.repeat(18)}`, BLANK));
+      }
+      children.push(line(`COORDINATION:  ${em.coordination.trim() || 'None'}`, BLANK));
+      children.push(line('Attachments:', BLANK));
+      children.push(line(em.attachments.trim() || 'As stated'));
+      if (em.preparedBy.trim()) children.push(line(`Prepared by:  ${em.preparedBy.trim()}`, BLANK));
     }
-    children.push(line(`COORDINATION:  ${em.coordination.trim() || 'None'}`, BLANK));
-    children.push(line('Attachments:', BLANK));
-    children.push(line(em.attachments.trim() || 'As stated'));
-    if (em.preparedBy.trim()) children.push(line(`Prepared by:  ${em.preparedBy.trim()}`, BLANK));
   } else {
     const sigLines = [state.signature.name];
     if (state.signature.title) sigLines.push(state.signature.title);

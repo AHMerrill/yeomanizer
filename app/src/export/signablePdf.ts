@@ -151,6 +151,7 @@ export async function buildSignablePdf(
   const isMoa = state.type === 'moa';
   const isJoint = state.type === 'joint-letter';
   const isExec = state.type === 'exec-memo';
+  const isMemoFor = isExec && state.execMemo.kind === 'MEMORANDUM-FOR';
   if (isJoint) {
     // Joint letter: each command its own identification column (shortTitle/SSIC/Ser/date); the columns
     // sit at the right, senior command (parties[0]) rightmost (fig 7-4).
@@ -198,7 +199,9 @@ export async function buildSignablePdf(
     // Executive memo (Ch 12): a right-aligned date + control symbol ("UNSECNAV ____"). A principal's
     // memo is dated when signed, so the date may be blank.
     const em = state.execMemo;
-    const idLines = [ident.date || null, em.controlLine.trim() || null].filter((l): l is string => l !== null);
+    const idLines = [ident.date || null, isMemoFor ? null : em.controlLine.trim() || null].filter(
+      (l): l is string => l !== null,
+    );
     if (idLines.length) {
       const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
       idLines.forEach((l) => put(l, RIGHT - blockW));
@@ -274,11 +277,16 @@ export async function buildSignablePdf(
     put(`JOINT ${state.joint.kind === 'MEMORANDUM' ? 'MEMORANDUM' : 'LETTER'}`, LEFT);
     gap(PARA_GAP);
   } else if (isExec) {
-    // Centered "ACTION MEMO" / "INFO MEMO" title (fig 12-9 / 12-11).
+    // Centered "ACTION MEMO" / "INFO MEMO" title (fig 12-9 / 12-11) — or, for a plain "Memorandum For"
+    // (fig 12-14), the left-aligned "MEMORANDUM FOR <recipient>" addressing line.
     gap(PARA_GAP);
     room(SIZE * BODY_LH);
-    const t = state.execMemo.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO';
-    put(t, LEFT + (RIGHT - LEFT - bold.widthOfTextAtSize(t, SIZE)) / 2, bold);
+    if (isMemoFor) {
+      put(`MEMORANDUM FOR ${state.to || 'SECRETARY OF DEFENSE'}`, LEFT);
+    } else {
+      const t = state.execMemo.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO';
+      put(t, LEFT + (RIGHT - LEFT - bold.widthOfTextAtSize(t, SIZE)) / 2, bold);
+    }
     gap(PARA_GAP);
   } else {
     gap(0.3 * PT - PARA_GAP < 0 ? 0.14 * PT : 0.3 * PT); // .headings margin-top (~0.3in from ident)
@@ -312,8 +320,8 @@ export async function buildSignablePdf(
       put(lines[0] ?? '', textX);
       lines.slice(1).forEach((ln) => put(ln, textX));
     };
-    if (state.to) erow('FOR:', state.to);
-    if (em.from.trim()) erow('FROM:', em.from.trim());
+    if (!isMemoFor && state.to) erow('FOR:', state.to);
+    if (!isMemoFor && em.from.trim()) erow('FROM:', em.from.trim());
     if (state.subj.trim()) erow('SUBJECT:', state.subj.trim());
     const erefs = state.refs.filter((r) => r.text.trim());
     if (erefs.length === 1) erow('Reference:', erefs[0].text);
@@ -595,6 +603,21 @@ export async function buildSignablePdf(
   // acts by initialing the decision line (figs 12-9 / 12-11).
   const drawExecClose = () => {
     const em = state.execMemo;
+    if (isMemoFor) {
+      // Plain "Memorandum For" (fig 12-14): a centered signature, then Attachments and cc.
+      gap(3 * PARA_GAP);
+      const center = (t: string) => put(t, LEFT + (RIGHT - LEFT - font.widthOfTextAtSize(t, SIZE)) / 2);
+      if (state.signature.name.trim()) center(state.signature.name.trim());
+      if (state.signature.title.trim()) center(state.signature.title.trim());
+      gap(PARA_GAP);
+      put('Attachments:', LEFT);
+      put(em.attachments.trim() || 'As stated', LEFT);
+      if (em.cc?.trim()) {
+        gap(PARA_GAP);
+        put(`cc:  ${em.cc.trim()}`, LEFT);
+      }
+      return;
+    }
     gap(PARA_GAP);
     if (em.kind === 'ACTION') {
       const recLabel = 'RECOMMENDATION:  ';
@@ -625,7 +648,7 @@ export async function buildSignablePdf(
     }
   };
 
-  drawBody(state.body, 0, state.cui.enabled && anyCui(state.body), isBusiness, isExec);
+  drawBody(state.body, 0, state.cui.enabled && anyCui(state.body), isBusiness || isMemoFor, isExec && !isMemoFor);
   if (isBusiness) {
     drawBizClose();
   } else if (isMoa) {

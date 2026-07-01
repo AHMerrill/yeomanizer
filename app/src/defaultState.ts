@@ -123,6 +123,7 @@ export const defaultState: LetterState = {
     coordination: '',
     attachments: 'As stated',
     preparedBy: '',
+    cc: '',
   },
 };
 
@@ -341,6 +342,7 @@ export function defaultFor(type: CorrespondenceType): LetterState {
         coordination: 'TAB D',
         attachments: 'As stated',
         preparedBy: 'A. Officer, OGC, (703) 555-0100',
+        cc: '',
       },
       body: [
         {

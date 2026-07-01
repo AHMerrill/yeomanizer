@@ -237,8 +237,11 @@ shifts one level deeper for subparagraphs); then the close — an **ACTION** mem
 `Approve ___ / Disapprove ___` decision block, then `COORDINATION:`, `Attachments:`, and `Prepared by:`.
 No signature block — the principal acts by initialing the decision line. Reuses the shared `to` (FOR:),
 `subj`, `refs`, `body`, `letterhead`; the editor hides the standard Routing card. Rendered identically
-across preview · PDF · `.docx`, verified vs fig 12-9. The plain "Memorandum For" (12-14) and the
-SECDEF/DEPSECDEF variants (12-10/12-12/12-15) + coordination page (12-13) remain future sub-variants.
+across preview · PDF · `.docx`, verified vs figs 12-9/12-14. **`MEMORANDUM-FOR`** is the plain
+"Memorandum For" (fig 12-14): `MEMORANDUM FOR <recipient>` addressing (no title/FROM/control), a
+Title-Case `SUBJECT:`, **indented** (unnumbered, not bulleted) paragraphs, a **centered signature**,
+then `Attachments:` and `cc:`. The SECDEF/DEPSECDEF variants (12-10/12-12/12-15) and the coordination
+page (12-13) remain future sub-variants.
 
 ## NATO travel order — done
 The bilingual two-page form (order + reverse instructions), with U.S.-grade → NATO (OF/OR)

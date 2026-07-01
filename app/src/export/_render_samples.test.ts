@@ -283,6 +283,27 @@ const base: LetterState = {
     execMemo: { ...defaultFor('exec-memo').execMemo, kind: 'INFORMATION' },
   };
   writeFileSync(`${OUT}/exec-info.pdf`, await buildSignablePdf(execInfo, today));
+  // Plain "Memorandum For" (fig 12-14): MEMORANDUM FOR addressing, indented paragraphs, centered signature.
+  const execMemoFor: LetterState = {
+    ...defaultFor('exec-memo'),
+    to: 'SECRETARY OF DEFENSE',
+    subj: 'Preparing a Memorandum for the Office of the Secretary of Defense',
+    signature: { name: 'Richard V. Spencer', title: '', authority: 'none' },
+    execMemo: { ...defaultFor('exec-memo').execMemo, kind: 'MEMORANDUM-FOR', cc: 'General Counsel' },
+    body: [
+      {
+        id: 'mf1',
+        text: 'Use memoranda for correspondence within the Department of Defense, to the President and White House staff, and to send routine correspondence to other Federal Agencies.',
+        children: [],
+      },
+      {
+        id: 'mf2',
+        text: 'Prepare memos on letterhead appropriate to the signing official. Indent paragraphs a half-inch and double-space between them.',
+        children: [],
+      },
+    ],
+  };
+  writeFileSync(`${OUT}/exec-memofor.pdf`, await buildSignablePdf(execMemoFor, today));
 
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
@@ -305,6 +326,7 @@ const base: LetterState = {
   await writeDocx('business', business);
   await writeDocx('multipage', longBody); // multi-page: verifies the repeated Subj header + page numbers
   await writeDocx('exec-memo', execMemo); // Ch 12 Action Memo — title, FOR/FROM/SUBJECT, bullets, decision
+  await writeDocx('exec-memofor', execMemoFor); // Ch 12 Memorandum For — addressing, indented, centered sig
   await writeDocx('multi-address-to', multiTo);
   await writeDocx('multi-address-dist', multiDist);
   await writeDocx('moa', moa);

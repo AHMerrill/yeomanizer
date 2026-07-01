@@ -473,6 +473,7 @@ function ExecMemoHead({ state, ident }: { state: LetterState; ident: IdentLines 
   const lh = state.letterhead;
   const em = state.execMemo;
   const title = em.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO';
+  const isMemoFor = em.kind === 'MEMORANDUM-FOR';
   const refs = state.refs.filter((r) => r.text.trim());
   return (
     <>
@@ -483,18 +484,29 @@ function ExecMemoHead({ state, ident }: { state: LetterState; ident: IdentLines 
       {/* Date + control symbol, upper right. A principal's memo is dated when signed. */}
       <div className={lh.mode === 'off' ? 'ident no-letterhead' : 'ident'}>
         {ident.date ? <div>{ident.date}</div> : <div className="ph">Date (added when signed)</div>}
-        {em.controlLine.trim() && <div>{em.controlLine}</div>}
+        {!isMemoFor && em.controlLine.trim() && <div>{em.controlLine}</div>}
       </div>
-      <div className="exec-title" data-sync="head">{title}</div>
+      {isMemoFor ? (
+        // Plain "Memorandum For" (fig 12-14): "MEMORANDUM FOR <recipient>" addressing (no title/FROM).
+        <div className="exec-memofor" data-sync="head">
+          MEMORANDUM FOR <span className={state.to ? '' : 'ph'}>{state.to || 'SECRETARY OF DEFENSE'}</span>
+        </div>
+      ) : (
+        <div className="exec-title" data-sync="head">{title}</div>
+      )}
       <div className="headings exec">
-        <div className="hrow">
-          <span className="label">FOR:</span>
-          <span className={state.to ? 'content' : 'content ph'}>{state.to || 'SECRETARY OF THE NAVY'}</span>
-        </div>
-        <div className="hrow">
-          <span className="label">FROM:</span>
-          <span className={em.from.trim() ? 'content' : 'content ph'}>{em.from.trim() || 'Full Name, Title'}</span>
-        </div>
+        {!isMemoFor && (
+          <>
+            <div className="hrow">
+              <span className="label">FOR:</span>
+              <span className={state.to ? 'content' : 'content ph'}>{state.to || 'SECRETARY OF THE NAVY'}</span>
+            </div>
+            <div className="hrow">
+              <span className="label">FROM:</span>
+              <span className={em.from.trim() ? 'content' : 'content ph'}>{em.from.trim() || 'Full Name, Title'}</span>
+            </div>
+          </>
+        )}
         <div className="hrow">
           <span className="label">SUBJECT:</span>
           <span className={state.subj.trim() ? 'content' : 'content ph'}>
@@ -525,6 +537,23 @@ function ExecMemoHead({ state, ident }: { state: LetterState; ident: IdentLines 
 function ExecMemoClose({ state }: { state: LetterState }) {
   const em = state.execMemo;
   const blank = '_'.repeat(14);
+  const sig = state.signature;
+  if (em.kind === 'MEMORANDUM-FOR') {
+    // Plain "Memorandum For" (fig 12-14): a centered signature, then Attachments and cc — no decision.
+    return (
+      <div className="exec-close" data-sync="sig">
+        <div className="exec-memofor-sig">
+          <div className={sig.name ? '' : 'ph'}>{sig.name || 'I. M. LASTNAME'}</div>
+          {sig.title && <div>{sig.title}</div>}
+        </div>
+        <div className="exec-meta">
+          <div className="exec-attach">Attachments:</div>
+          <div>{em.attachments.trim() || 'As stated'}</div>
+          {em.cc?.trim() && <div className="exec-cc">cc:&ensp;{em.cc}</div>}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="exec-close" data-sync="sig">
       {em.kind === 'ACTION' && (
@@ -880,10 +909,20 @@ function LetterDoc({ state }: { state: LetterState }) {
   const isMoa = state.type === 'moa';
   const isJoint = state.type === 'joint-letter';
   const isExec = state.type === 'exec-memo';
+  // A "Memorandum For" (Ch 12, fig 12-14) uses INDENTED (unnumbered) paragraphs like a business letter;
+  // the Action/Info memos use bullets.
+  const isExecMemoFor = isExec && state.execMemo.kind === 'MEMORANDUM-FOR';
   const items: FlowItem[] = [
     ...flat.map((fp) => ({
       key: `p_${fp.key}`,
-      node: <ParaFlow fp={fp} portionActive={portionActive} business={isBusiness} exec={isExec} />,
+      node: (
+        <ParaFlow
+          fp={fp}
+          portionActive={portionActive}
+          business={isBusiness || isExecMemoFor}
+          exec={isExec && !isExecMemoFor}
+        />
+      ),
     })),
     {
       key: 'sig',

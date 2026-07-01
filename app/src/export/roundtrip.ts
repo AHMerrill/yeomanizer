@@ -162,7 +162,12 @@ export function parseProject(text: string): LetterState | null {
     const execMemo =
       rawExec && typeof rawExec === 'object'
         ? {
-            kind: rawExec.kind === 'INFORMATION' ? ('INFORMATION' as const) : ('ACTION' as const),
+            kind:
+              rawExec.kind === 'INFORMATION'
+                ? ('INFORMATION' as const)
+                : rawExec.kind === 'MEMORANDUM-FOR'
+                  ? ('MEMORANDUM-FOR' as const)
+                  : ('ACTION' as const),
             controlLine: typeof rawExec.controlLine === 'string' ? rawExec.controlLine.slice(0, 120) : '',
             from: typeof rawExec.from === 'string' ? rawExec.from.slice(0, 300) : '',
             recommendation: typeof rawExec.recommendation === 'string' ? rawExec.recommendation.slice(0, 2000) : '',
@@ -170,6 +175,7 @@ export function parseProject(text: string): LetterState | null {
             coordination: typeof rawExec.coordination === 'string' ? rawExec.coordination.slice(0, 300) : '',
             attachments: typeof rawExec.attachments === 'string' ? rawExec.attachments.slice(0, 300) : 'As stated',
             preparedBy: typeof rawExec.preparedBy === 'string' ? rawExec.preparedBy.slice(0, 300) : '',
+            cc: typeof rawExec.cc === 'string' ? rawExec.cc.slice(0, 300) : '',
           }
         : defaultState.execMemo;
     return sanitizeEnclosures({

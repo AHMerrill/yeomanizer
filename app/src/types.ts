@@ -68,7 +68,10 @@ export interface Joint {
 // a centered title, FOR:/FROM: addressing, a Title-Case SUBJECT, BULLETED paragraphs, and a
 // COORDINATION line. Reuses the shared `to` (FOR:), `subj`, `refs`, `body`, `signature`, `letterhead`.
 export interface ExecMemo {
-  kind: 'ACTION' | 'INFORMATION';
+  // ACTION / INFORMATION are the bulleted staff memos (figs 12-9/12-11). MEMORANDUM-FOR is the plain
+  // executive memorandum (fig 12-14): "MEMORANDUM FOR <recipient>" addressing, indented (not bulleted)
+  // paragraphs, a centered signature, and a cc: line — no control line / FROM / recommendation.
+  kind: 'ACTION' | 'INFORMATION' | 'MEMORANDUM-FOR';
   controlLine: string; // top-right control symbol under the date, e.g. "UNSECNAV ______"
   from: string; // FROM: originator (full name, title)
   recommendation: string; // ACTION memo: the "RECOMMENDATION:" text (unused on an INFO memo)
@@ -76,6 +79,7 @@ export interface ExecMemo {
   coordination: string; // COORDINATION: value, e.g. "TAB D" or "None"
   attachments: string; // Attachments: value (defaults to "As stated")
   preparedBy: string; // "Prepared by:" — name, organization, phone
+  cc: string; // MEMORANDUM-FOR: the cc: line (fig 12-14)
 }
 
 // NATO travel order (a bilingual form, not a naval letter). DoD/FCG template.

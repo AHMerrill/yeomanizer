@@ -1289,33 +1289,40 @@ export function Editor({
           <Field label="Kind">
             <select
               value={state.execMemo.kind}
-              onChange={(e) => patchExecMemo({ kind: e.target.value as 'ACTION' | 'INFORMATION' })}
+              onChange={(e) =>
+                patchExecMemo({ kind: e.target.value as 'ACTION' | 'INFORMATION' | 'MEMORANDUM-FOR' })
+              }
             >
               <option value="ACTION">Action memo — asks the principal to decide/sign</option>
               <option value="INFORMATION">Info memo — informs, no action</option>
+              <option value="MEMORANDUM-FOR">Memorandum For — plain executive memo (fig 12-14)</option>
             </select>
           </Field>
-          <Field label="FOR (recipient)">
+          <Field label={state.execMemo.kind === 'MEMORANDUM-FOR' ? 'MEMORANDUM FOR (recipient)' : 'FOR (recipient)'}>
             <input
               value={state.to}
-              placeholder="SECRETARY OF THE NAVY"
+              placeholder="SECRETARY OF DEFENSE"
               onChange={(e) => patch({ to: e.target.value })}
             />
           </Field>
-          <Field label="FROM (originator — full name, title)">
-            <input
-              value={state.execMemo.from}
-              placeholder="Full Name, Title"
-              onChange={(e) => patchExecMemo({ from: e.target.value })}
-            />
-          </Field>
-          <Field label="Control symbol (upper right)">
-            <input
-              value={state.execMemo.controlLine}
-              placeholder="UNSECNAV ______"
-              onChange={(e) => patchExecMemo({ controlLine: e.target.value })}
-            />
-          </Field>
+          {state.execMemo.kind !== 'MEMORANDUM-FOR' && (
+            <>
+              <Field label="FROM (originator — full name, title)">
+                <input
+                  value={state.execMemo.from}
+                  placeholder="Full Name, Title"
+                  onChange={(e) => patchExecMemo({ from: e.target.value })}
+                />
+              </Field>
+              <Field label="Control symbol (upper right)">
+                <input
+                  value={state.execMemo.controlLine}
+                  placeholder="UNSECNAV ______"
+                  onChange={(e) => patchExecMemo({ controlLine: e.target.value })}
+                />
+              </Field>
+            </>
+          )}
           {state.execMemo.kind === 'ACTION' && (
             <>
               <Field label="Recommendation">
@@ -1335,13 +1342,15 @@ export function Editor({
               </label>
             </>
           )}
-          <Field label="Coordination">
-            <input
-              value={state.execMemo.coordination}
-              placeholder="TAB D (or None)"
-              onChange={(e) => patchExecMemo({ coordination: e.target.value })}
-            />
-          </Field>
+          {state.execMemo.kind !== 'MEMORANDUM-FOR' && (
+            <Field label="Coordination">
+              <input
+                value={state.execMemo.coordination}
+                placeholder="TAB D (or None)"
+                onChange={(e) => patchExecMemo({ coordination: e.target.value })}
+              />
+            </Field>
+          )}
           <Field label="Attachments">
             <input
               value={state.execMemo.attachments}
@@ -1349,13 +1358,26 @@ export function Editor({
               onChange={(e) => patchExecMemo({ attachments: e.target.value })}
             />
           </Field>
-          <Field label="Prepared by (name, org, phone)">
-            <input
-              value={state.execMemo.preparedBy}
-              placeholder="A. Officer, OGC, (703) 555-0100"
-              onChange={(e) => patchExecMemo({ preparedBy: e.target.value })}
-            />
-          </Field>
+          {state.execMemo.kind === 'MEMORANDUM-FOR' ? (
+            <>
+              <Field label="cc">
+                <input
+                  value={state.execMemo.cc}
+                  placeholder="General Counsel"
+                  onChange={(e) => patchExecMemo({ cc: e.target.value })}
+                />
+              </Field>
+              <div className="sub-label">The signer’s name/title come from the Signature card below.</div>
+            </>
+          ) : (
+            <Field label="Prepared by (name, org, phone)">
+              <input
+                value={state.execMemo.preparedBy}
+                placeholder="A. Officer, OGC, (703) 555-0100"
+                onChange={(e) => patchExecMemo({ preparedBy: e.target.value })}
+              />
+            </Field>
+          )}
         </Card>
       )}
 
