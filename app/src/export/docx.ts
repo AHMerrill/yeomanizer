@@ -4,6 +4,7 @@ import {
   Paragraph,
   TextRun,
   AlignmentType,
+  Tab,
   TabStopType,
   UnderlineType,
   Header,
@@ -158,20 +159,25 @@ function flattenBody(
     const bulletTop = execBullet && depth === 0;
     const mark = portionActive ? (p.cui ? '(CUI) ' : '(U) ') : '';
     const indentIn = business || execBullet ? depthIndentIn(depth + 1) : depthIndentIn(depth);
+    // An exec-memo bullet hangs: the "•" sits at indentIn, text/continuation align ~0.18in past it
+    // (bullet width + gap), matching the PDF and fig 12-9. A tab carries the first line to that edge.
+    const HANG = 0.18;
     out.push(
       new Paragraph({
         children: [
           ...(noMark
             ? [R(mark)]
             : bulletTop
-              ? [R('•  ' + mark)]
+              ? [new TextRun({ children: ['•', new Tab()] }), ...(mark ? [R(mark)] : [])]
               : [R(m.prefix), R(m.core, { underline: m.underline }), R(m.suffix), R('  ' + mark)]),
           ...(p.title ? [R(p.title, { underline: true }), R('.  ')] : []),
           ...parseInline(p.text).map((r) =>
             R(r.text, { bold: r.bold, italics: r.italic, underline: r.underline }),
           ),
         ],
-        indent: { firstLine: Math.round(indentIn * IN) },
+        indent: bulletTop
+          ? { left: Math.round((indentIn + HANG) * IN), hanging: Math.round(HANG * IN) }
+          : { firstLine: Math.round(indentIn * IN) },
         spacing: { after: BLANK },
       }),
     );

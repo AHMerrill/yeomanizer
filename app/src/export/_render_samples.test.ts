@@ -277,6 +277,25 @@ const base: LetterState = {
   // bulleted body, RECOMMENDATION + Approve/Disapprove, COORDINATION, Attachments, Prepared by.
   const execMemo: LetterState = { ...defaultFor('exec-memo') };
   writeFileSync(`${OUT}/exec-memo.pdf`, await buildSignablePdf(execMemo, today));
+  // Stress: long FOR/FROM/SUBJECT (heading wrap) + long recommendation + a body long enough to
+  // spill onto a second page — verifies the exec heading wraps and the memo paginates cleanly.
+  const execStress: LetterState = {
+    ...defaultFor('exec-memo'),
+    to: 'Under Secretary of Defense for Acquisition and Sustainment, and the Principal Deputy Under Secretary',
+    subj: 'Consolidation of Shore-Based Aviation Maintenance, Supply, and Training Functions Across the Fleet Readiness Enterprise',
+    execMemo: {
+      ...defaultFor('exec-memo').execMemo,
+      from: 'The Honorable A. B. Reviewer, Assistant Secretary of the Navy for Research, Development and Acquisition, performing the duties of the Under Secretary',
+      recommendation:
+        'That you approve the consolidation plan at Tab A and authorize the Assistant Secretary to direct the affected commands to begin phased implementation no later than the first quarter of the next fiscal year, subject to the availability of appropriated funds and completion of the required congressional notifications described in paragraphs 4 through 6.',
+    },
+    body: Array.from({ length: 14 }, (_, i) => ({
+      id: `x${i}`,
+      text: `Paragraph ${i + 1}. ${'This paragraph carries enough substance to occupy several lines so the memo body grows past a single page and the pagination, bullets, and any continuation behavior can be verified end to end. '.repeat(2)}`,
+      children: [],
+    })),
+  };
+  writeFileSync(`${OUT}/exec-stress.pdf`, await buildSignablePdf(execStress, today));
   const execInfo: LetterState = {
     ...defaultFor('exec-memo'),
     subj: 'Info Memo Format',
@@ -358,6 +377,7 @@ const base: LetterState = {
   await writeDocx('business', business);
   await writeDocx('multipage', longBody); // multi-page: verifies the repeated Subj header + page numbers
   await writeDocx('exec-memo', execMemo); // Ch 12 Action Memo — title, FOR/FROM/SUBJECT, bullets, decision
+  await writeDocx('exec-stress', execStress); // multi-page action memo — heading wrap + pagination
   await writeDocx('exec-memofor', execMemoFor); // Ch 12 Memorandum For — addressing, indented, centered sig
   await writeDocx('coord-page', coordPage); // Ch 12 Coordination Page — title + concurrence table
   await writeDocx('coord-stress', coordStress); // multi-page concurrence table — pagination + header repeat

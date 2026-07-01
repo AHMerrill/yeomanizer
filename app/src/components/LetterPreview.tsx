@@ -91,8 +91,14 @@ function ParaFlow({
   const indent = business || exec ? depthIndentIn(fp.depth + 1) : depthIndentIn(fp.depth);
   const bulletTop = exec && fp.depth === 0;
   const showMarker = !((business && fp.depth === 0) || bulletTop);
+  // Exec-memo bullets hang: the "•" sits at indent, and wrapped lines align ~0.18in past it (bullet
+  // width + gap), matching the PDF/docx and fig 12-9. Everything else indents just the first line.
+  const HANG = 0.18;
+  const style = bulletTop
+    ? { paddingLeft: `${indent + HANG}in`, textIndent: `-${HANG}in` }
+    : { textIndent: `${indent}in` };
   return (
-    <p className="para" data-sync={`p:${fp.key}`} style={{ textIndent: `${indent}in` }}>
+    <p className="para" data-sync={`p:${fp.key}`} style={style}>
       {bulletTop && <span className="pmark">•</span>}
       {bulletTop && <span className="pgap" />}
       {showMarker && <MarkerSpan depth={fp.depth} index={fp.index} />}

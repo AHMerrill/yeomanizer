@@ -473,7 +473,10 @@ export async function buildSignablePdf(
         }
       }
       flush();
-      // Wrap words into rows: row 0 begins after the title; continuation returns to LEFT (7-2.13).
+      // Wrap words into rows: row 0 begins after the title. Continuation returns to LEFT for a
+      // numbered/business letter (7-2.13), but an exec-memo bullet hangs — its wrapped lines align
+      // under the text after the "•" (Ch 12, fig 12-9), so use textX there.
+      const contX = execBullet && depth === 0 ? textX : LEFT;
       const rows: { words: Word[]; startX: number }[] = [];
       {
         let cur: Word[] = [];
@@ -484,8 +487,8 @@ export async function buildSignablePdf(
           if (cur.length && x + sp + wd.w > RIGHT) {
             rows.push({ words: cur, startX });
             cur = [wd];
-            startX = LEFT;
-            x = LEFT + wd.w;
+            startX = contX;
+            x = contX + wd.w;
           } else {
             cur.push(wd);
             x += sp + wd.w;
