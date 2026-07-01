@@ -20,8 +20,9 @@ Live: **https://yeomanizer.com**
   Understanding** (Ch 10 — dual per-party identification blocks + dual signatures), the **joint
   letter / memorandum** (Ch 7 — co-signed by two or more commands), the **executive memo** (Ch 12 —
   Action / Info memo for HqDON/OSD staff work: `ACTION MEMO`/`INFO MEMO`, `FOR:`/`FROM:`/`SUBJECT:`,
-  bulleted paragraphs, and an Approve/Disapprove decision block), and the bilingual two-page NATO
-  travel order.
+  bulleted paragraphs, and an Approve/Disapprove decision block), the **coordination page** (Ch 12,
+  fig 12-13 — the plain-bond concurrence table that rides with an action memo), and the bilingual
+  two-page NATO travel order.
 - **Pixel-faithful preview** — letterhead with the authentic DoD/DoW seal, the SSIC/identification
   block, the From/To/Via/Subj/Ref/Encl heading, automatic paragraph numbering & indentation (the
   full 8-level Fig 7-8 ladder), the signature block, and multi-page continuation (the Subj — or the
