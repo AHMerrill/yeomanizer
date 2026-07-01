@@ -44,8 +44,9 @@ Live: **https://yeomanizer.com**
   on your machine — nothing is logged or transmitted — and it's a reminder, not a verdict: what is
   PII/CUI, and how it's marked, stays your call.
 - **Starter templates** — one click drops a correctly-structured example (letter of appreciation,
-  request, memorandum for the record, or business letter) into the editor, with the parts to replace
-  shown in `[BRACKETS]`. Undoable, and the content is bundled — nothing is fetched.
+  request, memorandum for the record, business letter, congressional response, interim reply, or
+  flag stationery) into the editor, with the parts to replace shown in `[BRACKETS]`. Undoable, and
+  the content is bundled — nothing is fetched.
 - **SSIC lookup** — don't have a subject code memorized? Search a built-in list by number or keyword
   and click to fill it in (all 13 major groups plus the common second-level codes). It's a curated
   set, not the full SECNAV M-5210.2 catalog, so codes are never made up.
