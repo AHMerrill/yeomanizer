@@ -117,18 +117,24 @@ export async function buildSignablePdf(
     const cols = [LEFT, LEFT + 1.2 * PT, LEFT + 3.3 * PT, LEFT + 4.5 * PT, LEFT + 5.6 * PT];
     const colW = [1.1 * PT, 1.9 * PT, 1.1 * PT, 1.0 * PT, 0.85 * PT];
     const headers = ['Office/Dept', 'Point of Contact/Title', 'Phone', 'Date', 'Remarks'];
-    const hy = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
-    headers.forEach((h, i) => {
-      page.drawText(h, { x: cols[i], y: hy, font, size: SIZE });
-      page.drawLine({
-        start: { x: cols[i], y: hy - 1.6 },
-        end: { x: cols[i] + font.widthOfTextAtSize(h, SIZE), y: hy - 1.6 },
-        thickness: 0.6,
-        color: black,
+    // Draw the underlined column headers at the current cursor. Registered as the continuation
+    // header so a table that spills onto a second page repeats them instead of starting cold.
+    const drawCoordHeaders = () => {
+      const hy = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
+      headers.forEach((h, i) => {
+        page.drawText(h, { x: cols[i], y: hy, font, size: SIZE });
+        page.drawLine({
+          start: { x: cols[i], y: hy - 1.6 },
+          end: { x: cols[i] + font.widthOfTextAtSize(h, SIZE), y: hy - 1.6 },
+          thickness: 0.6,
+          color: black,
+        });
       });
-    });
-    top += SIZE * BODY_LH;
-    gap(PARA_GAP);
+      top += SIZE * BODY_LH;
+      gap(PARA_GAP);
+    };
+    drawCoordHeaders();
+    contHeader = drawCoordHeaders;
     state.coordPage.entries.forEach((e) => {
       const cells = [e.office, e.poc, e.phone, e.date, e.remarks];
       const wrapped = cells.map((c, i) => wrap(c, font, SIZE, colW[i]));

@@ -193,12 +193,18 @@ export function buildDocxDocument(
     const cell = (runs: TextRun[]) =>
       new TableCell({ children: [new Paragraph({ children: runs, spacing: { after: 40 } })], borders: noBorders });
     const headerRow = new TableRow({
+      tableHeader: true, // Word repeats the column headers atop each page the table spills onto
+      cantSplit: true,
       children: ['Office/Dept', 'Point of Contact/Title', 'Phone', 'Date', 'Remarks'].map((h) =>
         cell([R(h, { underline: true })]),
       ),
     });
     const rows = state.coordPage.entries.map(
-      (e) => new TableRow({ children: [e.office, e.poc, e.phone, e.date, e.remarks].map((c) => cell([R(c)])) }),
+      (e) =>
+        new TableRow({
+          cantSplit: true, // keep each office's row intact across a page break (matches the PDF)
+          children: [e.office, e.poc, e.phone, e.date, e.remarks].map((c) => cell([R(c)])),
+        }),
     );
     return new Document({
       creator: '',

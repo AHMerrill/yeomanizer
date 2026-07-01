@@ -307,6 +307,35 @@ const base: LetterState = {
   // Coordination page (fig 12-13): plain bond, a centered title over a concurrence table.
   const coordPage: LetterState = { ...defaultFor('coordination-page') };
   writeFileSync(`${OUT}/coord-page.pdf`, await buildSignablePdf(coordPage, today));
+  // Stress: enough offices to force a second page + one row with long, wrapping cell content —
+  // verifies the table paginates (rows never orphaned) and repeats its column headers on page 2.
+  const coordStress: LetterState = {
+    ...defaultFor('coordination-page'),
+    coordPage: {
+      entries: Array.from({ length: 26 }, (_, i) => ({
+        id: `s${i}`,
+        office:
+          i === 3
+            ? 'Office of the Assistant Secretary of the Navy for Research, Development and Acquisition'
+            : `Office ${i + 1} (N${i + 1})`,
+        poc:
+          i === 3
+            ? 'The Honorable Frederick J. Stefany, Performing the Duties of the Assistant Secretary'
+            : `RDML A. Reviewer ${i + 1}`,
+        phone: '(703) 555-0100',
+        date: '16 Feb 2018',
+        remarks:
+          i === 3
+            ? 'Concur with comment — see attached memorandum for edits to paragraphs 3 through 7'
+            : i % 3 === 0
+              ? 'Concur'
+              : i % 3 === 1
+                ? 'Nonconcur'
+                : 'Reviewed',
+      })),
+    },
+  };
+  writeFileSync(`${OUT}/coord-stress.pdf`, await buildSignablePdf(coordStress, today));
 
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
@@ -331,6 +360,7 @@ const base: LetterState = {
   await writeDocx('exec-memo', execMemo); // Ch 12 Action Memo — title, FOR/FROM/SUBJECT, bullets, decision
   await writeDocx('exec-memofor', execMemoFor); // Ch 12 Memorandum For — addressing, indented, centered sig
   await writeDocx('coord-page', coordPage); // Ch 12 Coordination Page — title + concurrence table
+  await writeDocx('coord-stress', coordStress); // multi-page concurrence table — pagination + header repeat
   await writeDocx('multi-address-to', multiTo);
   await writeDocx('multi-address-dist', multiDist);
   await writeDocx('moa', moa);
