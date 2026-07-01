@@ -99,4 +99,51 @@ export const TEMPLATES: Template[] = [
       },
     }),
   },
+  {
+    id: 'congressional',
+    name: 'Congressional response',
+    blurb: 'Reply to a Member of Congress — business-letter format (Ch 12, fig 12-4).',
+    build: () => ({
+      ...defaultFor('business-letter'),
+      ssic: '[SSIC]',
+      includeSsic: true,
+      subj: '',
+      copyTo: ['The Honorable [Last Name]', 'Ranking Minority Member'],
+      body: [
+        para('b1', 'Thank you for your letter of [date], concerning [subject]. I am responding on behalf of the Secretary of the Navy.'),
+        para('b2', '[Response — address the concern directly and courteously].'),
+        para('b3', 'Again, I appreciate you taking the time to share your thoughts on this issue. If I may be of any further assistance, please let me know.'),
+      ],
+      signature: { name: '[Full Name]', title: '[Title / Position]', authority: 'none' },
+      business: {
+        ...defaultFor('business-letter').business,
+        // Chairman of a committee; for a Senator use "United States Senate" and ZIP 20510 (fig 12-4).
+        insideAddress:
+          'The Honorable [Full Name]\nChairman\nCommittee on [Name]\nU.S. House of Representatives\nWashington, DC 20515',
+        salutation: 'Dear Mr. [or Madam] Chairman:',
+      },
+    }),
+  },
+  {
+    id: 'interim',
+    name: 'Interim reply',
+    blurb: 'Acknowledge incoming correspondence you can’t yet answer fully (Ch 12, fig 12-2).',
+    build: () => ({
+      ...defaultFor('business-letter'),
+      ssic: '[SSIC]',
+      includeSsic: true,
+      subj: '',
+      body: [
+        para('b1', 'This is to acknowledge your recent letter concerning [subject]. Your letter has been referred to [lead office], and I am responding on behalf of [name].'),
+        para('b2', 'We are gathering the information necessary to provide a substantive response and will reply further upon completion of our review. You can expect a final response by [date].'),
+        para('b3', 'In the interim, if you require further assistance or need to provide additional information, you may contact [name, phone number], who is coordinating the response.'),
+      ],
+      signature: { name: '[Full Name]', title: '[Title / Position]', authority: 'none' },
+      business: {
+        ...defaultFor('business-letter').business,
+        insideAddress: 'Mr. [or Ms.] [Full Name]\n[Street Address]\n[City, State ZIP]',
+        salutation: 'Dear Mr. [or Ms.] [Last Name]:',
+      },
+    }),
+  },
 ];
