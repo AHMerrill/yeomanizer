@@ -83,5 +83,15 @@ This file is the working guide for Claude sessions in this repo.
     npm run build && npm run lint && npx vitest run        # all green
     cd app && npx --yes wrangler pages deploy --commit-dirty=true   # deploy (Cloudflare Pages)
 
+**Always deploy from `app/` — never `wrangler pages deploy app/dist` from the repo root.** The
+anonymous counter lives in `app/functions/api/{count,visit}.js` (Cloudflare Pages Functions) and its
+KV binding is in `app/wrangler.toml`. wrangler only picks up `functions/` and the `[[kv_namespaces]]`
+binding relative to its CWD, so deploying the `dist` folder from the repo root silently ships the
+static site **without** the Functions — `/api/count` then falls through to the SPA (returns HTML, not
+JSON) and the "Page Loads · Download Clicks" footer shows `—`. A correct deploy logs
+"Compiled Worker successfully" + "Uploading Functions bundle"; if you don't see those, the counter
+API didn't ship. Verify after deploying: `curl -s https://yeomanizer.pages.dev/api/count` must return
+`{"downloads":N,"visits":N}`, not HTML.
+
 Keep small, reviewable commits. Surface anything that needs the user's Cloudflare/GitHub dashboard
 (e.g. the blocked custom domain or email routing) rather than guessing.
