@@ -199,6 +199,16 @@ const base: LetterState = {
     business: { ...defaultFor('business-letter').business, separateMailing: 'Secretarial Handbook' },
   };
   writeFileSync(`${OUT}/business.pdf`, await buildSignablePdf(business, today));
+  // Business letter with an Attention line (fig 11-5) + Separate Mailing notation (11-2.11).
+  const businessAttn: LetterState = {
+    ...business,
+    business: {
+      ...business.business,
+      attention: 'Mr. John Smith, Contracts Department',
+      separateMailing: '2 copies of enclosure (1)',
+    },
+  };
+  writeFileSync(`${OUT}/business-attn.pdf`, await buildSignablePdf(businessAttn, today));
   // Congressional response + interim reply — business-letter templates (Ch 12, figs 12-4 / 12-2).
   // Verify the inside address, special salutation, editable close, and Copy-to render on business.
   const { TEMPLATES } = await import('../data/templates');
@@ -242,6 +252,19 @@ const base: LetterState = {
     copyTo: ['COMNAVSEASYSCOM (SEA-06)'],
   };
   writeFileSync(`${OUT}/multi-address-dist.pdf`, await buildSignablePdf(multiDist, today));
+
+  // Fig 8-3: a To: line AND a Distribution: block together (action addressees on To:, the larger
+  // distribution list after the signature).
+  const multiBoth: LetterState = {
+    ...multiTo,
+    subj: 'MULTIPLE-ADDRESS LETTER USING TO: AND DISTRIBUTION: TOGETHER',
+    distribution: [
+      { id: 'db1', text: 'COMSUBFOR NORFOLK (4 copies)' },
+      { id: 'db2', text: 'USS ENTERPRISE' },
+      { id: 'db3', text: 'USS SCRANTON' },
+    ],
+  };
+  writeFileSync(`${OUT}/multi-address-both.pdf`, await buildSignablePdf(multiBoth, today));
 
   // Memorandum of Agreement (Ch 10, fig 10-5): plain bond, date-only ident, centered title + BETWEEN
   // the two activities (senior first), dual signatures with the senior (party A) at the RIGHT.

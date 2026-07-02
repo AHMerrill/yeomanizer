@@ -13,6 +13,7 @@ import {
   Table,
   TableRow,
   TableCell,
+  TableLayoutType,
   WidthType,
   BorderStyle,
   ImageRun,
@@ -69,6 +70,64 @@ const center = (text: string, size: number) =>
   });
 
 const spacer = (after = 120) => new Paragraph({ children: [R('')], spacing: { after } });
+
+// US Letter. The docx library defaults to A4 (w:pgSz 11906×16838) when a section sets no size —
+// which mis-sized every exported page (metric width, shifted margins and wrap points). Naval
+// correspondence is 8.5 × 11 (2-12), so every section sets this explicitly.
+const LETTER = { width: 12240, height: 15840 } as const;
+// Three blank 12-pt lines before the typed signature name — the name lands on the FOURTH line
+// below the last text line (7-2.14; the figures show exactly three blanks).
+const SIG_GAP = 828;
+const NB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' } as const;
+const NO_BORDERS = { top: NB, bottom: NB, left: NB, right: NB, insideHorizontal: NB, insideVertical: NB };
+// Approximate Times New Roman advance widths (points at 12pt). Word files carry no text measurer,
+// so this sizes the ident column; ±3% is plenty — the block just has to hug the right margin.
+const approxPt = (s: string) => {
+  let w = 0;
+  for (const ch of s) {
+    if (/[0-9]/.test(ch)) w += 6;
+    else if (/[A-Z]/.test(ch)) w += ch === 'I' ? 4 : ch === 'M' || ch === 'W' ? 10.6 : 8.1;
+    else if (/[a-z]/.test(ch)) w += /[ijlft]/.test(ch) ? 3.6 : /[mw]/.test(ch) ? 9 : 5.6;
+    else if (ch === ' ') w += 3;
+    else w += 4; // punctuation
+  }
+  return w;
+};
+// An identification-style block: an internally LEFT-aligned column of lines placed as a unit at
+// the right margin. The figures (7-1 / 10-5 / 11-2 / 11-6) show a left-aligned stack whose longest
+// line touches the right margin — NOT per-line right justification (which yields a ragged left
+// edge, the defect this replaces). A right-aligned fixed-width borderless table reproduces it (an
+// auto-width table collapses to nothing in LibreOffice, so the width is estimated from the text).
+const identColumn = (lines: string[], size?: number) => {
+  const wTw = Math.round(Math.max(...lines.map(approxPt)) * ((size ?? SZ) / SZ) * 20) + 120;
+  return new Table({
+    alignment: AlignmentType.RIGHT,
+    width: { size: wTw, type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: [wTw],
+    borders: NO_BORDERS,
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            borders: NO_BORDERS,
+            width: { size: wTw, type: WidthType.DXA },
+            // Zero cell margins: Word's default ~0.075in side margins would eat the estimated
+            // width (wrapping the longest line) and shift the stack's left edge.
+            margins: { top: 0, bottom: 0, left: 0, right: 0 },
+            children: lines.map(
+              (l) => new Paragraph({ children: [size ? R(l, { size }) : R(l)], spacing: { after: 0 } }),
+            ),
+          }),
+        ],
+      }),
+    ],
+  });
+};
+// Empty 12-pt lines that pad a page-2+ header down from the 0.25in header offset toward the
+// 1-inch line the manual puts the repeated Subj on (7-2.16).
+const headerPad = (n: number) =>
+  Array.from({ length: n }, () => new Paragraph({ children: [R('')], spacing: { after: 0 } }));
 
 const EMU = 914400; // EMUs per inch (floating-image offsets)
 
@@ -146,7 +205,7 @@ export async function loadSealBytes(state: LetterState): Promise<ArrayBuffer | u
 function flattenBody(
   list: P[],
   depth: number,
-  out: Paragraph[],
+  out: (Paragraph | Table)[],
   portionActive: boolean,
   business = false,
   execBullet = false,
@@ -246,7 +305,7 @@ export function buildDocxDocument(
       sections: [
         {
           properties: {
-            page: { margin: { top: IN, right: IN, bottom: IN, left: IN } },
+            page: { size: LETTER, margin: { top: IN, right: IN, bottom: IN, left: IN } },
             ...(ccui.enabled ? { titlePage: true } : {}),
           },
           headers: ccui.enabled
@@ -266,6 +325,10 @@ export function buildDocxDocument(
             }),
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
+              // Fixed columns sized like the PDF (1.2 / 2.1 / 1.2 / 1.1 / 0.9 in over 6.5in) so the
+              // Point-of-Contact column fits names on one line instead of wrapping.
+              layout: TableLayoutType.FIXED,
+              columnWidths: [1728, 3024, 1728, 1584, 1296],
               borders: noBorders,
               rows: [headerRow, ...rows],
             }),
@@ -285,7 +348,7 @@ export function buildDocxDocument(
   const isJoint = state.type === 'joint-letter';
   const isExec = state.type === 'exec-memo';
   const isMemoFor = isExec && state.execMemo.kind === 'MEMORANDUM-FOR';
-  const children: Paragraph[] = [];
+  const children: (Paragraph | Table)[] = [];
 
   // Letterhead: on = print it (text only in v1); preprinted = reserve blank lines; off = none.
   if (lh.mode === 'on') {
@@ -301,7 +364,8 @@ export function buildDocxDocument(
     );
     if (isJoint) {
       // Joint letter: each command on its own line (senior first).
-      state.joint.parties.forEach((p) => p.command.trim() && children.push(center(p.command, 15)));
+      // Command titles print in caps like every letterhead line (the PDF already uppercases).
+      state.joint.parties.forEach((p) => p.command.trim() && children.push(center(p.command.toUpperCase(), 15)));
     } else if (lh.activityName) {
       lh.activityName
         .split('\n')
@@ -310,6 +374,15 @@ export function buildDocxDocument(
     }
     if (!isJoint && lh.addressLine) children.push(center(lh.addressLine, 15));
     if (lh.cityStateZip) children.push(center(lh.cityStateZip, 15));
+    // Reserve the letterhead's minimum height (the PDF holds a 0.86in floor) so a short letterhead
+    // — e.g. a title-only flag heading or a bare DoN line — keeps the body clear of the floating
+    // seal's lower corner instead of climbing up into it.
+    const lhSubLines = isJoint
+      ? state.joint.parties.filter((p) => p.command.trim()).length + (lh.cityStateZip ? 1 : 0)
+      : (lh.activityName ? lh.activityName.split('\n').filter((l) => l.trim()).length : 0) +
+        (lh.addressLine ? 1 : 0) +
+        (lh.cityStateZip ? 1 : 0);
+    for (let k = lhSubLines; k < 3; k++) children.push(center(' ', 15));
     children.push(spacer());
   } else if (lh.mode === 'preprinted') {
     // Reserve blank body lines ≈ the rendered N-line letterhead height (small lines ≈ 0.7 of a body
@@ -353,33 +426,48 @@ export function buildDocxDocument(
     if (anyVal((p) => p.serial)) children.push(fieldRow((p) => p.serial));
     if (anyVal((p) => p.date)) children.push(fieldRow((p) => p.date));
   } else if (isMoa) {
-    // Dual identification blocks (fig 10-5): party A at the left, party B right-aligned at the right
-    // margin (via a RIGHT tab stop). Rows pair the two parties so their short title / SSIC / serial /
-    // date line up; party A reuses the shared identification, party B keeps its own.
+    // Dual identification blocks (fig 10-5): party A's column at the left margin, party B's as an
+    // internally LEFT-aligned column on the right (the figure shows a left-aligned stack starting
+    // ~5.6in, not per-line right justification). One borderless row keeps the columns line-aligned.
     const m = state.moa;
-    const moaStop = { type: TabStopType.RIGHT, position: Math.round(6.5 * IN) };
-    const row = (a: string, b: string) =>
-      new Paragraph({
-        tabStops: [moaStop],
-        children: [R(a), new TextRun({ text: '\t', font: FONT, size: SZ }), R(b)],
-        spacing: { after: 0 },
-      });
-    const rows: [string, string][] = [
-      [m.shortTitleA, m.shortTitleB],
-      [state.includeSsic ? ident.ssic || ' ' : '', m.ssicB],
-      [state.includeCode ? ident.codeLine || ' ' : '', m.serialB.trim() ? `Ser ${m.serialB.trim()}` : ''],
-      [ident.date, m.dateB],
-    ];
-    rows.forEach(([a, b]) => {
-      if (a !== '' || b !== '') children.push(row(a, b));
-    });
+    const moaRows = (
+      [
+        [m.shortTitleA, m.shortTitleB],
+        [state.includeSsic ? ident.ssic || ' ' : '', m.ssicB],
+        [state.includeCode ? ident.codeLine || ' ' : '', m.serialB.trim() ? `Ser ${m.serialB.trim()}` : ''],
+        [ident.date, m.dateB],
+      ] as [string, string][]
+    ).filter(([a, b]) => a !== '' || b !== '');
+    if (moaRows.length)
+      children.push(
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          layout: TableLayoutType.FIXED,
+          columnWidths: [Math.round(4.55 * IN), Math.round(1.95 * IN)],
+          borders: NO_BORDERS,
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  borders: NO_BORDERS,
+                  children: moaRows.map(([a]) => new Paragraph({ children: [R(a || ' ')], spacing: { after: 0 } })),
+                }),
+                new TableCell({
+                  borders: NO_BORDERS,
+                  children: moaRows.map(([, b]) => new Paragraph({ children: [R(b || ' ')], spacing: { after: 0 } })),
+                }),
+              ],
+            }),
+          ],
+        }),
+      );
   } else if (isExec) {
     // Executive memo (Ch 12): a right-aligned date + control symbol ("UNSECNAV ____"). A plain
     // "Memorandum For" (fig 12-14) has no control symbol — just the date.
     const em = state.execMemo;
     [ident.date, isMemoFor ? '' : em.controlLine.trim()].filter((l) => l).forEach((l) => children.push(rightLine(l)));
-  } else {
-    identLines.forEach((line) => children.push(rightLine(line)));
+  } else if (identLines.length) {
+    children.push(identColumn(identLines));
   }
   if (isMemo) {
     children.push(new Paragraph({ children: [R('MEMORANDUM')], spacing: { before: BLANK, after: BLANK } }));
@@ -564,7 +652,7 @@ export function buildDocxDocument(
         spacing: { before, after: 0 },
       });
     const SIG_LINE = '____________________';
-    children.push(row(SIG_LINE, SIG_LINE, 3 * BLANK)); // sign above the lines
+    children.push(row(SIG_LINE, SIG_LINE, SIG_GAP)); // sign above the lines
     children.push(row(b.name, a.name));
     if (b.title || a.title) children.push(row(b.title, a.title));
     if (authOf(b) || authOf(a)) children.push(row(authOf(b), authOf(a)));
@@ -586,7 +674,7 @@ export function buildDocxDocument(
         spacing: { before, after: 0 },
       });
     const SIG_LINE = '____________________';
-    children.push(sigRow(() => SIG_LINE, 3 * BLANK));
+    children.push(sigRow(() => SIG_LINE, SIG_GAP));
     children.push(sigRow((p) => p.signer.name));
     if (order.some((p) => p.signer.title.trim())) children.push(sigRow((p) => p.signer.title));
     if (order.some((p) => authOf(p.signer))) children.push(sigRow((p) => authOf(p.signer)));
@@ -600,7 +688,7 @@ export function buildDocxDocument(
       // Plain "Memorandum For" (fig 12-14): a centered signature, then Attachments and cc.
       const center = (text: string, before = 0) =>
         new Paragraph({ alignment: AlignmentType.CENTER, children: [R(text)], spacing: { before, after: 0 } });
-      if (state.signature.name.trim()) children.push(center(state.signature.name.trim(), 3 * BLANK));
+      if (state.signature.name.trim()) children.push(center(state.signature.name.trim(), SIG_GAP));
       if (state.signature.title.trim()) children.push(center(state.signature.title.trim()));
       children.push(line('Attachments:', BLANK));
       children.push(line(em.attachments.trim() || 'As stated'));
@@ -628,7 +716,7 @@ export function buildDocxDocument(
         new Paragraph({
           children: [R(line)],
           indent: { left: sigIndent },
-          spacing: { before: i === 0 ? 3 * BLANK : 0, after: 0 },
+          spacing: { before: i === 0 ? SIG_GAP : 0, after: 0 },
         }),
       ),
     );
@@ -675,7 +763,7 @@ export function buildDocxDocument(
   // Appended endorsements (Ch 9): collected into their OWN section (added below) so the basic letter's
   // continuation Subj header never bleeds onto an endorsement page. Mirrors the preview + PDF: the
   // endorsement ident block, "Nth ENDORSEMENT on …" line, From/To/Via/Subj, body, signature.
-  const endoChildren: Paragraph[] = [];
+  const endoChildren: (Paragraph | Table)[] = [];
   if (!isEndorsement && state.endorsements.length) {
     const endoSigIndent = Math.round(3.25 * IN);
     const onBasic = `ENDORSEMENT on ${basicLetterId(state, today)}`; // same for every endorsement
@@ -690,32 +778,25 @@ export function buildDocxDocument(
         e.serial.trim() ? eIdent.codeLine : null,
         eIdent.date || null,
       ].filter((l): l is string => l !== null);
-      eIdLines.forEach((line, k) =>
-        endoChildren.push(
-          new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            pageBreakBefore: k === 0 && i > 0,
-            children: [R(line)],
-            spacing: { after: 0 },
-          }),
-        ),
-      );
+      // 2nd+ endorsements start their own page (the first rides the endorsement section's break).
+      if (i > 0) endoChildren.push(new Paragraph({ children: [R('')], pageBreakBefore: true, spacing: { after: 0 } }));
+      if (eIdLines.length) endoChildren.push(identColumn(eIdLines));
       endoChildren.push(
         new Paragraph({
-          pageBreakBefore: eIdLines.length === 0 && i > 0,
           children: [R(`${ord} ${onBasic}`)],
           spacing: { before: eIdLines.length ? BLANK : 0, after: BLANK },
         }),
       );
-      endoChildren.push(heading('From:', e.endorser));
-      endoChildren.push(heading('To:', state.to));
+      // Gate each heading on content, like the PDF — no orphan "To:" labels for empty fields.
+      if (e.endorser.trim()) endoChildren.push(heading('From:', e.endorser));
+      if (state.to.trim()) endoChildren.push(heading('To:', state.to));
       const evias = remainingVias(state, e.viaId); // Ch 9-2.2: remaining Via addressees
       if (evias.length === 1) endoChildren.push(heading('Via:', evias[0].text));
       else if (evias.length >= 2)
         evias.forEach((v, k) =>
           endoChildren.push(heading(k === 0 ? 'Via:' : '', `(${k + 1}) ${v.text}`)),
         );
-      endoChildren.push(heading('Subj:', state.subj.toUpperCase(), true));
+      if (state.subj.trim()) endoChildren.push(heading('Subj:', state.subj.toUpperCase(), true));
       endoChildren.push(spacer());
       flattenBody(e.body, 0, endoChildren, cui.enabled && anyCui(e.body));
       const eSigLines = [e.sigName, e.sigTitle].filter(Boolean);
@@ -726,7 +807,7 @@ export function buildDocxDocument(
           new Paragraph({
             children: [R(line)],
             indent: { left: endoSigIndent },
-            spacing: { before: j === 0 ? 3 * BLANK : 0, after: 0 },
+            spacing: { before: j === 0 ? SIG_GAP : 0, after: 0 },
           }),
         ),
       );
@@ -790,32 +871,34 @@ export function buildDocxDocument(
     }
     const banner = e.cuiBanner?.trim() || cui.banner || 'CUI';
     enclSections.push({
-      properties: { page: { margin: { top: Math.round(0.5 * IN), right: IN, bottom: IN, left: IN } } },
+      properties: {
+        page: {
+          size: LETTER,
+          margin: { top: Math.round(0.5 * IN), right: IN, bottom: IN, left: IN, header: Math.round(0.25 * IN) },
+        },
+      },
       headers: cui.enabled ? { default: new Header({ children: [bannerPara(banner)] }) } : undefined,
-      footers: cui.enabled ? { default: new Footer({ children: [bannerPara(banner)] }) } : undefined,
+      // Explicit footer even with CUI off — an undefined footer INHERITS the letter section's
+      // page-number footer onto enclosure pages (the PDF excludes enclosure pages from numbering).
+      footers: { default: new Footer({ children: cui.enabled ? [bannerPara(banner)] : [spacer(0)] }) },
       children: enclKids,
     });
   });
 
-  // The letter section's CUI header/footer + the designation indicator block in its first-page footer.
-  const designationParas = () =>
-    [
-      `Controlled by: ${cui.controlledBy1}`,
-      cui.controlledBy2 ? `Controlled by: ${cui.controlledBy2}` : '',
-      `CUI Category: ${cui.category}`,
-      `Limited Dissemination Control: ${cui.dissemination}`,
-      cui.poc ? `POC: ${cui.poc}` : '',
-      cui.transmittalNote.trim(), // transmittal-document status note (e.g. "…UNCONTROLLED when separated")
-    ]
-      .filter(Boolean)
-      .map(
-        (line) =>
-          new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            children: [new TextRun({ text: line, font: FONT, size: 16 })],
-            spacing: { after: 0 },
-          }),
-      );
+  // The letter section's CUI header/footer + the designation indicator block in its first-page
+  // footer — an internally left-aligned 8-pt column at the right, like the PDF draws it.
+  const designationBlock = () =>
+    identColumn(
+      [
+        `Controlled by: ${cui.controlledBy1}`,
+        cui.controlledBy2 ? `Controlled by: ${cui.controlledBy2}` : '',
+        `CUI Category: ${cui.category}`,
+        `Limited Dissemination Control: ${cui.dissemination}`,
+        cui.poc ? `POC: ${cui.poc}` : '',
+        cui.transmittalNote.trim(), // transmittal-document status note (e.g. "…UNCONTROLLED when separated")
+      ].filter(Boolean),
+      16,
+    );
 
   const letterBanner = cui.banner || 'CUI';
 
@@ -827,10 +910,10 @@ export function buildDocxDocument(
     state.includeCode ? ident.codeLine : '',
     ident.date,
   ].filter((l) => l.trim());
-  const contHeaderParas: Paragraph[] = isBusiness
-    ? contIdent.map(
-        (l) => new Paragraph({ alignment: AlignmentType.RIGHT, children: [R(l)], spacing: { after: 0 } }),
-      )
+  const contHeaderParas: (Paragraph | Table)[] = isBusiness
+    ? contIdent.length
+      ? [identColumn(contIdent)] // fig 11-3 p2: the repeated symbols are a left-aligned stack too
+      : []
     : state.subj.trim()
       ? [heading('Subj:', state.subj.toUpperCase())]
       : [];
@@ -840,7 +923,12 @@ export function buildDocxDocument(
     cui.enabled || hasCont
       ? {
           default: new Header({
-            children: [...(cui.enabled ? [bannerPara(letterBanner)] : []), ...contHeaderParas],
+            children: [
+              ...(cui.enabled ? [bannerPara(letterBanner)] : []),
+              // Pad the repeated Subj/ident down toward the 1-inch line (7-2.16), then one blank
+              // line so the body resumes on the second line below it (fig 7-2).
+              ...(hasCont ? [...headerPad(cui.enabled ? 3 : 4), ...contHeaderParas, ...headerPad(1)] : []),
+            ],
           }),
           // Page 1 carries the full heading already; show only the CUI banner there (if any).
           ...(cui.enabled ? { first: new Header({ children: [bannerPara(letterBanner)] }) } : {}),
@@ -860,7 +948,7 @@ export function buildDocxDocument(
       children: [pageNumberPara(), ...(cui.enabled ? [bannerPara(letterBanner)] : [])],
     }),
     first: new Footer({
-      children: cui.enabled ? [...designationParas(), bannerPara(letterBanner)] : [spacer(0)],
+      children: cui.enabled ? [designationBlock(), bannerPara(letterBanner)] : [spacer(0)],
     }),
   };
 
@@ -879,7 +967,17 @@ export function buildDocxDocument(
     sections: [
       {
         properties: {
-          page: { margin: { top: Math.round(0.5 * IN), right: IN, bottom: IN, left: IN } },
+          page: {
+            size: LETTER,
+            // Printed letterhead occupies the 0.5–1in band; plain bond starts at the 1in margin.
+            margin: {
+              top: lh.mode === 'on' ? Math.round(0.5 * IN) : IN,
+              right: IN,
+              bottom: IN,
+              left: IN,
+              header: Math.round(0.25 * IN), // CUI banner rides at ~0.25in like the PDF
+            },
+          },
           // Always on: page 1 needs a distinct (Subj-free, unnumbered) header/footer from pages 2+.
           titlePage: true,
         },
@@ -893,7 +991,10 @@ export function buildDocxDocument(
         ? [
             {
               properties: {
-                page: { margin: { top: Math.round(0.5 * IN), right: IN, bottom: IN, left: IN } },
+                page: {
+                  size: LETTER,
+                  margin: { top: IN, right: IN, bottom: IN, left: IN, header: Math.round(0.25 * IN) },
+                },
               },
               // Explicit header (empty when no CUI) — an undefined header would INHERIT the letter
               // section's Subj continuation header, bleeding it onto the endorsement pages.
