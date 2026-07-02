@@ -29,18 +29,18 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
 - ☑ Endorsement spill-over pages: re-arm the Subj continuation header (exports lack it; preview has it).
 - ☑ Ref markers past 26 break (`({`) in the PDF while preview/docx print `(aa)`.
 
-## Batch 3 — executive memo family (all three renderers) ☐
-- ☐ Head order inverted: figures 12-9/10/11 put the centered title ABOVE the date/control line.
-- ☐ FOR:/FROM:/SUBJECT: are double-spaced in the figures (blank line between); render single-spaces.
-- ☐ Memo-For: ½-inch paragraph indent (figure text explicit; render 0.25in); signature starts AT page
+## Batch 3 — executive memo family ☑ (remaining: preview spill-page SUBJECT label uses Subj: style — minor)
+- ☑ Head order inverted: figures 12-9/10/11 put the centered title ABOVE the date/control line.
+- ☑ FOR:/FROM:/SUBJECT: are double-spaced in the figures (blank line between); render single-spaces.
+- ☑ Memo-For: ½-inch paragraph indent (figure text explicit; render 0.25in); signature starts AT page
   center (render block-centers); `cc:` stacks label then names (render inlines); decision line follows
   RECOMMENDATION with no blank; Info-memo carries leftover recommendation spacing.
-- ☐ Continuation pages must repeat `SUBJECT:` (fig 12-15 footnote) — today PDF omits, docx prints
+- ☑ Continuation pages must repeat (PDF+docx; preview label still Subj:-style) `SUBJECT:` (fig 12-15 footnote) — today PDF omits, docx prints
   `Subj:` uppercased, preview a third form.
-- ☐ Exports print preview placeholder text as real content (empty FOR/recommendation/attachments
+- ☑ Exports print preview placeholder text as real content (empty FOR/recommendation/attachments
   export fabricated strings) — exports must render only user content.
-- ☐ Coordination-page title is regular weight in fig 12-13 (render bolds it).
-- ☐ Re-measure bullet left position vs fig 12-9 (agents split: flush-margin vs 0.25in).
+- ☑ Coordination-page title is regular weight in fig 12-13 (render bolds it).
+- ☑ Re-measure bullet left position (measured: FLUSH at margin, x identical to FOR: label; all three renderers now bullet-at-margin with 0.25in hang) vs fig 12-9 (agents split: flush-margin vs 0.25in).
 
 ## Batch 4 — joint letter (all three renderers) ☐
 - ☐ Ident columns spread full width: junior at LEFT margin, senior at RIGHT (fig 7-4; render clusters

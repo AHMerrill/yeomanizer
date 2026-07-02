@@ -142,7 +142,7 @@ export async function buildSignablePdf(
   if (state.type === 'coordination-page') {
     top = M_TOP + 0.5 * PT;
     const title = 'COORDINATION PAGE';
-    put(title, LEFT + (RIGHT - LEFT - bold.widthOfTextAtSize(title, SIZE)) / 2, bold);
+    put(title, LEFT + (RIGHT - LEFT - font.widthOfTextAtSize(title, SIZE)) / 2); // regular weight (fig 12-13)
     gap(PARA_GAP * 2);
     const cols = [LEFT, LEFT + 1.2 * PT, LEFT + 3.3 * PT, LEFT + 4.5 * PT, LEFT + 5.6 * PT];
     const colW = [1.1 * PT, 1.9 * PT, 1.1 * PT, 1.0 * PT, 0.85 * PT];
@@ -282,16 +282,8 @@ export async function buildSignablePdf(
     colB.forEach((l) => put(l, RIGHT - colBW));
     top = Math.max(moaMaxTop, top);
   } else if (isExec) {
-    // Executive memo (Ch 12): a right-aligned date + control symbol ("UNSECNAV ____"). A principal's
-    // memo is dated when signed, so the date may be blank.
-    const em = state.execMemo;
-    const idLines = [ident.date || null, isMemoFor ? null : em.controlLine.trim() || null].filter(
-      (l): l is string => l !== null,
-    );
-    if (idLines.length) {
-      const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
-      idLines.forEach((l) => put(l, RIGHT - blockW));
-    }
+    // Executive memo: the date/control block renders BELOW the centered title (figs 12-9/12-11
+    // stack title → date → control symbol), so it's drawn in the title phase — nothing here.
   } else {
     // A KEPT but blank SSIC / code line reserves a blank line (a space) so an admin can fill it in by
     // hand later; an un-kept line is dropped entirely.
@@ -363,17 +355,34 @@ export async function buildSignablePdf(
     put(`JOINT ${state.joint.kind === 'MEMORANDUM' ? 'MEMORANDUM' : 'LETTER'}`, LEFT);
     gap(PARA_GAP);
   } else if (isExec) {
-    // Centered "ACTION MEMO" / "INFO MEMO" title (fig 12-9 / 12-11) — or, for a plain "Memorandum For"
-    // (fig 12-14), the left-aligned "MEMORANDUM FOR <recipient>" addressing line.
-    gap(PARA_GAP);
-    room(SIZE * BODY_LH);
+    const em = state.execMemo;
     if (isMemoFor) {
-      put(`MEMORANDUM FOR ${state.to || 'SECRETARY OF DEFENSE'}`, LEFT);
+      // Fig 12-14: right-aligned date space (a principal's memo is dated when signed), then the
+      // left-aligned "MEMORANDUM FOR <recipient>" addressing line. No fabricated recipient —
+      // exports print only what the user typed (the preview's gray hint is screen-only).
+      if (ident.date) put(ident.date, RIGHT - font.widthOfTextAtSize(ident.date, SIZE));
+      gap(PARA_GAP);
+      if (state.to.trim()) {
+        room(SIZE * BODY_LH);
+        put(`MEMORANDUM FOR ${state.to.trim()}`, LEFT);
+        gap(PARA_GAP);
+      }
     } else {
-      const t = state.execMemo.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO';
+      // Figs 12-9/12-11: centered "ACTION MEMO"/"INFO MEMO" title FIRST, then the right-aligned
+      // date + control symbol beneath it.
+      const t = em.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO';
+      room(SIZE * BODY_LH);
       put(t, LEFT + (RIGHT - LEFT - bold.widthOfTextAtSize(t, SIZE)) / 2, bold);
+      gap(PARA_GAP);
+      const idLines = [ident.date || null, em.controlLine.trim() || null].filter(
+        (l): l is string => l !== null,
+      );
+      if (idLines.length) {
+        const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
+        idLines.forEach((l) => put(l, RIGHT - blockW));
+      }
+      gap(PARA_GAP);
     }
-    gap(PARA_GAP);
   } else {
     gap(PARA_GAP); // one blank line from the ident block to From: (fig 7-1's single hard return)
   }
@@ -406,12 +415,26 @@ export async function buildSignablePdf(
       put(lines[0] ?? '', textX);
       lines.slice(1).forEach((ln) => put(ln, textX));
     };
-    if (!isMemoFor && state.to) erow('FOR:', state.to);
-    if (!isMemoFor && em.from.trim()) erow('FROM:', em.from.trim());
-    if (state.subj.trim()) erow('SUBJECT:', state.subj.trim());
+    // Figs 12-9/12-11 double-space the FOR:/FROM:/SUBJECT: block — one blank line between entries.
+    const entries: [string, string][] = [];
+    if (!isMemoFor && state.to.trim()) entries.push(['FOR:', state.to.trim()]);
+    if (!isMemoFor && em.from.trim()) entries.push(['FROM:', em.from.trim()]);
+    if (state.subj.trim()) entries.push(['SUBJECT:', state.subj.trim()]);
+    entries.forEach(([l, v], i) => {
+      if (i) gap(PARA_GAP);
+      erow(l, v);
+    });
     const erefs = state.refs.filter((r) => r.text.trim());
+    if (erefs.length) gap(PARA_GAP);
     if (erefs.length === 1) erow('Reference:', erefs[0].text);
     else erefs.forEach((r, i) => erow(i === 0 ? 'References:' : '', `(${refLetter(i)}) ${r.text}`));
+    // Fig 12-15 (footnote): "Add subject line on second and corresponding pages."
+    if (state.subj.trim()) {
+      contHeader = () => {
+        erow('SUBJECT:', state.subj.trim());
+        gap(PARA_GAP);
+      };
+    }
   }
   // The business letter is addressed by the inside address above — no From/To/Via/Subj/Ref/Encl heading.
   else if (!isBusiness) {
@@ -483,9 +506,20 @@ export async function buildSignablePdf(
       // ladder one level deeper for subparagraphs (11-2.6 / Ch 12).
       const mk = (business || execBullet) && depth === 0 ? null : paragraphMarker(depth, i);
       const marker = mk ? markerText(mk) : execBullet && depth === 0 ? '•' : '';
-      const indent = (business || execBullet ? depthIndentIn(depth + 1) : depthIndentIn(depth)) * PT;
+      // Fig 12-9 (measured): the exec bullet sits FLUSH at the left margin with the text hanging
+      // at 0.25in. Fig 12-14: Memo-For paragraphs indent a HALF inch. Business stays at 0.25.
+      const indent = (
+        execBullet && depth === 0
+          ? 0
+          : isMemoFor && depth === 0
+            ? 0.5
+            : business || execBullet
+              ? depthIndentIn(depth + 1)
+              : depthIndentIn(depth)
+      ) * PT;
       const markerX = LEFT + indent;
-      const textX = markerX + (marker ? font.widthOfTextAtSize(marker, SIZE) + PGAP : 0);
+      const textX =
+        execBullet && depth === 0 ? LEFT + 0.25 * PT : markerX + (marker ? font.widthOfTextAtSize(marker, SIZE) + PGAP : 0);
       // Portion marking when active: "(CUI)" on a marked paragraph, else "(U)" — sits before the title.
       const portion = portionActive ? (p.cui ? '(CUI) ' : '(U) ') : '';
       const portionW = portion ? font.widthOfTextAtSize(portion, SIZE) : 0;
@@ -700,58 +734,65 @@ export async function buildSignablePdf(
   // acts by initialing the decision line (figs 12-9 / 12-11).
   const drawExecClose = () => {
     const em = state.execMemo;
+    // Exports print ONLY user content — the preview's gray sample hints are screen-only, and a
+    // fabricated recommendation/attachment line in a CAC-signable PDF would be a forgery hazard.
     if (isMemoFor) {
-      // Plain "Memorandum For" (fig 12-14): a CAC-signable centered signature, then Attachments + cc.
-      gap(3 * PARA_GAP);
-      const fieldTopY = PAGE_H - top - 2;
-      const fieldH = 30;
-      top += fieldH;
-      const center = (t: string) => put(t, LEFT + (RIGHT - LEFT - font.widthOfTextAtSize(t, SIZE)) / 2);
-      if (state.signature.name.trim()) center(state.signature.name.trim());
-      if (state.signature.title.trim()) center(state.signature.title.trim());
-      const fx = (PAGE_W - 3 * PT) / 2;
+      // Plain "Memorandum For" (fig 12-14): the name-only signature STARTS at page center (the
+      // figure follows the naval signature position), on the 4th line below the text.
+      gap(3 * SIZE * BODY_LH - PARA_GAP);
+      room(SIZE * BODY_LH * 4);
+      const fieldBottom = PAGE_H - top - 2;
+      if (state.signature.name.trim()) put(state.signature.name.trim(), sigX);
+      if (state.signature.title.trim()) put(state.signature.title.trim(), sigX);
       sigRefs.push(
-        addSignatureField(doc, page, [fx, fieldTopY - fieldH, fx + 3 * PT, fieldTopY], 'Signature1', PDFName, PDFString),
+        addSignatureField(doc, page, [sigX, fieldBottom, sigX + 3 * PT, fieldBottom + 34], 'Signature1', PDFName, PDFString),
       );
-      gap(PARA_GAP);
-      put('Attachments:', LEFT);
-      put(em.attachments.trim() || 'As stated', LEFT);
-      if (em.cc?.trim()) {
+      if (em.attachments.trim()) {
         gap(PARA_GAP);
-        put(`cc:  ${em.cc.trim()}`, LEFT);
+        put('Attachments:', LEFT);
+        put(em.attachments.trim(), LEFT);
+      }
+      if (em.cc?.trim()) {
+        // Fig 12-15: "cc:" on its own line, each recipient on the line below.
+        gap(PARA_GAP);
+        put('cc:', LEFT);
+        em.cc
+          .split(/[\n;]/)
+          .map((c) => c.trim())
+          .filter(Boolean)
+          .forEach((c) => put(c, LEFT));
       }
       return;
     }
-    gap(PARA_GAP);
-    if (em.kind === 'ACTION') {
+    if (em.kind === 'ACTION' && em.recommendation.trim()) {
+      gap(PARA_GAP);
       const recLabel = 'RECOMMENDATION:  ';
       const recX = LEFT + font.widthOfTextAtSize(recLabel, SIZE);
-      const recLines = wrap(
-        em.recommendation.trim() || 'That SECNAV sign the action at TAB A.',
-        font,
-        SIZE,
-        RIGHT - recX,
-      );
+      const recLines = wrap(em.recommendation.trim(), font, SIZE, RIGHT - recX);
       room(SIZE * BODY_LH);
       page.drawText(recLabel, { x: LEFT, y: PAGE_H - top - baselineDrop(SIZE, BODY_LH), font, size: SIZE });
       put(recLines[0] ?? '', recX);
       recLines.slice(1).forEach((ln) => put(ln, LEFT));
-      if (em.decisionLines) {
-        gap(PARA_GAP);
-        const fieldTopY = PAGE_H - top - 2;
-        put(`Approve  ${'_'.repeat(18)}      Disapprove  ${'_'.repeat(18)}`, LEFT);
-        // A CAC field over the "Approve" blank so the principal can sign the approval.
-        const approveX = LEFT + font.widthOfTextAtSize('Approve  ', SIZE);
-        sigRefs.push(
-          addSignatureField(doc, page, [approveX, fieldTopY - 22, approveX + 1.6 * PT, fieldTopY], 'Signature1', PDFName, PDFString),
-        );
-      }
     }
-    gap(PARA_GAP);
-    put(`COORDINATION:  ${em.coordination.trim() || 'None'}`, LEFT);
-    gap(PARA_GAP);
-    put('Attachments:', LEFT);
-    put(em.attachments.trim() || 'As stated', LEFT);
+    if (em.kind === 'ACTION' && em.decisionLines) {
+      // Fig 12-9: the decision line follows the RECOMMENDATION directly (no blank line).
+      const fieldTopY = PAGE_H - top - 2;
+      put(`Approve  ${'_'.repeat(18)}      Disapprove  ${'_'.repeat(18)}`, LEFT);
+      // A CAC field over the "Approve" blank so the principal can sign the approval.
+      const approveX = LEFT + font.widthOfTextAtSize('Approve  ', SIZE);
+      sigRefs.push(
+        addSignatureField(doc, page, [approveX, fieldTopY - 22, approveX + 1.6 * PT, fieldTopY], 'Signature1', PDFName, PDFString),
+      );
+    }
+    if (em.coordination.trim()) {
+      gap(PARA_GAP);
+      put(`COORDINATION:  ${em.coordination.trim()}`, LEFT);
+    }
+    if (em.attachments.trim()) {
+      gap(PARA_GAP);
+      put('Attachments:', LEFT);
+      put(em.attachments.trim(), LEFT);
+    }
     if (em.preparedBy.trim()) {
       gap(PARA_GAP);
       put(`Prepared by:  ${em.preparedBy.trim()}`, LEFT);

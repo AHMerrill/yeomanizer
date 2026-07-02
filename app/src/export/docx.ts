@@ -209,6 +209,7 @@ function flattenBody(
   portionActive: boolean,
   business = false,
   execBullet = false,
+  topIndentIn?: number, // depth-0 first-line indent override (Memo-For's half inch, fig 12-14)
 ): void {
   list.forEach((p, i) => {
     const m = paragraphMarker(depth, i);
@@ -217,10 +218,15 @@ function flattenBody(
     const noMark = business && depth === 0;
     const bulletTop = execBullet && depth === 0;
     const mark = portionActive ? (p.cui ? '(CUI) ' : '(U) ') : '';
-    const indentIn = business || execBullet ? depthIndentIn(depth + 1) : depthIndentIn(depth);
-    // An exec-memo bullet hangs: the "•" sits at indentIn, text/continuation align ~0.18in past it
-    // (bullet width + gap), matching the PDF and fig 12-9. A tab carries the first line to that edge.
-    const HANG = 0.18;
+    const indentIn =
+      depth === 0 && topIndentIn
+        ? topIndentIn
+        : business || execBullet
+          ? depthIndentIn(depth + 1)
+          : depthIndentIn(depth);
+    // Fig 12-9 (measured): the exec bullet sits FLUSH at the left margin; text and wrapped lines
+    // hang at 0.25in. A tab carries the first line to the hanging edge.
+    const HANG = 0.25;
     out.push(
       new Paragraph({
         children: [
@@ -235,7 +241,8 @@ function flattenBody(
           ),
         ],
         indent: bulletTop
-          ? { left: Math.round((indentIn + HANG) * IN), hanging: Math.round(HANG * IN) }
+          ? { left: Math.round(HANG * IN), hanging: Math.round(HANG * IN) } // bullet at the margin
+
           : { firstLine: Math.round(indentIn * IN) },
         spacing: { after: BLANK },
       }),
@@ -320,7 +327,7 @@ export function buildDocxDocument(
           children: [
             new Paragraph({
               alignment: AlignmentType.CENTER,
-              children: [R('COORDINATION PAGE', { bold: true })],
+              children: [R('COORDINATION PAGE')],
               spacing: { after: 2 * BLANK },
             }),
             new Table({
@@ -462,10 +469,9 @@ export function buildDocxDocument(
         }),
       );
   } else if (isExec) {
-    // Executive memo (Ch 12): a right-aligned date + control symbol ("UNSECNAV ____"). A plain
-    // "Memorandum For" (fig 12-14) has no control symbol — just the date.
-    const em = state.execMemo;
-    [ident.date, isMemoFor ? '' : em.controlLine.trim()].filter((l) => l).forEach((l) => children.push(rightLine(l)));
+    // Executive memo: the date/control block renders BELOW the centered title (figs 12-9/12-11) —
+    // drawn in the title phase below. Memo-For keeps its date here (fig 12-14: date, then addressing).
+    if (isMemoFor && ident.date) children.push(rightLine(ident.date));
   } else if (identLines.length) {
     children.push(identColumn(identLines));
   }
@@ -498,22 +504,28 @@ export function buildDocxDocument(
       }),
     );
   } else if (isExec && isMemoFor) {
-    // Plain "Memorandum For" (fig 12-14): left-aligned "MEMORANDUM FOR <recipient>" addressing.
-    children.push(
-      new Paragraph({
-        children: [R(`MEMORANDUM FOR ${state.to || 'SECRETARY OF DEFENSE'}`)],
-        spacing: { before: BLANK, after: BLANK },
-      }),
-    );
+    // Plain "Memorandum For" (fig 12-14): left-aligned addressing. Exports print only user content
+    // (the preview's gray recipient hint is screen-only) — no fabricated recipient.
+    if (state.to.trim())
+      children.push(
+        new Paragraph({
+          children: [R(`MEMORANDUM FOR ${state.to.trim()}`)],
+          spacing: { before: BLANK, after: BLANK },
+        }),
+      );
   } else if (isExec) {
-    // Centered "ACTION MEMO" / "INFO MEMO" title (fig 12-9 / 12-11).
+    // Figs 12-9/12-11: centered "ACTION MEMO"/"INFO MEMO" title FIRST, then the right-aligned
+    // date + control symbol beneath it.
+    const em = state.execMemo;
     children.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [R(state.execMemo.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO', { bold: true })],
+        children: [R(em.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO', { bold: true })],
         spacing: { before: BLANK, after: BLANK },
       }),
     );
+    [ident.date, em.controlLine.trim()].filter((l) => l).forEach((l) => children.push(rightLine(l)));
+    children.push(spacer());
   } else {
     children.push(spacer());
   }
@@ -574,10 +586,17 @@ export function buildDocxDocument(
         indent: { left: EXEC_LBL, hanging: EXEC_LBL },
         spacing: { after: 0 },
       });
-    if (!isMemoFor && state.to) children.push(erow('FOR:', state.to));
-    if (!isMemoFor && em.from.trim()) children.push(erow('FROM:', em.from.trim()));
-    if (state.subj.trim()) children.push(erow('SUBJECT:', state.subj.trim()));
+    // Figs 12-9/12-11 double-space the FOR:/FROM:/SUBJECT: block — one blank line between entries.
+    const entries: [string, string][] = [];
+    if (!isMemoFor && state.to.trim()) entries.push(['FOR:', state.to.trim()]);
+    if (!isMemoFor && em.from.trim()) entries.push(['FROM:', em.from.trim()]);
+    if (state.subj.trim()) entries.push(['SUBJECT:', state.subj.trim()]);
+    entries.forEach(([l, v], i) => {
+      if (i) children.push(spacer(0));
+      children.push(erow(l, v));
+    });
     const erefs = state.refs.filter((r) => r.text.trim());
+    if (erefs.length) children.push(spacer(0));
     if (erefs.length === 1) children.push(erow('Reference:', erefs[0].text));
     else erefs.forEach((r, i) => children.push(erow(i === 0 ? 'References:' : '', `(${refLetter(i)}) ${r.text}`)));
   } else {
@@ -624,7 +643,7 @@ export function buildDocxDocument(
   } // end of the non-business heading block
 
   children.push(spacer());
-  flattenBody(state.body, 0, children, cui.enabled && anyCui(state.body), isBusiness || isMemoFor, isExec && !isMemoFor);
+  flattenBody(state.body, 0, children, cui.enabled && anyCui(state.body), isBusiness || isMemoFor, isExec && !isMemoFor, isMemoFor ? 0.5 : undefined);
 
   // Signature — left edge at page center. The export leaves the signature space blank so the
   // signer can wet-sign or CAC-sign the PDF in Adobe (no script-font placeholder).
@@ -684,26 +703,38 @@ export function buildDocxDocument(
     const em = state.execMemo;
     const line = (text: string, before = 0) =>
       new Paragraph({ children: [R(text)], spacing: { before, after: 0 } });
+    // Exports print ONLY user content — the preview's gray sample hints are screen-only; no
+    // fabricated recommendation/attachment strings in a signable document.
     if (isMemoFor) {
-      // Plain "Memorandum For" (fig 12-14): a centered signature, then Attachments and cc.
-      const center = (text: string, before = 0) =>
-        new Paragraph({ alignment: AlignmentType.CENTER, children: [R(text)], spacing: { before, after: 0 } });
-      if (state.signature.name.trim()) children.push(center(state.signature.name.trim(), SIG_GAP));
-      if (state.signature.title.trim()) children.push(center(state.signature.title.trim()));
-      children.push(line('Attachments:', BLANK));
-      children.push(line(em.attachments.trim() || 'As stated'));
-      if (em.cc?.trim()) children.push(line(`cc:  ${em.cc.trim()}`, BLANK));
-    } else {
-      if (em.kind === 'ACTION') {
-        children.push(
-          line(`RECOMMENDATION:  ${em.recommendation.trim() || 'That SECNAV sign the action at TAB A.'}`, BLANK),
-        );
-        if (em.decisionLines)
-          children.push(line(`Approve  ${'_'.repeat(18)}      Disapprove  ${'_'.repeat(18)}`, BLANK));
+      // Fig 12-14: the name-only signature STARTS at page center (naval signature position).
+      const sig = (text: string, before = 0) =>
+        new Paragraph({ children: [R(text)], indent: { left: sigIndent }, spacing: { before, after: 0 } });
+      if (state.signature.name.trim()) children.push(sig(state.signature.name.trim(), SIG_GAP));
+      if (state.signature.title.trim()) children.push(sig(state.signature.title.trim()));
+      if (em.attachments.trim()) {
+        children.push(line('Attachments:', BLANK));
+        children.push(line(em.attachments.trim()));
       }
-      children.push(line(`COORDINATION:  ${em.coordination.trim() || 'None'}`, BLANK));
-      children.push(line('Attachments:', BLANK));
-      children.push(line(em.attachments.trim() || 'As stated'));
+      if (em.cc?.trim()) {
+        // Fig 12-15: "cc:" on its own line, each recipient on the line below.
+        children.push(line('cc:', BLANK));
+        em.cc
+          .split(/[\n;]/)
+          .map((c) => c.trim())
+          .filter(Boolean)
+          .forEach((c) => children.push(line(c)));
+      }
+    } else {
+      if (em.kind === 'ACTION' && em.recommendation.trim())
+        children.push(line(`RECOMMENDATION:  ${em.recommendation.trim()}`, BLANK));
+      // Fig 12-9: the decision line follows the RECOMMENDATION directly (no blank line).
+      if (em.kind === 'ACTION' && em.decisionLines)
+        children.push(line(`Approve  ${'_'.repeat(18)}      Disapprove  ${'_'.repeat(18)}`));
+      if (em.coordination.trim()) children.push(line(`COORDINATION:  ${em.coordination.trim()}`, BLANK));
+      if (em.attachments.trim()) {
+        children.push(line('Attachments:', BLANK));
+        children.push(line(em.attachments.trim()));
+      }
       if (em.preparedBy.trim()) children.push(line(`Prepared by:  ${em.preparedBy.trim()}`, BLANK));
     }
   } else {
@@ -923,7 +954,17 @@ export function buildDocxDocument(
       ? [identColumn(contIdent)] // fig 11-3 p2: the repeated symbols are a left-aligned stack too
       : []
     : state.subj.trim()
-      ? [heading('Subj:', state.subj.toUpperCase())]
+      ? isExec
+        ? [
+            // Fig 12-15 footnote: exec continuation pages repeat "SUBJECT:" (Title Case, exec label).
+            new Paragraph({
+              children: [R('SUBJECT:'), new TextRun({ text: '\t', font: FONT, size: SZ }), R(state.subj.trim())],
+              tabStops: [{ type: TabStopType.LEFT, position: Math.round(0.92 * IN) }],
+              indent: { left: Math.round(0.92 * IN), hanging: Math.round(0.92 * IN) },
+              spacing: { after: 0 },
+            }),
+          ]
+        : [heading('Subj:', state.subj.toUpperCase())]
       : [];
   const hasCont = contHeaderParas.length > 0;
 

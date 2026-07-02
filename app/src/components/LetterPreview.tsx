@@ -79,23 +79,30 @@ function ParaFlow({
   portionActive,
   business,
   exec,
+  memoFor,
 }: {
   fp: FlatPara;
   portionActive: boolean;
   business?: boolean;
   exec?: boolean;
+  memoFor?: boolean;
 }) {
   // Business letter (Ch 11-2.6): main paragraphs are NOT numbered (just indented); subparagraphs are
   // lettered/numbered the same as a standard letter, so the ladder shifts one level deeper. Exec memo
   // (Ch 12, figs 12-9/12-11): main paragraphs are BULLETED ("•"); subparagraphs use the same ladder.
-  const indent = business || exec ? depthIndentIn(fp.depth + 1) : depthIndentIn(fp.depth);
+  const indent =
+    memoFor && fp.depth === 0
+      ? 0.5 // fig 12-14: Memo-For paragraphs indent a half inch
+      : business || exec
+        ? depthIndentIn(fp.depth + 1)
+        : depthIndentIn(fp.depth);
   const bulletTop = exec && fp.depth === 0;
   const showMarker = !((business && fp.depth === 0) || bulletTop);
   // Exec-memo bullets hang: the "•" sits at indent, and wrapped lines align ~0.18in past it (bullet
   // width + gap), matching the PDF/docx and fig 12-9. Everything else indents just the first line.
-  const HANG = 0.18;
+  const HANG = 0.25; // fig 12-9 (measured): bullet flush at the margin, text hangs at 0.25in
   const style = bulletTop
-    ? { paddingLeft: `${indent + HANG}in`, textIndent: `-${HANG}in` }
+    ? { paddingLeft: `${HANG}in`, textIndent: `-${HANG}in` }
     : { textIndent: `${indent}in` };
   return (
     <p className="para" data-sync={`p:${fp.key}`} style={style}>
@@ -496,18 +503,25 @@ function ExecMemoHead({ state, ident }: { state: LetterState; ident: IdentLines 
       {lh.mode === 'preprinted' && (
         <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(0.86, lh.preprintedLines * 0.11)}in` }} />
       )}
-      {/* Date + control symbol, upper right. A principal's memo is dated when signed. */}
-      <div className={lh.mode === 'off' ? 'ident no-letterhead' : 'ident'}>
-        {ident.date ? <div>{ident.date}</div> : <div className="ph">Date (added when signed)</div>}
-        {!isMemoFor && em.controlLine.trim() && <div>{em.controlLine}</div>}
-      </div>
       {isMemoFor ? (
-        // Plain "Memorandum For" (fig 12-14): "MEMORANDUM FOR <recipient>" addressing (no title/FROM).
-        <div className="exec-memofor" data-sync="head">
-          MEMORANDUM FOR <span className={state.to ? '' : 'ph'}>{state.to || 'SECRETARY OF DEFENSE'}</span>
-        </div>
+        // Fig 12-14: right-aligned date space, then the "MEMORANDUM FOR <recipient>" addressing.
+        <>
+          <div className={lh.mode === 'off' ? 'ident no-letterhead' : 'ident'}>
+            {ident.date ? <div>{ident.date}</div> : <div className="ph">Date (added when signed)</div>}
+          </div>
+          <div className="exec-memofor" data-sync="head">
+            MEMORANDUM FOR <span className={state.to ? '' : 'ph'}>{state.to || 'SECRETARY OF DEFENSE'}</span>
+          </div>
+        </>
       ) : (
-        <div className="exec-title" data-sync="head">{title}</div>
+        // Figs 12-9/12-11: centered title FIRST, then the date + control symbol beneath it.
+        <>
+          <div className="exec-title" data-sync="head">{title}</div>
+          <div className="ident exec-ident">
+            {ident.date ? <div>{ident.date}</div> : <div className="ph">Date (added when signed)</div>}
+            {em.controlLine.trim() && <div>{em.controlLine}</div>}
+          </div>
+        </>
       )}
       <div className="headings exec">
         {!isMemoFor && (
@@ -536,7 +550,7 @@ function ExecMemoHead({ state, ident }: { state: LetterState; ident: IdentLines 
                 ? refs[0].text
                 : refs.map((r, i) => (
                     <div key={r.id}>
-                      ({String.fromCharCode(97 + i)}) {r.text}
+                      ({refLetter(i)}) {r.text}
                     </div>
                   ))}
             </span>
@@ -562,9 +576,21 @@ function ExecMemoClose({ state }: { state: LetterState }) {
           {sig.title && <div>{sig.title}</div>}
         </div>
         <div className="exec-meta">
-          <div className="exec-attach">Attachments:</div>
-          <div>{em.attachments.trim() || 'As stated'}</div>
-          {em.cc?.trim() && <div className="exec-cc">cc:&ensp;{em.cc}</div>}
+          {/* Empty fields show gray screen-only hints (.ph never prints/exports). */}
+          <div className={em.attachments.trim() ? 'exec-attach' : 'exec-attach ph'}>Attachments:</div>
+          <div className={em.attachments.trim() ? '' : 'ph'}>{em.attachments.trim() || 'As stated'}</div>
+          {em.cc?.trim() && (
+            <div className="exec-cc">
+              <div>cc:</div>
+              {em.cc
+                .split(/[\n;]/)
+                .map((c) => c.trim())
+                .filter(Boolean)
+                .map((c, i) => (
+                  <div key={i}>{c}</div>
+                ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -587,12 +613,12 @@ function ExecMemoClose({ state }: { state: LetterState }) {
         </div>
       )}
       <div className="exec-meta">
-        <div>
+        <div className={em.coordination.trim() ? '' : 'ph'}>
           <span className="label">COORDINATION:</span>{' '}
-          <span className={em.coordination.trim() ? '' : 'ph'}>{em.coordination.trim() || 'TAB D (or None)'}</span>
+          <span>{em.coordination.trim() || 'TAB D (or None)'}</span>
         </div>
-        <div className="exec-attach">Attachments:</div>
-        <div>{em.attachments.trim() || 'As stated'}</div>
+        <div className={em.attachments.trim() ? 'exec-attach' : 'exec-attach ph'}>Attachments:</div>
+        <div className={em.attachments.trim() ? '' : 'ph'}>{em.attachments.trim() || 'As stated'}</div>
         {em.preparedBy.trim() && <div className="exec-prepared">Prepared by: {em.preparedBy}</div>}
       </div>
     </div>
@@ -979,6 +1005,7 @@ function LetterDoc({ state }: { state: LetterState }) {
           portionActive={portionActive}
           business={isBusiness || isExecMemoFor}
           exec={isExec && !isExecMemoFor}
+          memoFor={isExecMemoFor}
         />
       ),
     })),

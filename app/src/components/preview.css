@@ -406,14 +406,22 @@
   --label-col: 1in;
   margin-top: 0.2in;
 }
+/* Figs 12-9/12-11: the FOR/FROM/SUBJECT block is double-spaced (one blank line between entries). */
+.headings.exec .hrow + .hrow {
+  margin-top: var(--para-gap);
+}
+/* Title first, then the date + control block beneath it (figs 12-9/12-10/12-11). */
+.exec-ident {
+  margin-top: var(--para-gap);
+}
 .exec-close {
-  margin-top: 0.3in;
+  margin-top: var(--para-gap);
 }
 .exec-rec {
   margin-bottom: 0.16in;
 }
 .exec-decision {
-  margin-top: 0.12in;
+  margin-top: 0; /* the decision line follows the RECOMMENDATION directly (fig 12-9) */
 }
 .exec-attach {
   margin-top: 0.14in;
@@ -426,8 +434,10 @@
   margin: 0.16in 0 0.2in;
 }
 .exec-memofor-sig {
-  text-align: center;
-  margin-bottom: 0.3in;
+  /* Starts at page center like a naval signature block (fig 12-14), name on the 4th line below. */
+  margin-left: 3.25in;
+  margin-top: calc(var(--para-gap) * 3);
+  margin-bottom: var(--para-gap);
 }
 .exec-cc {
   margin-top: 0.14in;
@@ -435,7 +445,6 @@
 /* Coordination page (Ch 12, fig 12-13): a centered title over a 5-column concurrence table. */
 .coord-title {
   text-align: center;
-  font-weight: bold;
   margin: 0.2in 0 0.3in;
 }
 .coord-table {
