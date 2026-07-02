@@ -10,6 +10,7 @@
 import type { LetterState, Paragraph } from '../types';
 import {
   buildIdent,
+  refLetter,
   ENDORSE_ORD,
   basicLetterId,
   remainingVias,
@@ -374,7 +375,7 @@ export async function buildSignablePdf(
     }
     gap(PARA_GAP);
   } else {
-    gap(0.3 * PT - PARA_GAP < 0 ? 0.14 * PT : 0.3 * PT); // .headings margin-top (~0.3in from ident)
+    gap(PARA_GAP); // one blank line from the ident block to From: (fig 7-1's single hard return)
   }
   // A long heading entry hangs its continuation under the entry's FIRST WORD (7-2.6–11): under the
   // content for From/To/Via/Subj, and under the text — past the marker — for the numbered Via/Ref/Encl
@@ -410,7 +411,7 @@ export async function buildSignablePdf(
     if (state.subj.trim()) erow('SUBJECT:', state.subj.trim());
     const erefs = state.refs.filter((r) => r.text.trim());
     if (erefs.length === 1) erow('Reference:', erefs[0].text);
-    else erefs.forEach((r, i) => erow(i === 0 ? 'References:' : '', `(${String.fromCharCode(97 + i)}) ${r.text}`));
+    else erefs.forEach((r, i) => erow(i === 0 ? 'References:' : '', `(${refLetter(i)}) ${r.text}`));
   }
   // The business letter is addressed by the inside address above — no From/To/Via/Subj/Ref/Encl heading.
   else if (!isBusiness) {
@@ -436,7 +437,7 @@ export async function buildSignablePdf(
   const refs = state.refs.filter((r) => r.text.trim());
   refs.forEach((r, i) => {
     if (i === 0) gap(PARA_GAP);
-    headRow(i === 0 ? 'Ref:' : '', r.text, `(${String.fromCharCode(97 + i)})  `);
+    headRow(i === 0 ? 'Ref:' : '', r.text, `(${refLetter(i)})  `);
   });
   const encls = state.encls.filter((e) => e.text.trim());
   encls.forEach((e, i) => {
@@ -537,6 +538,9 @@ export async function buildSignablePdf(
         }
         if (cur.length || !rows.length) rows.push({ words: cur, startX });
       }
+      // 7-2.13 ¶3a: a paragraph may not START at the bottom of a page unless at least two of its
+      // lines fit there — check before the first row so a lone first line never orphans.
+      room(SIZE * BODY_LH * Math.min(2, rows.length));
       rows.forEach((row, li) => {
         room(SIZE * BODY_LH);
         const baseY = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
@@ -594,17 +598,19 @@ export async function buildSignablePdf(
   // endorsement gets its own block + CAC field; all fields share one AcroForm built at the end. ----
   const sigX = LEFT + 3.25 * PT;
   const signatureBlock = (name: string, title: string, authority: string | undefined, fieldName: string) => {
-    gap(PARA_GAP * 2.6 - PARA_GAP);
+    // The typed name lands on the FOURTH line below the last text line (7-2.14; the figures show
+    // exactly three blank lines). The body loop already advanced one paragraph gap, so add the rest.
+    gap(3 * SIZE * BODY_LH - PARA_GAP);
     room(SIZE * BODY_LH * 4);
-    const fieldTopY = PAGE_H - top - 2; // the clickable field sits just above the typed name
-    const fieldH = 30;
-    top += fieldH;
+    // The clickable CAC field overlays the blank signing space ABOVE the typed name. It's an
+    // annotation, not content — consuming layout height for it pushed the name a line too deep.
+    const fieldBottom = PAGE_H - top - 2;
     if (name) put(name, sigX);
     if (title) put(title, sigX);
     if (authority === 'by-direction') put('By direction', sigX);
     if (authority === 'acting') put('Acting', sigX);
     sigRefs.push(
-      addSignatureField(doc, page, [sigX, fieldTopY - fieldH, sigX + 3 * PT, fieldTopY], fieldName, PDFName, PDFString),
+      addSignatureField(doc, page, [sigX, fieldBottom, sigX + 3 * PT, fieldBottom + 34], fieldName, PDFName, PDFString),
     );
   };
 
@@ -614,17 +620,16 @@ export async function buildSignablePdf(
     const biz = state.business;
     gap(PARA_GAP * 0.4); // "Sincerely," sits just below the last body line
     put(biz.complimentaryClose.trim() || 'Sincerely,', sigX);
-    gap(PARA_GAP * 2.6); // the signer's name begins ~4 lines below the close
+    // Typed name on the 4th line below the close (11-2.9 / fig 11-3's three hard returns).
+    gap(3 * SIZE * BODY_LH);
     room(SIZE * BODY_LH * 4);
-    const fieldTopY = PAGE_H - top - 2;
-    const fieldH = 30;
-    top += fieldH;
+    const fieldBottom = PAGE_H - top - 2; // CAC field overlays the blank signing space above the name
     if (state.signature.name) put(state.signature.name, sigX);
     if (state.signature.title) put(state.signature.title, sigX);
     if (state.signature.authority === 'by-direction') put('By direction', sigX);
     if (state.signature.authority === 'acting') put('Acting', sigX);
     sigRefs.push(
-      addSignatureField(doc, page, [sigX, fieldTopY - fieldH, sigX + 3 * PT, fieldTopY], 'Signature1', PDFName, PDFString),
+      addSignatureField(doc, page, [sigX, fieldBottom, sigX + 3 * PT, fieldBottom + 34], 'Signature1', PDFName, PDFString),
     );
     const bizEncls = state.encls.filter((e) => e.text.trim());
     if (bizEncls.length === 1) {
@@ -632,8 +637,12 @@ export async function buildSignablePdf(
       put(`Enclosure:  ${bizEncls[0].text}`, LEFT);
     } else if (bizEncls.length > 1) {
       gap(PARA_GAP);
-      put('Enclosures:', LEFT);
-      bizEncls.forEach((e, i) => put(`${i + 1}.  ${e.text}`, LEFT));
+      // Fig 11-3: the first item rides the label line ("Enclosures: 1. …"); later items align
+      // under the first item's number.
+      const enclLabel = 'Enclosures:  ';
+      const enclItemX = LEFT + font.widthOfTextAtSize(enclLabel, SIZE);
+      put(`${enclLabel}1.  ${bizEncls[0].text}`, LEFT);
+      bizEncls.slice(1).forEach((e, i) => put(`${i + 2}.  ${e.text}`, enclItemX));
     }
     if (biz.separateMailing.trim()) {
       gap(PARA_GAP);
@@ -783,7 +792,9 @@ export async function buildSignablePdf(
   // ---- Endorsements — each on its own page with its own signature block + CAC field (Ch 9) ----
   contHeader = null; // basic-letter Subj must not bleed onto endorsement/enclosure pages
   const onBasic = `ENDORSEMENT on ${basicLetterId(state, today)}`;
-  state.endorsements.forEach((e, i) => {
+  // A standalone endorsement (type 'endorsement') IS the document — appended endorsement pages
+  // belong only to letters/memos (the preview and docx already gate this way).
+  (state.type === 'endorsement' ? [] : state.endorsements).forEach((e, i) => {
     newPage();
     // New-page endorsement identification block (9-2.2: repeat the basic letter's SSIC; the endorser
     // adds its own serial + date). Right-aligned, matching the preview's endorsement ident.
@@ -813,8 +824,17 @@ export async function buildSignablePdf(
       headRow('Subj:', state.subj.toUpperCase());
     }
     gap(PARA_GAP);
+    // An endorsement spilling onto another page repeats the Subj line like any letter (7-2.16);
+    // the preview already does this — the export was leaving spill pages headerless.
+    if (state.subj.trim()) {
+      contHeader = () => {
+        headRow('Subj:', state.subj.toUpperCase());
+        gap(PARA_GAP);
+      };
+    }
     drawBody(e.body, 0, state.cui.enabled && anyCui(e.body));
     signatureBlock(e.sigName, e.sigTitle, e.authority, `Signature${i + 2}`);
+    contHeader = null; // enclosure pages bring their own headers
   });
 
   // ---- In-document enclosures — appended as their own page(s), marked "Enclosure (n)" (§7).

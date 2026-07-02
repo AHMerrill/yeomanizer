@@ -3,7 +3,7 @@
 // how we verify the vector layout without a human in the loop. Gated so normal test runs skip it:
 //   GEN_PDF=1 npx vitest run src/export/_render_samples.test.ts
 import { it } from 'vitest';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { buildSignablePdf } from './signablePdf';
 import { defaultState, defaultFor } from '../defaultState';
 import type { LetterState } from '../types';
@@ -11,6 +11,9 @@ import type { LetterState } from '../types';
 const RUN = process.env.GEN_PDF === '1';
 const today = new Date(2006, 8, 7);
 const OUT = '/tmp/ynpdf';
+// Real seal bytes read from disk — the harness can't fetch Vite asset URLs, so without this every
+// sample rendered seal-less and figure comparisons mis-flagged the letterhead as missing its seal.
+const SEAL = new Uint8Array(readFileSync(new URL('../assets/dow-seal.png', import.meta.url)));
 
 const base: LetterState = {
   ...defaultState,
@@ -33,7 +36,7 @@ const base: LetterState = {
 
 (RUN ? it : it.skip)('render sample PDFs to disk', async () => {
   mkdirSync(OUT, { recursive: true });
-  writeFileSync(`${OUT}/basic.pdf`, await buildSignablePdf(base, today));
+  writeFileSync(`${OUT}/basic.pdf`, await buildSignablePdf(base, today, SEAL));
 
   // Long From/To/Via/Subj/Ref/Encl that must wrap — verifies hang-indent alignment per part (7-2.6–11).
   const headwrap: LetterState = {
@@ -57,13 +60,13 @@ const base: LetterState = {
       'Chief of Naval Personnel',
     ],
   };
-  writeFileSync(`${OUT}/headwrap.pdf`, await buildSignablePdf(headwrap, today));
+  writeFileSync(`${OUT}/headwrap.pdf`, await buildSignablePdf(headwrap, today, SEAL));
 
   // Round-trip the long-headings sample through .json export → import, then re-render — the
   // generate → export → re-import → view-again pipeline; proves the import preserves every heading.
   const { serializeProject, parseProject } = await import('./roundtrip');
   const headwrapRT = parseProject(serializeProject(headwrap));
-  if (headwrapRT) writeFileSync(`${OUT}/headwrap-roundtrip.pdf`, await buildSignablePdf(headwrapRT, today));
+  if (headwrapRT) writeFileSync(`${OUT}/headwrap-roundtrip.pdf`, await buildSignablePdf(headwrapRT, today, SEAL));
 
   const endo: LetterState = {
     ...base,
@@ -82,10 +85,10 @@ const base: LetterState = {
       },
     ],
   };
-  writeFileSync(`${OUT}/endorsement.pdf`, await buildSignablePdf(endo, today));
+  writeFileSync(`${OUT}/endorsement.pdf`, await buildSignablePdf(endo, today, SEAL));
 
   const cui: LetterState = { ...base, cui: { ...base.cui, enabled: true } };
-  writeFileSync(`${OUT}/cui.pdf`, await buildSignablePdf(cui, today));
+  writeFileSync(`${OUT}/cui.pdf`, await buildSignablePdf(cui, today, SEAL));
 
   // CUI on a MULTI-PAGE letter: the designation block stays on page 1 (lower-right) and must NOT
   // overlap the body; the banner repeats top+bottom on every page.
@@ -100,7 +103,7 @@ const base: LetterState = {
       children: [],
     })),
   };
-  writeFileSync(`${OUT}/cui-multipage.pdf`, await buildSignablePdf(cuiLong, today));
+  writeFileSync(`${OUT}/cui-multipage.pdf`, await buildSignablePdf(cuiLong, today, SEAL));
 
   // CUI portion markings: paras 1 & 3 marked CUI → "(CUI)", para 2 unmarked → "(U)". Tests the mark
   // sitting before a section title and ahead of inline emphasis (must match preview + docx).
@@ -109,7 +112,7 @@ const base: LetterState = {
     cui: { ...base.cui, enabled: true },
     body: base.body.map((p, i) => (i !== 1 ? { ...p, cui: true } : p)),
   };
-  writeFileSync(`${OUT}/portions.pdf`, await buildSignablePdf(portions, today));
+  writeFileSync(`${OUT}/portions.pdf`, await buildSignablePdf(portions, today, SEAL));
 
   const longBody: LetterState = {
     ...base,
@@ -123,7 +126,7 @@ const base: LetterState = {
       children: [],
     })),
   };
-  writeFileSync(`${OUT}/multipage.pdf`, await buildSignablePdf(longBody, today));
+  writeFileSync(`${OUT}/multipage.pdf`, await buildSignablePdf(longBody, today, SEAL));
 
   // Enclosures: an image (embedded) and a PDF (real pages copied), each marked "Enclosure (n)".
   const pdfLib = await import('pdf-lib');
@@ -150,10 +153,10 @@ const base: LetterState = {
       { id: 'en2', text: 'Supporting documentation', inDocument: true, file: { name: 'doc.pdf', type: 'application/pdf', dataUrl: enclPdfUrl } },
     ],
   };
-  writeFileSync(`${OUT}/enclosures.pdf`, await buildSignablePdf(encls, today));
+  writeFileSync(`${OUT}/enclosures.pdf`, await buildSignablePdf(encls, today, SEAL));
   // Round-trip the CUI package (.json export → import → re-render) — proves per-enclosure banners survive.
   const enclsRT = parseProject(serializeProject(encls));
-  if (enclsRT) writeFileSync(`${OUT}/enclosures-roundtrip.pdf`, await buildSignablePdf(enclsRT, today));
+  if (enclsRT) writeFileSync(`${OUT}/enclosures-roundtrip.pdf`, await buildSignablePdf(enclsRT, today, SEAL));
 
   // Memorandum for the Record (MFR): plain paper, date-only ident, "MEMORANDUM FOR THE RECORD" title,
   // NO From/To/Via, signature = name + org code. Verifies the MFR branch (must match preview + docx + Fig 10-1).
@@ -162,7 +165,7 @@ const base: LetterState = {
     subj: 'TELEPHONE CONVERSATION WITH NAVSEA REGARDING CONTRACT N00024',
     signature: { name: 'E. S. HOWARD', title: 'N11', authority: 'none' },
   };
-  writeFileSync(`${OUT}/mfr.pdf`, await buildSignablePdf(mfr, today));
+  writeFileSync(`${OUT}/mfr.pdf`, await buildSignablePdf(mfr, today, SEAL));
 
   // Memorandum (Ch 10, From-To): plain bond, date-only ident (right, ~6th line), "MEMORANDUM" at the
   // left margin, then From/To/Subj and numbered paragraphs; signature centered. Verifies the memo branch.
@@ -173,7 +176,7 @@ const base: LetterState = {
     subj: 'PARKING DURING THE PIER REPAIR',
     signature: { name: 'R. T. KEEL', title: 'N4', authority: 'none' },
   };
-  writeFileSync(`${OUT}/memo.pdf`, await buildSignablePdf(memo, today));
+  writeFileSync(`${OUT}/memo.pdf`, await buildSignablePdf(memo, today, SEAL));
 
   // Business letter (Ch 11): letterhead, LEFT identification block, inside address + salutation,
   // civilian date, unnumbered main paragraphs, centered "Sincerely," + signature, end-of-letter
@@ -198,7 +201,7 @@ const base: LetterState = {
     ],
     business: { ...defaultFor('business-letter').business, separateMailing: 'Secretarial Handbook' },
   };
-  writeFileSync(`${OUT}/business.pdf`, await buildSignablePdf(business, today));
+  writeFileSync(`${OUT}/business.pdf`, await buildSignablePdf(business, today, SEAL));
   // Business letter with an Attention line (fig 11-5) + Separate Mailing notation (11-2.11).
   const businessAttn: LetterState = {
     ...business,
@@ -208,16 +211,16 @@ const base: LetterState = {
       separateMailing: '2 copies of enclosure (1)',
     },
   };
-  writeFileSync(`${OUT}/business-attn.pdf`, await buildSignablePdf(businessAttn, today));
+  writeFileSync(`${OUT}/business-attn.pdf`, await buildSignablePdf(businessAttn, today, SEAL));
   // Congressional response + interim reply — business-letter templates (Ch 12, figs 12-4 / 12-2).
   // Verify the inside address, special salutation, editable close, and Copy-to render on business.
   const { TEMPLATES } = await import('../data/templates');
   const congressional = TEMPLATES.find((t) => t.id === 'congressional')!.build();
-  writeFileSync(`${OUT}/tmpl-congressional.pdf`, await buildSignablePdf(congressional, today));
+  writeFileSync(`${OUT}/tmpl-congressional.pdf`, await buildSignablePdf(congressional, today, SEAL));
   const interim = TEMPLATES.find((t) => t.id === 'interim')!.build();
-  writeFileSync(`${OUT}/tmpl-interim.pdf`, await buildSignablePdf(interim, today));
+  writeFileSync(`${OUT}/tmpl-interim.pdf`, await buildSignablePdf(interim, today, SEAL));
   const flag = TEMPLATES.find((t) => t.id === 'flag')!.build();
-  writeFileSync(`${OUT}/tmpl-flag.pdf`, await buildSignablePdf(flag, today));
+  writeFileSync(`${OUT}/tmpl-flag.pdf`, await buildSignablePdf(flag, today, SEAL));
 
   // Multiple-address letter (Ch 8): To: line with three addressees (Fig 8-1) and, separately, a
   // Distribution: block with copy counts and no To: line (Fig 8-2). Verifies stacked To: addressees
@@ -234,7 +237,7 @@ const base: LetterState = {
     subj: 'MULTIPLE-ADDRESS LETTER USING A TO: LINE',
     copyTo: ['COMNAVSEASYSCOM (SEA-06)'],
   };
-  writeFileSync(`${OUT}/multi-address-to.pdf`, await buildSignablePdf(multiTo, today));
+  writeFileSync(`${OUT}/multi-address-to.pdf`, await buildSignablePdf(multiTo, today, SEAL));
 
   const multiDist: LetterState = {
     ...base,
@@ -251,7 +254,7 @@ const base: LetterState = {
     ],
     copyTo: ['COMNAVSEASYSCOM (SEA-06)'],
   };
-  writeFileSync(`${OUT}/multi-address-dist.pdf`, await buildSignablePdf(multiDist, today));
+  writeFileSync(`${OUT}/multi-address-dist.pdf`, await buildSignablePdf(multiDist, today, SEAL));
 
   // Fig 8-3: a To: line AND a Distribution: block together (action addressees on To:, the larger
   // distribution list after the signature).
@@ -264,7 +267,7 @@ const base: LetterState = {
       { id: 'db3', text: 'USS SCRANTON' },
     ],
   };
-  writeFileSync(`${OUT}/multi-address-both.pdf`, await buildSignablePdf(multiBoth, today));
+  writeFileSync(`${OUT}/multi-address-both.pdf`, await buildSignablePdf(multiBoth, today, SEAL));
 
   // Memorandum of Agreement (Ch 10, fig 10-5): plain bond, date-only ident, centered title + BETWEEN
   // the two activities (senior first), dual signatures with the senior (party A) at the RIGHT.
@@ -278,12 +281,12 @@ const base: LetterState = {
       signerB: { name: 'M. L. SIMPSON', title: 'Acting', authority: 'none' },
     },
   };
-  writeFileSync(`${OUT}/moa.pdf`, await buildSignablePdf(moa, today));
+  writeFileSync(`${OUT}/moa.pdf`, await buildSignablePdf(moa, today, SEAL));
 
   // Joint letter (Ch 7, fig 7-4): multi-command letterhead, per-command identification columns (senior
   // right), JOINT LETTER title, a From per command, dual signatures (senior right).
   const joint: LetterState = { ...defaultFor('joint-letter') };
-  writeFileSync(`${OUT}/joint.pdf`, await buildSignablePdf(joint, today));
+  writeFileSync(`${OUT}/joint.pdf`, await buildSignablePdf(joint, today, SEAL));
 
   // Deep paragraph nesting (fig 7-8): 6 levels so the underline-at-level-5 markers are exercised
   // (levels 5-8 underline the digit/letter to distinguish the second 1./a./(1)/(a) cycle).
@@ -304,12 +307,12 @@ const base: LetterState = {
       ] },
     ],
   };
-  writeFileSync(`${OUT}/deepnest.pdf`, await buildSignablePdf(deepnest, today));
+  writeFileSync(`${OUT}/deepnest.pdf`, await buildSignablePdf(deepnest, today, SEAL));
 
   // Executive memorandum (Ch 12, fig 12-9 Action Memo): ACTION MEMO title, FOR:/FROM:/SUBJECT:,
   // bulleted body, RECOMMENDATION + Approve/Disapprove, COORDINATION, Attachments, Prepared by.
   const execMemo: LetterState = { ...defaultFor('exec-memo') };
-  writeFileSync(`${OUT}/exec-memo.pdf`, await buildSignablePdf(execMemo, today));
+  writeFileSync(`${OUT}/exec-memo.pdf`, await buildSignablePdf(execMemo, today, SEAL));
   // Stress: long FOR/FROM/SUBJECT (heading wrap) + long recommendation + a body long enough to
   // spill onto a second page — verifies the exec heading wraps and the memo paginates cleanly.
   const execStress: LetterState = {
@@ -328,13 +331,13 @@ const base: LetterState = {
       children: [],
     })),
   };
-  writeFileSync(`${OUT}/exec-stress.pdf`, await buildSignablePdf(execStress, today));
+  writeFileSync(`${OUT}/exec-stress.pdf`, await buildSignablePdf(execStress, today, SEAL));
   const execInfo: LetterState = {
     ...defaultFor('exec-memo'),
     subj: 'Info Memo Format',
     execMemo: { ...defaultFor('exec-memo').execMemo, kind: 'INFORMATION' },
   };
-  writeFileSync(`${OUT}/exec-info.pdf`, await buildSignablePdf(execInfo, today));
+  writeFileSync(`${OUT}/exec-info.pdf`, await buildSignablePdf(execInfo, today, SEAL));
   // Plain "Memorandum For" (fig 12-14): MEMORANDUM FOR addressing, indented paragraphs, centered signature.
   const execMemoFor: LetterState = {
     ...defaultFor('exec-memo'),
@@ -355,10 +358,10 @@ const base: LetterState = {
       },
     ],
   };
-  writeFileSync(`${OUT}/exec-memofor.pdf`, await buildSignablePdf(execMemoFor, today));
+  writeFileSync(`${OUT}/exec-memofor.pdf`, await buildSignablePdf(execMemoFor, today, SEAL));
   // Coordination page (fig 12-13): plain bond, a centered title over a concurrence table.
   const coordPage: LetterState = { ...defaultFor('coordination-page') };
-  writeFileSync(`${OUT}/coord-page.pdf`, await buildSignablePdf(coordPage, today));
+  writeFileSync(`${OUT}/coord-page.pdf`, await buildSignablePdf(coordPage, today, SEAL));
   // Stress: enough offices to force a second page + one row with long, wrapping cell content —
   // verifies the table paginates (rows never orphaned) and repeats its column headers on page 2.
   const coordStress: LetterState = {
@@ -387,13 +390,13 @@ const base: LetterState = {
       })),
     },
   };
-  writeFileSync(`${OUT}/coord-stress.pdf`, await buildSignablePdf(coordStress, today));
+  writeFileSync(`${OUT}/coord-stress.pdf`, await buildSignablePdf(coordStress, today, SEAL));
   // CUI on the new Ch 12 types: the banner must print top + bottom of every page (the CUI card is
   // offered for both, so enabling it must actually mark the document — not silently do nothing).
   const coordCui: LetterState = { ...defaultFor('coordination-page'), cui: { ...coordPage.cui, enabled: true } };
-  writeFileSync(`${OUT}/coord-cui.pdf`, await buildSignablePdf(coordCui, today));
+  writeFileSync(`${OUT}/coord-cui.pdf`, await buildSignablePdf(coordCui, today, SEAL));
   const execCui: LetterState = { ...defaultFor('exec-memo'), cui: { ...execMemo.cui, enabled: true } };
-  writeFileSync(`${OUT}/exec-cui.pdf`, await buildSignablePdf(execCui, today));
+  writeFileSync(`${OUT}/exec-cui.pdf`, await buildSignablePdf(execCui, today, SEAL));
 
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----

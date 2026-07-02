@@ -18,16 +18,16 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
 - ☑ Endorsement orphan `From:/To:/Subj:` labels for empty fields → gated like the PDF.
 - ☑ Coordination docx column widths fixed (POC names no longer wrap); joint letterhead uppercased.
 
-## Batch 2 — PDF export ☐
-- ☐ Signature depth: name lands ~5.4 lines below text; rule is 4th line (all closes; move the CAC
+## Batch 2 — PDF export ☑ (business-notation + heading-gap fixes applied to all three renderers)
+- ☑ Signature depth: name lands ~5.4 lines below text; rule is 4th line (all closes; move the CAC
   field rect over the whitespace instead of consuming layout height).
-- ☐ Date→From gap on p1 reads ~2 blank lines (should be 1); same for MFR/MOA title→Subj gap.
-- ☐ Paragraph-start orphan: a paragraph may not START at page bottom with <2 lines remaining (7-2.13 ¶3a).
-- ☐ Render-harness samples pass no seal bytes → samples show no seal (app is fine — browser fetches
+- ☑ Date→From gap on p1 reads ~2 blank lines (should be 1); same for MFR/MOA title→Subj gap.
+- ☑ Paragraph-start orphan: a paragraph may not START at page bottom with <2 lines remaining (7-2.13 ¶3a).
+- ☑ Render-harness samples pass no seal bytes → samples show no seal (app is fine — browser fetches
   the bundled asset; harness must read the PNG from disk like signablePdf.test.ts does).
-- ☐ Appended endorsements not gated for `type==='endorsement'` (preview/docx skip them; PDF doesn't).
-- ☐ Endorsement spill-over pages: re-arm the Subj continuation header (exports lack it; preview has it).
-- ☐ Ref markers past 26 break (`({`) in the PDF while preview/docx print `(aa)`.
+- ☑ Appended endorsements not gated for `type==='endorsement'` (preview/docx skip them; PDF doesn't).
+- ☑ Endorsement spill-over pages: re-arm the Subj continuation header (exports lack it; preview has it).
+- ☑ Ref markers past 26 break (`({`) in the PDF while preview/docx print `(aa)`.
 
 ## Batch 3 — executive memo family (all three renderers) ☐
 - ☐ Head order inverted: figures 12-9/10/11 put the centered title ABOVE the date/control line.
@@ -75,7 +75,7 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
   separateMailing, Identification date fields).
 - ☐ NATO: CUI checkbox does nothing (NatoForm renders no banner/designation); preprinted letterhead
   mode prints the letterhead anyway.
-- ☐ Business enclosures notation: fig 11-3 runs item 1 on the label line ("Enclosures: 1. X" with
+- ☑ Business enclosures notation: fig 11-3 runs item 1 on the label line ("Enclosures: 1. X" with
   "2. Y" aligned under) — render puts the label alone.
 - ☐ Preview-only divergences: CUI banner not uppercased (CSS); designation block repeats on each
   endorsement's first page; coordination page flows leftover body/distribution/copyTo the exports drop;

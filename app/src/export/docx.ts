@@ -733,9 +733,17 @@ export function buildDocxDocument(
         }),
       );
     else if (bizEncls.length > 1) {
-      children.push(new Paragraph({ children: [R('Enclosures:')], spacing: { before: BLANK, after: 0 } }));
-      bizEncls.forEach((e, i) =>
-        children.push(new Paragraph({ children: [R(`${i + 1}.  ${e.text}`)], spacing: { after: 0 } })),
+      // Fig 11-3: the first item rides the label line; later items align under its number.
+      children.push(
+        new Paragraph({
+          children: [R(`Enclosures:  1.  ${bizEncls[0].text}`)],
+          spacing: { before: BLANK, after: 0 },
+        }),
+      );
+      bizEncls.slice(1).forEach((e, i) =>
+        children.push(
+          new Paragraph({ children: [R(`${i + 2}.  ${e.text}`)], indent: { left: 1240 }, spacing: { after: 0 } }),
+        ),
       );
     }
     if (state.business.separateMailing.trim())

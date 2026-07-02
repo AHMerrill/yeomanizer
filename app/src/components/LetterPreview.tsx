@@ -348,12 +348,15 @@ function BusinessClose({ state }: { state: LetterState }) {
         </div>
       </div>
       {encls.length === 1 && <div className="biz-encls">Enclosure:&ensp;{encls[0].text}</div>}
+      {/* Fig 11-3: the first item rides the label line; later items align under its number. */}
       {encls.length > 1 && (
         <div className="biz-encls">
-          <div>Enclosures:</div>
-          {encls.map((e, i) => (
-            <div key={e.id} className="biz-encl-item">
-              {i + 1}.&ensp;{e.text}
+          <div>
+            Enclosures:&ensp;<span className="biz-encl-first">1.&ensp;{encls[0].text}</span>
+          </div>
+          {encls.slice(1).map((e, i) => (
+            <div key={e.id} className="biz-encl-item biz-encl-under">
+              {i + 2}.&ensp;{e.text}
             </div>
           ))}
         </div>

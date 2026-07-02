@@ -148,9 +148,9 @@
   }
 }
 
-/* Heading block */
+/* Heading block — one blank line below the ident block (fig 7-1 single hard return). */
 .headings {
-  margin-top: 0.3in;
+  margin-top: var(--para-gap);
 }
 
 /* Memorandum: "MEMORANDUM" at the left margin, one blank line above and below (fig 10-3) */
@@ -367,7 +367,11 @@
 }
 /* Enclosure + separate-mailing notations: left margin, below the signature (11-2.10/2.11). */
 .biz-encls {
-  margin-top: calc(var(--para-gap) * 2.6);
+  margin-top: var(--para-gap);
+}
+/* Items 2+ align under the first item, which rides the "Enclosures:" label line (fig 11-3). */
+.biz-encl-under {
+  padding-left: 62pt;
 }
 .biz-sepmail {
   margin-top: var(--para-gap);
