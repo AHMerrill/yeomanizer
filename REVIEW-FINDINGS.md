@@ -1,6 +1,6 @@
 # Full tenet review — 2026-07-02 (Fable 5)
 
-Nine parallel audits (security, round-trip/renderer parity, editor UX, and six figure-by-figure
+**STATUS: COMPLETE — all batches fixed, verified, and deployed 2026-07-02.** Nine parallel audits (security, round-trip/renderer parity, editor UX, and six figure-by-figure
 comparisons against every SECNAV M-5216.5 figure), each finding re-verified against the figure or
 code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ deferred (documented).
 
@@ -50,7 +50,7 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
 - ☑ Hide the dead Identification card for joint (per-party ident lives in Joint commands card).
 - ☐ `blankFor('joint-letter')` leaves 0 parties (UI minimum is 2).
 
-## Batch 5 — endorsements + import hardening ☐
+## Batch 5 — endorsements + import hardening ☑
 - ☑ Fig 9-2: a new-page endorsement is prepared on the ENDORSING activity's letterhead — add optional
   per-endorsement letterhead fields (default off = current look), all three renderers.
 - ☑ **Import sanitization gaps** (security): `endorsements` (incl. each `body` tree — bypasses the
@@ -61,8 +61,8 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
 - ☑ Preview skips in-document enclosure pages for `type==='endorsement'` while both exports render them.
 - ☑ Routing Via hint promises an Endorsements section that doesn't exist for `type==='endorsement'`.
 
-## Batch 6 — editor / preview / proofread ☐
-- ☐ `letterhead.titleOnly` honored only by the preview → exporters must skip activity/address too;
+## Batch 6 — editor / preview / proofread ☑ (open: exec preview spill-page label prints Subj:-style, not SUBJECT:)
+- ☑ `letterhead.titleOnly` honored only by the preview → exporters must skip activity/address too;
   add Letterhead-card controls for `line1` + title-only (flag template is locked to CNO today).
 - ☑ Proofread is type-blind: demands Subj/Body/Signature/Date on coordination pages, ALL-CAPS subject
   + date + signature on exec memos (all wrong there); drop the subj-caps nag generally (renderers
