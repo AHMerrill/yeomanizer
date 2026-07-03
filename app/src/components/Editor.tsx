@@ -1736,6 +1736,14 @@ export function Editor({
                   onChange={(ev) => updateEndorsement(e.id, { serial: ev.target.value })}
                 />
               </Field>
+              <Field label="Endorser letterhead (optional — fig 9-2, one line each)">
+                <textarea
+                  value={e.letterhead ?? ''}
+                  rows={2}
+                  placeholder={'DEPARTMENT OF THE NAVY\nCOMMANDER NAVAL SURFACE FORCE\nSAN DIEGO CA 92155-5490'}
+                  onChange={(ev) => updateEndorsement(e.id, { letterhead: ev.target.value })}
+                />
+              </Field>
               <div className="sub-label">Endorsement text</div>
               <ParaEditor
                 root={e.body}

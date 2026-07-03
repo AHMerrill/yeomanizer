@@ -220,6 +220,7 @@ export function parseProject(text: string): LetterState | null {
           id: typeof e.id === 'string' && e.id ? e.id.slice(0, 100) : `endo${i}`,
           endorser: typeof e.endorser === 'string' ? e.endorser.slice(0, 300) : '',
           serial: typeof e.serial === 'string' ? e.serial.slice(0, 60) : '',
+          letterhead: typeof e.letterhead === 'string' ? e.letterhead.slice(0, 400) : '',
           body: sanitizeBody(e.body, 0, { n: 0 }),
           sigName: typeof e.sigName === 'string' ? e.sigName.slice(0, 120) : '',
           sigTitle: typeof e.sigTitle === 'string' ? e.sigTitle.slice(0, 200) : '',

@@ -74,7 +74,8 @@ const base: LetterState = {
       {
         id: 'e1',
         endorser: 'Commander, Naval Surface Force, U.S. Pacific Fleet',
-        serial: '',
+        serial: 'N72/420',
+        letterhead: 'DEPARTMENT OF THE NAVY\nCOMMANDER NAVAL SURFACE FORCE\nU.S. PACIFIC FLEET\nSAN DIEGO CA 92155-5490',
         body: [
           { id: 'eb1', text: 'Forwarded, recommending approval.', children: [] },
           { id: 'eb2', text: 'The requested action is fully supported by this command.', children: [] },

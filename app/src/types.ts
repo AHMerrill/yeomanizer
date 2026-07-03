@@ -206,6 +206,10 @@ export interface EndorsementEntry {
   viaId?: string; // if set, this endorsement is auto-created for a Via addressee (From = the via)
   endorser: string; // the "From:" of the endorsement (the endorsing command)
   serial: string; // the endorser's serial (optional)
+  // Optional letterhead for the endorsing activity (fig 9-2 prepares a new-page endorsement on
+  // the ENDORSER'S letterhead): one line each — "DEPARTMENT OF THE NAVY", activity, address,
+  // city/state/zip. Blank = plain continuation sheet (the pre-existing look).
+  letterhead?: string;
   body: Paragraph[];
   sigName: string;
   sigTitle: string;

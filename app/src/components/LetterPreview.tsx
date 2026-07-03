@@ -840,14 +840,29 @@ interface FlowItem {
 // line is derived from the basic letter's originator/SSIC/serial/date.
 function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): LetterState {
   const basicId = basicLetterId(basic);
+  // Fig 9-2: a new-page endorsement is prepared on the ENDORSING activity's letterhead. When the
+  // endorsement carries letterhead lines (first = the DoN line, rest = activity/address/city), the
+  // page renders them; blank = the plain continuation-sheet look.
+  const lhLines = (e.letterhead ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
   return {
     ...basic,
     type: 'endorsement',
-    letterhead: { ...basic.letterhead, mode: 'off' },
+    letterhead: lhLines.length
+      ? {
+          ...basic.letterhead,
+          mode: 'on',
+          titleOnly: false,
+          line1: lhLines[0],
+          activityName: lhLines.slice(1).join('\n'),
+          addressLine: '',
+          cityStateZip: '',
+        }
+      : { ...basic.letterhead, mode: 'off' },
     endorsementNumber: ENDORSE_ORD[i] ?? `${i + 1}`,
     endorsementOf: basicId,
     from: e.endorser,
     serial: e.serial,
+    originatorCode: '', // the endorser's serial carries its own code (fig 9-2 "Ser N72/420")
     includeSsic: true,
     includeCode: !!e.serial.trim(),
     via: remainingVias(basic, e.viaId),

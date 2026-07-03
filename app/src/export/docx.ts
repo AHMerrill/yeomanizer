@@ -824,7 +824,7 @@ export function buildDocxDocument(
       // New-page endorsement identification block (9-2.2: repeat the basic letter's SSIC; the endorser
       // adds its own serial + date). Right-aligned, matching the preview + PDF. The section break starts
       // the first endorsement on a fresh page; later endorsements break the page themselves.
-      const eIdent = buildIdent({ ...state, type: 'endorsement', serial: e.serial }, today);
+      const eIdent = buildIdent({ ...state, type: 'endorsement', serial: e.serial, originatorCode: '' }, today);
       const eIdLines = [
         eIdent.ssic || ' ',
         e.serial.trim() ? eIdent.codeLine : null,
@@ -832,6 +832,20 @@ export function buildDocxDocument(
       ].filter((l): l is string => l !== null);
       // 2nd+ endorsements start their own page (the first rides the endorsement section's break).
       if (i > 0) endoChildren.push(new Paragraph({ children: [R('')], pageBreakBefore: true, spacing: { after: 0 } }));
+      // Fig 9-2: the endorsing activity's letterhead (first line = DoN line, rest = activity/
+      // address/city), centered in navy like a first page; blank = plain continuation sheet.
+      const eLh = (e.letterhead ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+      if (eLh.length) {
+        endoChildren.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [R(eLh[0], { bold: true, size: 22, color: NAVY })],
+            spacing: { after: 0 },
+          }),
+        );
+        eLh.slice(1).forEach((l) => endoChildren.push(center(l.toUpperCase(), 15)));
+        endoChildren.push(spacer());
+      }
       if (eIdLines.length) endoChildren.push(identColumn(eIdLines));
       endoChildren.push(
         new Paragraph({

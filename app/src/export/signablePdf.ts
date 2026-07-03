@@ -852,9 +852,20 @@ export async function buildSignablePdf(
   // belong only to letters/memos (the preview and docx already gate this way).
   (state.type === 'endorsement' ? [] : state.endorsements).forEach((e, i) => {
     newPage();
+    // Fig 9-2: a new-page endorsement is prepared on the ENDORSING activity's letterhead — when
+    // letterhead lines are set (first = DoN line, rest = activity/address/city), draw them like a
+    // first page (top band + navy centered block); blank keeps the plain continuation-sheet look.
+    const eLh = (e.letterhead ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+    if (eLh.length) {
+      top = M_TOP;
+      putCenter(eLh[0], bold, 11, 1.04, navy);
+      eLh.slice(1).forEach((l) => putCenter(l.toUpperCase(), bold, 7.5, 1.04, navy));
+      top = Math.max(top, M_TOP + 0.86 * PT);
+      gap(0.16 * PT);
+    }
     // New-page endorsement identification block (9-2.2: repeat the basic letter's SSIC; the endorser
     // adds its own serial + date). Right-aligned, matching the preview's endorsement ident.
-    const eIdent = buildIdent({ ...state, type: 'endorsement', serial: e.serial }, today);
+    const eIdent = buildIdent({ ...state, type: 'endorsement', serial: e.serial, originatorCode: '' }, today);
     const eIdLines = [
       eIdent.ssic || ' ',
       e.serial.trim() ? eIdent.codeLine : null,
