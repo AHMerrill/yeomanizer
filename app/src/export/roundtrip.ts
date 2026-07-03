@@ -39,7 +39,7 @@ function sanitizeEnclosures(state: LetterState): LetterState {
         cuiBanner: typeof e.cuiBanner === 'string' ? e.cuiBanner.slice(0, 200) : undefined,
         // Only let image/PDF data URLs back in — stops a hand-edited/hostile file from slipping a
         // non-media URL (e.g. data:text/html) into an <img>/embed.
-        file: e.file && !/^data:(image\/|application\/pdf)/i.test(e.file.dataUrl) ? undefined : e.file,
+        file: e.file && !/^data:(image\/(png|jpe?g|gif|bmp|webp)|application\/pdf)/i.test(e.file.dataUrl) ? undefined : e.file,
       })),
   };
 }
@@ -210,6 +210,47 @@ export function parseProject(text: string): LetterState | null {
       refs: sanitizeEntries(s.refs),
       distribution: sanitizeEntries(s.distribution),
       copyTo: sanitizeStrings(s.copyTo),
+      // Endorsements were the one list that bypassed sanitization — each body tree now goes
+      // through the same node/depth caps as the main body (a hostile file could otherwise hang
+      // the export path with a million-node endorsement body).
+      endorsements: ((Array.isArray(s.endorsements) ? s.endorsements : []) as unknown as Record<string, unknown>[])
+        .slice(0, 20)
+        .filter((e) => !!e && typeof e === 'object')
+        .map((e, i) => ({
+          id: typeof e.id === 'string' && e.id ? e.id.slice(0, 100) : `endo${i}`,
+          endorser: typeof e.endorser === 'string' ? e.endorser.slice(0, 300) : '',
+          serial: typeof e.serial === 'string' ? e.serial.slice(0, 60) : '',
+          body: sanitizeBody(e.body, 0, { n: 0 }),
+          sigName: typeof e.sigName === 'string' ? e.sigName.slice(0, 120) : '',
+          sigTitle: typeof e.sigTitle === 'string' ? e.sigTitle.slice(0, 200) : '',
+          authority:
+            e.authority === 'by-direction' || e.authority === 'acting'
+              ? (e.authority as 'by-direction' | 'acting')
+              : ('none' as const),
+          viaId: typeof e.viaId === 'string' ? e.viaId.slice(0, 100) : undefined,
+        })),
+      // Deep-fill + coerce the remaining pass-through objects a hand-edited file could corrupt.
+      signature: (() => {
+        const raw = (s.signature ?? {}) as unknown as Record<string, unknown>;
+        return {
+          name: typeof raw.name === 'string' ? raw.name.slice(0, 120) : '',
+          title: typeof raw.title === 'string' ? raw.title.slice(0, 200) : '',
+          authority:
+            raw.authority === 'by-direction' || raw.authority === 'acting'
+              ? (raw.authority as 'by-direction' | 'acting')
+              : ('none' as const),
+        };
+      })(),
+      nato: {
+        ...defaultState.nato,
+        ...Object.fromEntries(
+          Object.entries((s.nato && typeof s.nato === 'object' ? s.nato : {}) as unknown as Record<string, unknown>)
+            .map(([k, v]) => [k, typeof v === 'string' ? v.slice(0, 400) : v]),
+        ),
+      },
+      endorsementNumber:
+        typeof s.endorsementNumber === 'string' ? s.endorsementNumber.slice(0, 40) : defaultState.endorsementNumber,
+      endorsementOf: typeof s.endorsementOf === 'string' ? s.endorsementOf.slice(0, 300) : '',
     });
   } catch {
     return null;

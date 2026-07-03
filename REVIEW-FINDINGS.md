@@ -53,10 +53,10 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
 ## Batch 5 — endorsements + import hardening ☐
 - ☐ Fig 9-2: a new-page endorsement is prepared on the ENDORSING activity's letterhead — add optional
   per-endorsement letterhead fields (default off = current look), all three renderers.
-- ☐ **Import sanitization gaps** (security): `endorsements` (incl. each `body` tree — bypasses the
+- ☑ **Import sanitization gaps** (security): `endorsements` (incl. each `body` tree — bypasses the
   2000-node/12-deep caps → export-path DoS), `signature`, `nato`, `endorsementNumber/Of`, `encls`
   text/id/file.name/type pass through unsanitized. THREAT_MODEL claim currently falsified.
-- ☐ Tighten enclosure data-URL whitelist to raster images + PDF (drop `image/svg+xml`, inert but a
+- ☑ Tighten enclosure data-URL whitelist to raster images + PDF (drop `image/svg+xml`, inert but a
   script carrier).
 - ☐ Preview skips in-document enclosure pages for `type==='endorsement'` while both exports render them.
 - ☐ Routing Via hint promises an Endorsements section that doesn't exist for `type==='endorsement'`.

@@ -182,6 +182,43 @@ describe('parseProject — body-tree hardening', () => {
   });
 });
 
+describe('hostile endorsements are sanitized on import (security)', () => {
+  it('caps a deep/huge endorsement body with the same limits as the main body', () => {
+    // Build a 20-deep nested endorsement body — pre-fix this survived import unchanged and could
+    // hang/overflow the export path (the caps only guarded state.body).
+    let node: unknown = { id: 'leaf', text: 'deep', children: [] };
+    for (let i = 0; i < 20; i++) node = { id: `d${i}`, text: 't', children: [node] };
+    const hostile = JSON.parse(serializeProject(defaultState));
+    hostile.state.endorsements = [
+      { id: 'e1', endorser: 'X'.repeat(10_000), serial: 's', body: [node], sigName: '', sigTitle: '', authority: 'none' },
+    ];
+    const back = parseProject(JSON.stringify(hostile));
+    expect(back).not.toBeNull();
+    expect(back!.endorsements).toHaveLength(1);
+    expect(back!.endorsements[0].endorser.length).toBeLessThanOrEqual(300);
+    let depth = 0;
+    let cur = back!.endorsements[0].body[0];
+    while (cur && cur.children.length) {
+      cur = cur.children[0];
+      depth++;
+    }
+    expect(depth).toBeLessThanOrEqual(12);
+  });
+
+  it('rejects an SVG data URL on an enclosure (raster images + pdf only)', () => {
+    const f = JSON.parse(serializeProject(defaultState));
+    f.state.encls = [
+      {
+        id: 'e1', text: 'svg', inDocument: true,
+        file: { name: 'x.svg', type: 'image/svg+xml', dataUrl: 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=' },
+      },
+    ];
+    const back = parseProject(JSON.stringify(f));
+    expect(back).not.toBeNull();
+    expect(back!.encls[0]?.file).toBeUndefined();
+  });
+});
+
 // "Upload 20 times each": every type must be a lossless FIXPOINT under repeated export→import —
 // each of 20 round-trips reproduces the original state exactly, so re-importing a downloaded .json
 // (and re-exporting, and re-importing…) never drifts or silently drops a type-specific field.
