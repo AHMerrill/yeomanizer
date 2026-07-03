@@ -64,7 +64,7 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
 ## Batch 6 — editor / preview / proofread ☐
 - ☐ `letterhead.titleOnly` honored only by the preview → exporters must skip activity/address too;
   add Letterhead-card controls for `line1` + title-only (flag template is locked to CNO today).
-- ☐ Proofread is type-blind: demands Subj/Body/Signature/Date on coordination pages, ALL-CAPS subject
+- ☑ Proofread is type-blind: demands Subj/Body/Signature/Date on coordination pages, ALL-CAPS subject
   + date + signature on exec memos (all wrong there); drop the subj-caps nag generally (renderers
   normalize).
 - ☐ Dead controls: Signature card shown for joint + exec-Action/Info (never prints); SSIC/Code pills

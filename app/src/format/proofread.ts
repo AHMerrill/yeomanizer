@@ -33,12 +33,14 @@ export function proofread(s: LetterState): Check[] {
     out.push({ id, label, status: ok ? 'pass' : 'warn', hint });
   const t = s.type;
 
-  // Subject — every type except the NATO form and the business letter (which may use a salutation).
-  if (t !== 'nato' && t !== 'business-letter') {
+  // Subject — every type except the NATO form, the business letter (which may use a salutation),
+  // and the coordination page (a table; it has no Subj line at all).
+  if (t !== 'nato' && t !== 'business-letter' && t !== 'coordination-page') {
     const subj = s.subj.trim();
     add('subj', 'Subject line filled in', subj.length > 0, 'Add a Subj: line naming the topic.');
     if (subj) {
-      add('subj-caps', 'Subject is in ALL CAPS', subj === subj.toUpperCase(), 'Type the subject in all capital letters.');
+      // No ALL-CAPS nag: the letter renderers print the subject in caps automatically, and the
+      // executive memo's SUBJECT: is Title Case by design (figs 12-9/12-11).
       add('subj-dot', 'Subject has no ending period', !/\.$/.test(subj), 'The subject is a phrase — drop the trailing period.');
     }
   }
@@ -59,14 +61,33 @@ export function proofread(s: LetterState): Check[] {
   }
 
   // Body (¶19.b(6): paragraphs sequentially numbered/lettered — never a single subdivision).
-  if (t !== 'nato') {
+  // The coordination page is a table — no body, signature, or date to check.
+  if (t !== 'nato' && t !== 'coordination-page') {
     add('body', 'Body has content', anyText(s.body), 'Write at least one paragraph.');
     add('subdiv', 'No lone subparagraph', !hasLoneChild(s.body),
       'If you subdivide a paragraph, use at least two subparagraphs — never a single (a) or (1).');
-    add('sig', 'Signature name present', s.signature.name.trim().length > 0,
-      'Add the signer’s last name (in caps) to the signature block.');
-    const hasDate = s.dateMode === 'auto' || (s.dateMode === 'manual' && s.dateManual.trim().length > 0);
-    add('date', 'Date set', hasDate, 'Set the date — automatic, or type it.');
+    // Signature: type-aware. Joint letters sign per command (Joint commands card); an exec
+    // ACTION/INFO memo has no signature block at all (the principal initials the decision line);
+    // only the exec MEMORANDUM-FOR uses the shared signature.
+    if (t === 'joint-letter') {
+      add('sig', 'Each command has a signer', s.joint.parties.every((p) => p.signer.name.trim().length > 0),
+        'Name each command’s signing official in the Joint commands card.');
+    } else if (t !== 'exec-memo' || s.execMemo.kind === 'MEMORANDUM-FOR') {
+      add('sig', 'Signature name present', s.signature.name.trim().length > 0,
+        'Add the signer’s last name (in caps) to the signature block.');
+    }
+    // Date: an executive memo is dated when SIGNED — a blank date is the correct default (Ch 12).
+    if (t !== 'exec-memo') {
+      const hasDate = s.dateMode === 'auto' || (s.dateMode === 'manual' && s.dateManual.trim().length > 0);
+      add('date', 'Date set', hasDate, 'Set the date — automatic, or type it.');
+    }
+  }
+
+  // Coordination page: the one thing that matters is at least one office row.
+  if (t === 'coordination-page') {
+    add('coord', 'At least one coordinating office listed',
+      s.coordPage.entries.some((e) => e.office.trim() || e.poc.trim()),
+      'Add the offices that reviewed or concurred (one row each).');
   }
 
   // A typed (manual) date should look like the naval DD MMM YY form.

@@ -48,10 +48,24 @@ describe('proofread()', () => {
     expect(get(c2, 'sig')?.status).toBe('pass');
   });
 
-  it('warns on a lowercase subject and a trailing period', () => {
+  it('warns on a trailing period; no ALL-CAPS nag (renderers uppercase automatically)', () => {
     const c = proofread({ ...defaultFor('standard-letter'), subj: 'lower case subject.' });
-    expect(get(c, 'subj-caps')?.status).toBe('warn');
+    expect(get(c, 'subj-caps')).toBeUndefined(); // removed: exports normalize; exec is Title Case
     expect(get(c, 'subj-dot')?.status).toBe('warn');
+  });
+
+  it('is type-aware for the new Ch 12 types', () => {
+    // A pristine coordination page has no subj/body/signature/date — zero bogus warnings.
+    const coord = proofread(defaultFor('coordination-page'));
+    expect(get(coord, 'subj')).toBeUndefined();
+    expect(get(coord, 'body')).toBeUndefined();
+    expect(get(coord, 'sig')).toBeUndefined();
+    expect(get(coord, 'date')).toBeUndefined();
+    expect(get(coord, 'coord')?.status).toBe('pass'); // sample rows present
+    // An exec ACTION memo: no signature block, dated when signed — neither warns.
+    const exec = proofread(defaultFor('exec-memo'));
+    expect(get(exec, 'sig')).toBeUndefined();
+    expect(get(exec, 'date')).toBeUndefined();
   });
 
   it('flags a lone subparagraph (never a single subdivision)', () => {
