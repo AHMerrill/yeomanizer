@@ -58,12 +58,18 @@ export function NatoForm({ state }: { state: LetterState }) {
   const n = state.nato;
   const rank = rankByGrade(n.rankGrade);
   const sealSrc = SEAL_URL[lh.seal];
-  const showLh = lh.mode !== 'off';
+  const showLh = lh.mode === 'on'; // preprinted stock brings its own letterhead — don't print over it
+  const cui = state.cui;
+  const banner = (cui.banner || 'CUI').toUpperCase();
 
   return (
     <>
       {/* ---------- Page 1: the order ---------- */}
       <div className="page nato">
+        {cui.enabled && <div className="cui-banner cui-top">{banner}</div>}
+        {lh.mode === 'preprinted' && (
+          <div className="lh-spacer" aria-hidden style={{ height: `${Math.max(0.86, lh.preprintedLines * 0.11)}in` }} />
+        )}
         {showLh && sealSrc && <img className="seal" src={sealSrc} alt="" />}
         {showLh && (
           <div className="letterhead">
@@ -226,10 +232,25 @@ export function NatoForm({ state }: { state: LetterState }) {
             <div className="nfr">DATE DE L'AUTORISATION</div>
           </div>
         </div>
+        {cui.enabled && (
+          <>
+            <div className="cui-designation">
+              <div>Controlled by: {cui.controlledBy1}</div>
+              {cui.controlledBy2 && <div>Controlled by: {cui.controlledBy2}</div>}
+              <div>CUI Category: {cui.category}</div>
+              <div>Limited Dissemination Control: {cui.dissemination}</div>
+              {cui.poc && <div>POC: {cui.poc}</div>}
+              {cui.transmittalNote.trim() && <div className="cui-transmittal">{cui.transmittalNote}</div>}
+            </div>
+            <div className="cui-banner cui-bottom">{banner}</div>
+          </>
+        )}
       </div>
 
       {/* ---------- Page 2: reverse-side instructions ---------- */}
       <div className="page nato nato-reverse">
+        {cui.enabled && <div className="cui-banner cui-top">{banner}</div>}
+        {cui.enabled && <div className="cui-banner cui-bottom">{banner}</div>}
         <div className="nato-rev-title">REVERSE SIDE OF NATO TRAVEL ORDER</div>
         <div className="nato-rev-title nfr">[VERSO DE L'ORDRE DE MISSION]</div>
         <div className="nato-rev-sub">SUGGESTED INSTRUCTIONS WHICH MAY BE PUT ON BACK OF FORM</div>

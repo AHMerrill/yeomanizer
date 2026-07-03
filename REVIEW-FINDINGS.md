@@ -73,7 +73,7 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
   "unless local practice calls for more") — show them (default off).
 - ☑ Card Clear buttons miss fields (exec `cc`+FOR, CUI transmittalNote+controlledBy1, Enclosures'
   separateMailing, Identification date fields).
-- ☐ NATO: CUI checkbox does nothing (NatoForm renders no banner/designation); preprinted letterhead
+- ☑ NATO: CUI checkbox does nothing (NatoForm renders no banner/designation); preprinted letterhead
   mode prints the letterhead anyway.
 - ☑ Business enclosures notation: fig 11-3 runs item 1 on the label line ("Enclosures: 1. X" with
   "2. Y" aligned under) — render puts the label alone.
@@ -82,7 +82,7 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
   Editor-tab type switch to MFR keeps appending via-endorsement pages.
 - ☑ Templates: congressional/interim should default date-only ident (figs 12-2/12-4); "Request letter"
   template seeds a Via without running the endorsement sync.
-- ☐ PDF signature-title should wrap (long titles like ASN(RD&A) overrun); MOA/joint PDF closes lack
+- ☑ PDF signature-title should wrap (long titles like ASN(RD&A) overrun); MOA/joint PDF closes lack
   CAC signature fields (hint claims otherwise).
 
 ## Deferred (documented, deliberate) ⏭

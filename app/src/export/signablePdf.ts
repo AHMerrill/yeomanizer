@@ -643,7 +643,9 @@ export async function buildSignablePdf(
     // annotation, not content — consuming layout height for it pushed the name a line too deep.
     const fieldBottom = PAGE_H - top - 2;
     if (name) put(name, sigX);
-    if (title) put(title, sigX);
+    // A long title (e.g. "Assistant Secretary of the Navy (Research, Development and Acquisition)")
+    // wraps within the signature column instead of running off the right margin (fig 12-4).
+    if (title) wrap(title, font, SIZE, RIGHT - sigX).forEach((ln) => put(ln, sigX));
     if (authority === 'by-direction') put('By direction', sigX);
     if (authority === 'acting') put('Acting', sigX);
     sigRefs.push(
@@ -662,7 +664,7 @@ export async function buildSignablePdf(
     room(SIZE * BODY_LH * 4);
     const fieldBottom = PAGE_H - top - 2; // CAC field overlays the blank signing space above the name
     if (state.signature.name) put(state.signature.name, sigX);
-    if (state.signature.title) put(state.signature.title, sigX);
+    if (state.signature.title) wrap(state.signature.title, font, SIZE, RIGHT - sigX).forEach((ln) => put(ln, sigX));
     if (state.signature.authority === 'by-direction') put('By direction', sigX);
     if (state.signature.authority === 'acting') put('Acting', sigX);
     sigRefs.push(
@@ -694,17 +696,22 @@ export async function buildSignablePdf(
     room(SIZE * BODY_LH * 4);
     const SIG_LINE = '________________________';
     const startTop = top;
-    const drawCol = (x: number, s: { name: string; title: string; authority?: string }) => {
+    const drawCol = (x: number, s: { name: string; title: string; authority?: string }, fieldName: string) => {
       top = startTop;
+      // CAC-signable field over the signature line (sign digitally or print + wet-sign).
+      const lineTopY = PAGE_H - top - 2;
       put(SIG_LINE, x);
+      sigRefs.push(
+        addSignatureField(doc, page, [x, lineTopY - 4, x + 2 * PT, lineTopY + 26], fieldName, PDFName, PDFString),
+      );
       if (s.name) put(s.name, x);
       if (s.title) put(s.title, x);
       if (s.authority === 'by-direction') put('By direction', x);
       if (s.authority === 'acting') put('Acting', x);
     };
-    drawCol(LEFT, state.moa.signerB); // party B (left)
+    drawCol(LEFT, state.moa.signerB, 'SignatureB'); // party B (left)
     const leftEnd = top;
-    drawCol(sigX, state.signature); // party A — senior (right)
+    drawCol(sigX, state.signature, 'Signature1'); // party A — senior (right)
     top = Math.max(leftEnd, top);
   };
 
@@ -723,6 +730,11 @@ export async function buildSignablePdf(
     order.forEach((p, idx) => {
       top = startTop;
       const x = idx === n - 1 ? sigX : idx === 0 ? LEFT : LEFT + ((sigX - LEFT) * idx) / (n - 1);
+      // CAC-signable field over the blank signing space above each cosigner's typed name.
+      const fieldBottom = PAGE_H - top - 2;
+      sigRefs.push(
+        addSignatureField(doc, page, [x, fieldBottom, x + 2 * PT, fieldBottom + 34], `JointSig${idx + 1}`, PDFName, PDFString),
+      );
       if (p.signer.name) put(p.signer.name, x);
       if (p.signer.title) put(p.signer.title, x);
       if (p.signer.authority === 'by-direction') put('By direction', x);
