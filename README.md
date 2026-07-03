@@ -16,7 +16,8 @@ Live: **https://yeomanizer.com**
 - **Document types** — standard naval letter, memorandum (From-To), memorandum for the record
   (MFR), business letter (Ch 11 — inside address, salutation, civilian date, unnumbered paragraphs,
   centered "Sincerely,"), multiple-address letters (Ch 8 — `To:` / `Distribution:`), endorsements
-  (Ch 9, appended automatically when you add a Via addressee), the **Memorandum of Agreement /
+  (Ch 9, appended automatically when you add a Via addressee — with optional letterhead for the
+  endorsing activity, fig 9-2), the **Memorandum of Agreement /
   Understanding** (Ch 10 — dual per-party identification blocks + dual signatures), the **joint
   letter / memorandum** (Ch 7 — co-signed by two or more commands), the **executive memo** (Ch 12 —
   Action / Info memo for HqDON/OSD staff work: `ACTION MEMO`/`INFO MEMO`, `FOR:`/`FROM:`/`SUBJECT:`,
@@ -66,7 +67,8 @@ Live: **https://yeomanizer.com**
 Three exports, all generated **in your browser**:
 
 - **`.docx`** — an editable Microsoft Word version of the full document (endorsements, enclosures,
-  and CUI included).
+  and CUI included), on US Letter with the identification block, signatures, and page rhythm laid
+  out to match the PDF and the manual — not Word's A4 defaults.
 - **`.pdf`** — a pixel-accurate, **vector / searchable** PDF of the whole package, with a built-in
   **CAC-signable** signature field. Open it to print, save, or CAC-sign — no Prepare-a-Form step.
 - **`.json`** — a small, plain-text editable copy of your draft. Drop it into the **Editor** tab

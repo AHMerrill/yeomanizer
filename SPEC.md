@@ -224,7 +224,12 @@ the PDF (print) and the `.docx` export, and each can be signed normally or "By d
 numbered if more); the "To:" stays the action addressee — `remainingVias` in
 format/identification.ts, used by both the preview and the .docx export. Each new-page endorsement
 carries its own **identification block** — the basic letter's **SSIC repeated** (9-2.2) plus the
-endorser's serial/date, right-aligned at the top — in the preview, PDF, and `.docx`.
+endorser's own **serial/date** (its serial carries its own code, so `Ser N72/420`, not the
+letter's), right-aligned at the top — in the preview, PDF, and `.docx`. Fig 9-2 prepares a
+new-page endorsement on the **endorsing activity's letterhead**: an optional per-endorsement
+`letterhead` field (one line each — the DoN line, then activity/address/city) renders centered
+in navy like a first page; blank = a plain continuation sheet. A long endorsement paginates and
+repeats the Subj line, and each endorsement carries its own CAC-signable field.
 
 ## Executive memorandum (Ch 12, figs 12-9 / 12-11) — done (Action / Info)
 The OSD/SecDef staff memo that carries a decision or information **up** to a principal — a distinct
