@@ -848,6 +848,24 @@ export function Editor({
               </a>{' '}
               (CAC required).
             </p>
+            <Field label="Top line (centered title)">
+              <input
+                value={state.letterhead.line1}
+                placeholder="DEPARTMENT OF THE NAVY"
+                onChange={(e) => patchLH({ line1: e.target.value.toUpperCase() })}
+              />
+            </Field>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={state.letterhead.titleOnly}
+                onChange={(e) => patchLH({ titleOnly: e.target.checked })}
+              />{' '}
+              Title only &mdash; flag/personal stationery (Ch 12): print just the centered title, no
+              activity or address lines
+            </label>
+            {!state.letterhead.titleOnly && (
+            <>
             <Field label="Activity name (one line each)">
               <textarea
                 value={state.letterhead.activityName}
@@ -871,6 +889,8 @@ export function Editor({
                 onChange={(e) => patchLH({ cityStateZip: e.target.value.toUpperCase() })}
               />
             </Field>
+            </>
+            )}
             <Field label="Seal">
               <select
                 value={state.letterhead.seal}

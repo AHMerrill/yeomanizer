@@ -215,8 +215,9 @@ export async function buildSignablePdf(
   if (lh.mode === 'on') {
     putCenter(lh.line1 || 'DEPARTMENT OF THE NAVY', bold, 11, 1.04, navy);
     // Joint letter: list each command (senior first) + the shared city/state; else the single activity.
-    const lhLines =
-      state.type === 'joint-letter'
+    const lhLines = lh.titleOnly
+      ? [] // flag/personal stationery: the centered title only (figs 12-7/12-8)
+      : state.type === 'joint-letter'
         ? [...state.joint.parties.map((p) => p.command), lh.cityStateZip]
         : [...lh.activityName.split('\n'), lh.addressLine, lh.cityStateZip];
     lhLines.filter((l) => l.trim()).forEach((l) => putCenter(l.toUpperCase(), bold, 7.5, 1.04, navy));

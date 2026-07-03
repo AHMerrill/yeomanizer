@@ -369,7 +369,9 @@ export function buildDocxDocument(
         spacing: { after: 0 },
       }),
     );
-    if (isJoint) {
+    if (lh.titleOnly) {
+      // Flag/personal stationery: the centered title only (figs 12-7/12-8) — no activity/address.
+    } else if (isJoint) {
       // Joint letter: each command on its own line (senior first).
       // Command titles print in caps like every letterhead line (the PDF already uppercases).
       state.joint.parties.forEach((p) => p.command.trim() && children.push(center(p.command.toUpperCase(), 15)));
@@ -379,8 +381,8 @@ export function buildDocxDocument(
         .filter((l) => l.trim())
         .forEach((l) => children.push(center(l, 15)));
     }
-    if (!isJoint && lh.addressLine) children.push(center(lh.addressLine, 15));
-    if (lh.cityStateZip) children.push(center(lh.cityStateZip, 15));
+    if (!lh.titleOnly && !isJoint && lh.addressLine) children.push(center(lh.addressLine, 15));
+    if (!lh.titleOnly && lh.cityStateZip) children.push(center(lh.cityStateZip, 15));
     // Reserve the letterhead's minimum height (the PDF holds a 0.86in floor) so a short letterhead
     // — e.g. a title-only flag heading or a bare DoN line — keeps the body clear of the floating
     // seal's lower corner instead of climbing up into it.
