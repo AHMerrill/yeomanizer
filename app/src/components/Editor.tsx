@@ -13,7 +13,7 @@ import type {
   AttachedFile,
   JointParty,
 } from '../types';
-import { uid, syncViaEndorsements, blankFor } from '../defaultState';
+import { uid, syncViaEndorsements, blankFor, defaultFor } from '../defaultState';
 import * as tree from '../format/tree';
 import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { ENDORSE_ORD } from '../format/identification';
@@ -685,10 +685,12 @@ export function Editor({
           patchCui({
             enabled: false,
             banner: 'CUI',
+            controlledBy1: 'Department of the Navy',
             controlledBy2: '',
             category: 'PRVCY',
             dissemination: 'FEDCON',
             poc: '',
+            transmittalNote: '',
           })
         }
       >
@@ -798,6 +800,7 @@ export function Editor({
         </Card>
       )}
 
+      {state.type !== 'coordination-page' && (
       <Card title="Letterhead" hint="No abbreviations or punctuation in the address (2-12).">
         <div className="pills">
           <Pill on={state.letterhead.mode === 'on'} onClick={() => patchLH({ mode: 'on' })}>
@@ -909,6 +912,7 @@ export function Editor({
           </>
         )}
       </Card>
+      )}
 
       {state.type === 'nato' && (
         <Card
@@ -1026,16 +1030,21 @@ export function Editor({
 
       {state.type !== 'nato' && state.type !== 'coordination-page' && (
         <>
+      {state.type !== 'joint-letter' && (
       <Card
         title="Identification"
         hint={
           state.type === 'memo-from-to'
-            ? "A memo's only identification symbol is the date (10-2)."
-            : 'Usually added by a yeoman. Not sure? Leave blank — most people only set the date.'
+            ? "A memo usually carries only the date (10-2) — the SSIC/serial lines are optional (\u201cunless local practice calls for more\u201d)."
+            : state.type === 'exec-memo'
+              ? 'An executive memo carries only the date (added when signed) — set it here if needed.'
+              : 'Usually added by a yeoman. Not sure? Leave blank — most people only set the date.'
         }
-        onReset={() => patch({ ssic: '', originatorCode: '', serial: '' })}
+        onReset={() =>
+          patch({ ssic: '', originatorCode: '', serial: '', dateMode: defaultFor(state.type).dateMode, dateManual: '' })
+        }
       >
-        {state.type !== 'memo-from-to' && (
+        {state.type !== 'exec-memo' && (
           <>
             <div className="pills">
               <Pill on={state.includeSsic} onClick={() => patch({ includeSsic: !state.includeSsic })}>
@@ -1104,6 +1113,7 @@ export function Editor({
           </Field>
         )}
       </Card>
+      )}
 
       {state.type === 'business-letter' && (
         <Card
@@ -1359,7 +1369,7 @@ export function Editor({
           title="Executive memo"
           syncId="head"
           hint="Ch 12 (figs 12-9/12-11): the OSD/SecDef staff memo. An Action memo asks the principal to approve/sign (with the Approve/Disapprove block); an Info memo just informs. Edit the Title-Case SUBJECT, references, and the bulleted body in the cards below."
-          onReset={() =>
+          onReset={() => {
             patchExecMemo({
               kind: 'ACTION',
               controlLine: '',
@@ -1369,8 +1379,10 @@ export function Editor({
               coordination: '',
               attachments: 'As stated',
               preparedBy: '',
-            })
-          }
+              cc: '',
+            });
+            patch({ to: '' }); // the FOR: recipient is edited in this card too
+          }}
         >
           <Field label="Kind">
             <select
@@ -1514,7 +1526,7 @@ export function Editor({
           addLabel="Add Via addressee"
           onChange={(via) => setState((s) => syncViaEndorsements({ ...s, via }))}
         />
-        {state.via.some((v) => v.text.trim()) && (
+        {state.type !== 'endorsement' && state.via.some((v) => v.text.trim()) && (
           <p className="hint">
             Each Via addressee automatically gets an endorsement page (appended below) — fill in
             its text in the Endorsements section.
@@ -1568,7 +1580,10 @@ export function Editor({
       <Card
         title="Enclosures"
         hint="Numbered (1), (2)… Name one, choose to embed its file in the document or attach it separately, then drag an image or PDF onto it."
-        onReset={() => patch({ encls: [] })}
+        onReset={() => {
+          patch({ encls: [] });
+          if (state.type === 'business-letter') patchBiz({ separateMailing: '' });
+        }}
       >
         <EnclosureCards
           encls={state.encls}
@@ -1614,6 +1629,8 @@ export function Editor({
         </button>
       </Card>
 
+      {state.type !== 'joint-letter' &&
+        (state.type !== 'exec-memo' || state.execMemo.kind === 'MEMORANDUM-FOR') && (
       <Card
         title="Signature"
         syncId="sig"
@@ -1663,6 +1680,7 @@ export function Editor({
           print and wet-sign.
         </p>
       </Card>
+      )}
 
       <Card
         title="Copy to"

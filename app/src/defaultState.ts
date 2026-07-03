@@ -423,7 +423,21 @@ export function blankFor(type: CorrespondenceType): LetterState {
     business: { ...defaultState.business },
     nato: { ...defaultState.nato },
     moa: { ...defaultState.moa, signerB: { ...defaultState.moa.signerB } },
-    joint: { ...defaultState.joint, parties: [] },
+    // Keep the two-command minimum the UI enforces — a zero-party joint letter renders no ident
+    // columns or signatures and the remove buttons don't show below 3 parties.
+    joint: {
+      ...defaultState.joint,
+      parties: defaultFor('joint-letter').joint.parties.map((p) => ({
+        ...p,
+        command: '',
+        from: '',
+        shortTitle: '',
+        ssic: '',
+        serial: '',
+        date: '',
+        signer: { name: '', title: '', authority: 'none' as const },
+      })),
+    },
     execMemo: { ...defaultState.execMemo },
     coordPage: { entries: [] },
   };

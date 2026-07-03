@@ -47,7 +47,7 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
   both upper-right). 3-party: left / middle / right.
 - ☑ No signature rules (typed names only); senior signature starts at page CENTER (2-party).
 - ☑ Blank line between the From: block and To: (PDF+docx; preview pending in batch 6).
-- ☐ Hide the dead Identification card for joint (per-party ident lives in Joint commands card).
+- ☑ Hide the dead Identification card for joint (per-party ident lives in Joint commands card).
 - ☐ `blankFor('joint-letter')` leaves 0 parties (UI minimum is 2).
 
 ## Batch 5 — endorsements + import hardening ☐
@@ -59,7 +59,7 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
 - ☑ Tighten enclosure data-URL whitelist to raster images + PDF (drop `image/svg+xml`, inert but a
   script carrier).
 - ☐ Preview skips in-document enclosure pages for `type==='endorsement'` while both exports render them.
-- ☐ Routing Via hint promises an Endorsements section that doesn't exist for `type==='endorsement'`.
+- ☑ Routing Via hint promises an Endorsements section that doesn't exist for `type==='endorsement'`.
 
 ## Batch 6 — editor / preview / proofread ☐
 - ☐ `letterhead.titleOnly` honored only by the preview → exporters must skip activity/address too;
@@ -67,11 +67,11 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
 - ☑ Proofread is type-blind: demands Subj/Body/Signature/Date on coordination pages, ALL-CAPS subject
   + date + signature on exec memos (all wrong there); drop the subj-caps nag generally (renderers
   normalize).
-- ☐ Dead controls: Signature card shown for joint + exec-Action/Info (never prints); SSIC/Code pills
+- ☑ Dead controls: Signature card shown for joint + exec-Action/Info (never prints); SSIC/Code pills
   shown for exec (only date prints); Letterhead card shown for coordination page (ignored).
-- ☐ Memo-from-to hides SSIC/Code pills though the renderer supports `Memo <code>/<serial>` (10-2
+- ☑ Memo-from-to hides SSIC/Code pills though the renderer supports `Memo <code>/<serial>` (10-2
   "unless local practice calls for more") — show them (default off).
-- ☐ Card Clear buttons miss fields (exec `cc`+FOR, CUI transmittalNote+controlledBy1, Enclosures'
+- ☑ Card Clear buttons miss fields (exec `cc`+FOR, CUI transmittalNote+controlledBy1, Enclosures'
   separateMailing, Identification date fields).
 - ☐ NATO: CUI checkbox does nothing (NatoForm renders no banner/designation); preprinted letterhead
   mode prints the letterhead anyway.
