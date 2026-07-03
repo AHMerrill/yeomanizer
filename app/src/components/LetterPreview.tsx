@@ -759,12 +759,13 @@ function JointHead({ state }: { state: LetterState }) {
 // Joint letter closing — one signature per command, senior at the RIGHT (7-4). Reuses the MOA
 // signature-line styling.
 function JointClose({ state }: { state: LetterState }) {
+  // Fig 7-4: typed names only (no signature rules); junior at the left margin, senior at the
+  // naval signature position (page center), a third cosigner between them.
   const cols = [...state.joint.parties].reverse(); // senior (parties[0]) at the right
   return (
-    <div className="moa-close" data-sync="sig">
+    <div className={cols.length > 2 ? 'joint-close three' : 'joint-close'} data-sync="sig">
       {cols.map((p, i) => (
-        <div className="moa-sig" key={i}>
-          <div className="moa-sig-line" />
+        <div className="joint-sig" key={i}>
           <div className={p.signer.name ? '' : 'ph'}>{p.signer.name || 'I. M. LASTNAME'}</div>
           {p.signer.title && <div>{p.signer.title}</div>}
           {p.signer.authority === 'by-direction' && <div>By direction</div>}

@@ -42,11 +42,11 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
 - ☑ Coordination-page title is regular weight in fig 12-13 (render bolds it).
 - ☑ Re-measure bullet left position (measured: FLUSH at margin, x identical to FOR: label; all three renderers now bullet-at-margin with 0.25in hang) vs fig 12-9 (agents split: flush-margin vs 0.25in).
 
-## Batch 4 — joint letter (all three renderers) ☐
-- ☐ Ident columns spread full width: junior at LEFT margin, senior at RIGHT (fig 7-4; render clusters
+## Batch 4 — joint letter ☑ (remaining → batch 6: preview From→To blank line, hide Identification card, blankFor 2 parties)
+- ☑ Ident columns spread full width: junior at LEFT margin, senior at RIGHT (fig 7-4; render clusters
   both upper-right). 3-party: left / middle / right.
-- ☐ No signature rules (typed names only); senior signature starts at page CENTER (2-party).
-- ☐ Blank line between the From: block and To: (fig 7-4 hard-return markers).
+- ☑ No signature rules (typed names only); senior signature starts at page CENTER (2-party).
+- ☑ Blank line between the From: block and To: (PDF+docx; preview pending in batch 6).
 - ☐ Hide the dead Identification card for joint (per-party ident lives in Joint commands card).
 - ☐ `blankFor('joint-letter')` leaves 0 parties (UI minimum is 2).
 

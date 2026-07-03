@@ -414,17 +414,27 @@ export function buildDocxDocument(
   // says "upper left", but the manual's own canonical figures 11-2/11-6 show them upper-right with a
   // serial, like a standard letter; we follow the figures + real practice. See signablePdf for the note.)
   if (isJoint) {
-    // Per-command identification columns at the right (senior rightmost), via tab stops (fig 7-4).
+    // Fig 7-4: per-command columns spread the FULL width — junior at the LEFT margin, the senior's
+    // column left-aligned against the RIGHT margin (width estimated), a third party centered.
     const order = [...state.joint.parties].reverse(); // junior … senior (right)
     const n = order.length;
-    // A TIGHT block of columns near the right margin (~1.1in apart), senior rightmost — not spread
-    // across the page (a wide spread overflows the margin and wraps the right column).
-    const pos = (i: number) => Math.round((5.5 - (n - 1 - i) * 1.1) * IN);
-    const stops = order.map((_, i) => ({ type: TabStopType.LEFT, position: pos(i) }));
+    const colW = (p: (typeof order)[number]) =>
+      Math.max(0, ...[p.shortTitle, p.ssic, p.serial, p.date].map((v) => approxPt(v.trim()))) * 20;
+    const CONTENT = Math.round(6.5 * IN);
+    // Tab stops for parties 2..n only — the junior column starts at the margin with no tab.
+    const pos = (i: number) =>
+      i === n - 1
+        ? Math.max(0, Math.round(CONTENT - colW(order[i]) - 120))
+        : Math.max(0, Math.round((CONTENT - colW(order[i])) / 2));
+    const stops = order.slice(1).map((_, k) => ({ type: TabStopType.LEFT, position: pos(k + 1) }));
     const fieldRow = (getter: (p: (typeof order)[number]) => string) =>
       new Paragraph({
         tabStops: stops,
-        children: order.flatMap((p) => [new TextRun({ text: '\t', font: FONT, size: SZ }), R(getter(p) || ' ')]),
+        children: order.flatMap((p, i) =>
+          i === 0
+            ? [R(getter(p) || ' ')]
+            : [new TextRun({ text: '\t', font: FONT, size: SZ }), R(getter(p) || ' ')],
+        ),
         spacing: { after: 0 },
       });
     const anyVal = (g: (p: (typeof order)[number]) => string) => order.some((p) => g(p).trim());
@@ -614,6 +624,7 @@ export function buildDocxDocument(
     state.joint.parties.forEach((p, i) => {
       if (p.from.trim()) children.push(heading(i === 0 ? 'From:' : '', p.from));
     });
+    children.push(spacer(0)); // fig 7-4 marks a blank line between the From: block and To:
     if (state.to) children.push(heading('To:', state.to));
   } else if (!isMfr && !isMoa) {
     // Omit an empty From:/To: line (matches the PDF) — a Distribution-only multiple-address letter
@@ -692,9 +703,9 @@ export function buildDocxDocument(
         ),
         spacing: { before, after: 0 },
       });
-    const SIG_LINE = '____________________';
-    children.push(sigRow(() => SIG_LINE, SIG_GAP));
-    children.push(sigRow((p) => p.signer.name));
+    // Fig 7-4: typed names only — no signature rules; junior at the left margin, senior at the
+    // naval signature position (page center), a third cosigner between them.
+    children.push(sigRow((p) => p.signer.name, SIG_GAP));
     if (order.some((p) => p.signer.title.trim())) children.push(sigRow((p) => p.signer.title));
     if (order.some((p) => authOf(p.signer))) children.push(sigRow((p) => authOf(p.signer)));
   } else if (isExec) {

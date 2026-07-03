@@ -487,10 +487,28 @@
 /* ---- Joint letter / memorandum (Ch 7, fig 7-4) ---- */
 /* Per-command identification columns, right-aligned as a group; the senior command sits at the right. */
 .joint-ident {
+  /* Fig 7-4: columns spread the FULL width — junior at the left margin, senior at the right. */
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 0.45in;
   margin-top: 0.16in;
+}
+/* Joint signatures (fig 7-4): typed names only — no rules; junior left, senior at page center. */
+.joint-close {
+  display: flex;
+  margin-top: calc(var(--para-gap) * 3);
+}
+.joint-sig:first-child {
+  margin-right: auto;
+}
+.joint-sig:last-child {
+  margin-left: 3.25in;
+}
+.joint-sig:only-child {
+  margin-left: 3.25in;
+}
+.joint-close.three .joint-sig:last-child {
+  margin-left: 0;
 }
 .joint-ident.no-letterhead {
   margin-top: 0.5in;

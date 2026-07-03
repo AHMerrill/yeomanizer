@@ -245,16 +245,17 @@ export async function buildSignablePdf(
       [p.shortTitle, p.ssic, p.serial, p.date].map((s) => s.trim()).filter(Boolean);
     const order = [...state.joint.parties].reverse(); // draw left→right: junior … senior
     const widths = order.map((p) => Math.max(0, ...colLines(p).map((l) => font.widthOfTextAtSize(l, SIZE))));
-    const GAPC = 0.3 * PT;
-    const totalW = widths.reduce((a, b) => a + b, 0) + GAPC * Math.max(0, order.length - 1);
-    let x = RIGHT - totalW;
+    const n = order.length;
     const startTop = top;
     let maxTop = top;
     order.forEach((p, idx) => {
       top = startTop;
+      // Fig 7-4: the columns spread the FULL page width — the junior command's column at the LEFT
+      // margin, the senior's at the RIGHT margin, a third party centered between them.
+      const x =
+        idx === n - 1 ? RIGHT - widths[idx] : idx === 0 ? LEFT : LEFT + (RIGHT - LEFT - widths[idx]) / 2;
       colLines(p).forEach((l) => put(l, x));
       maxTop = Math.max(maxTop, top);
-      x += widths[idx] + GAPC;
     });
     top = maxTop;
   } else if (isMoa) {
@@ -444,6 +445,7 @@ export async function buildSignablePdf(
     state.joint.parties.forEach((p, i) => {
       if (p.from.trim()) headRow(i === 0 ? 'From:' : '', p.from);
     });
+    gap(PARA_GAP); // fig 7-4 marks a blank line between the From: block and To:
     if (state.to) headRow('To:', state.to);
   } else if (!isMfr && !isMoa) {
     if (state.from) headRow('From:', state.from);
@@ -708,18 +710,18 @@ export async function buildSignablePdf(
   // Joint letter closing: one signature per command, spread across the page with the senior (party
   // listed first) at the RIGHT and a third cosigner in the middle (7-4).
   const drawJointClose = () => {
-    gap(PARA_GAP * 3);
+    // Fig 7-4: TYPED NAMES ONLY — no signature rules. Names land on the 4th line below the text;
+    // the junior official signs at the LEFT margin, the senior at the RIGHT (the naval signature
+    // position, page center), a third cosigner in the middle of that span (7-4 ¶3).
+    gap(3 * SIZE * BODY_LH - PARA_GAP);
     room(SIZE * BODY_LH * 4);
-    const SIG_LINE = '____________________';
-    const sigW = font.widthOfTextAtSize(SIG_LINE, SIZE);
     const order = [...state.joint.parties].reverse(); // left→right: junior … senior (right)
     const n = order.length;
     const startTop = top;
     let maxTop = top;
     order.forEach((p, idx) => {
       top = startTop;
-      const x = n > 1 ? LEFT + ((RIGHT - sigW - LEFT) * idx) / (n - 1) : sigX;
-      put(SIG_LINE, x);
+      const x = idx === n - 1 ? sigX : idx === 0 ? LEFT : LEFT + ((sigX - LEFT) * idx) / (n - 1);
       if (p.signer.name) put(p.signer.name, x);
       if (p.signer.title) put(p.signer.title, x);
       if (p.signer.authority === 'by-direction') put('By direction', x);
