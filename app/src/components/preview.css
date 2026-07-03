@@ -525,6 +525,7 @@
    Banner top & bottom of every page; designation indicator block on the
    first page, lower-right. Bold, capitalized, centered, black, 12pt. */
 .cui-banner {
+  text-transform: uppercase; /* the PDF/docx uppercase the banner — keep the preview identical */
   position: absolute;
   left: 0;
   right: 0;

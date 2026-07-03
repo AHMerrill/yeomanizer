@@ -77,7 +77,7 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
   mode prints the letterhead anyway.
 - ☑ Business enclosures notation: fig 11-3 runs item 1 on the label line ("Enclosures: 1. X" with
   "2. Y" aligned under) — render puts the label alone.
-- ☐ Preview-only divergences: CUI banner not uppercased (CSS); designation block repeats on each
+- ☑ Preview-only divergences: CUI banner not uppercased (CSS); designation block repeats on each
   endorsement's first page; coordination page flows leftover body/distribution/copyTo the exports drop;
   Editor-tab type switch to MFR keeps appending via-endorsement pages.
 - ☐ Templates: congressional/interim should default date-only ident (figs 12-2/12-4); "Request letter"

@@ -715,7 +715,8 @@ function JointHead({ state }: { state: LetterState }) {
             <span className={p.from.trim() ? 'content' : 'content ph'}>{p.from.trim() || 'Commander, [command]'}</span>
           </div>
         ))}
-        <div className="hrow">
+        {/* fig 7-4 marks a blank line between the From: block and To: */}
+        <div className="hrow h-gap">
           <span className="label">To:</span>
           <span className={state.to ? 'content' : 'content ph'}>{state.to || 'Action addressee'}</span>
         </div>
@@ -953,9 +954,9 @@ export function LetterPreview({ state }: { state: LetterState }) {
         ) : (
           <>
             <LetterDoc state={state} />
-            {state.type !== 'endorsement' &&
+            {(state.type === 'standard-letter' || state.type === 'memo-from-to') &&
               state.endorsements.map((e, i) => (
-                <LetterDoc key={e.id} state={endorsementState(state, e, i)} />
+                <LetterDoc key={e.id} state={endorsementState(state, e, i)} showDesignation={false} />
               ))}
             {state.type !== 'endorsement' &&
               state.encls.map((e, i) =>
@@ -976,7 +977,7 @@ export function LetterPreview({ state }: { state: LetterState }) {
   );
 }
 
-function LetterDoc({ state }: { state: LetterState }) {
+function LetterDoc({ state, showDesignation = true }: { state: LetterState; showDesignation?: boolean }) {
   const cui = state.cui;
   // Portion markings show only once at least one paragraph is marked (per the user's flow:
   // enabling CUI doesn't auto-mark every paragraph). When active: (CUI) marked, (U) otherwise.
@@ -998,18 +999,22 @@ function LetterDoc({ state }: { state: LetterState }) {
   // The coordination page is a standalone table (rendered by Head); it has no body/signature/copy-to.
   const isCoord = state.type === 'coordination-page';
   const items: FlowItem[] = [
-    ...flat.map((fp) => ({
-      key: `p_${fp.key}`,
-      node: (
-        <ParaFlow
-          fp={fp}
-          portionActive={portionActive}
-          business={isBusiness || isExecMemoFor}
-          exec={isExec && !isExecMemoFor}
-          memoFor={isExecMemoFor}
-        />
-      ),
-    })),
+    // The coordination page is title + table only in every renderer — leftover body/distribution/
+    // copy-to from a type switch must not flow beneath it (the exports drop them).
+    ...(isCoord
+      ? []
+      : flat.map((fp) => ({
+          key: `p_${fp.key}`,
+          node: (
+            <ParaFlow
+              fp={fp}
+              portionActive={portionActive}
+              business={isBusiness || isExecMemoFor}
+              exec={isExec && !isExecMemoFor}
+              memoFor={isExecMemoFor}
+            />
+          ),
+        }))),
     ...(isCoord
       ? []
       : [
@@ -1028,8 +1033,8 @@ function LetterDoc({ state }: { state: LetterState }) {
             ),
           },
         ]),
-    ...(distribution.length ? [{ key: 'dist', node: <Distribution items={distribution} /> }] : []),
-    ...(copyTo.length ? [{ key: 'copy', node: <CopyTo items={copyTo} /> }] : []),
+    ...(distribution.length && !isCoord ? [{ key: 'dist', node: <Distribution items={distribution} /> }] : []),
+    ...(copyTo.length && !isCoord ? [{ key: 'copy', node: <CopyTo items={copyTo} /> }] : []),
   ];
 
   const measurerRef = useRef<HTMLDivElement>(null);
@@ -1113,7 +1118,7 @@ function LetterDoc({ state }: { state: LetterState }) {
               return it ? <Fragment key={it.key}>{it.node}</Fragment> : null;
             })}
           </div>
-          {p === 0 && cui.enabled && <Designation cui={cui} />}
+          {p === 0 && cui.enabled && showDesignation && <Designation cui={cui} />}
           {pageList.length > 1 && p >= 1 && <div className="page-number">{p + 1}</div>}
           {cui.enabled && <CuiBanner pos="bottom" text={bannerText} />}
         </div>
