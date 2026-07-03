@@ -58,7 +58,7 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
   text/id/file.name/type pass through unsanitized. THREAT_MODEL claim currently falsified.
 - ☑ Tighten enclosure data-URL whitelist to raster images + PDF (drop `image/svg+xml`, inert but a
   script carrier).
-- ☐ Preview skips in-document enclosure pages for `type==='endorsement'` while both exports render them.
+- ☑ Preview skips in-document enclosure pages for `type==='endorsement'` while both exports render them.
 - ☑ Routing Via hint promises an Endorsements section that doesn't exist for `type==='endorsement'`.
 
 ## Batch 6 — editor / preview / proofread ☐
@@ -80,7 +80,7 @@ code before being accepted. Status: ☑ fixed · ☐ open (this pass) · ⏭ def
 - ☑ Preview-only divergences: CUI banner not uppercased (CSS); designation block repeats on each
   endorsement's first page; coordination page flows leftover body/distribution/copyTo the exports drop;
   Editor-tab type switch to MFR keeps appending via-endorsement pages.
-- ☐ Templates: congressional/interim should default date-only ident (figs 12-2/12-4); "Request letter"
+- ☑ Templates: congressional/interim should default date-only ident (figs 12-2/12-4); "Request letter"
   template seeds a Via without running the endorsement sync.
 - ☐ PDF signature-title should wrap (long titles like ASN(RD&A) overrun); MOA/joint PDF closes lack
   CAC signature fields (hint claims otherwise).

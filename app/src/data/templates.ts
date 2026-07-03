@@ -105,8 +105,9 @@ export const TEMPLATES: Template[] = [
     blurb: 'Reply to a Member of Congress — business-letter format (Ch 12, fig 12-4).',
     build: () => ({
       ...defaultFor('business-letter'),
-      ssic: '[SSIC]',
-      includeSsic: true,
+      // Fig 12-4 shows the date alone above the address — no SSIC/code block by default.
+      includeSsic: false,
+      includeCode: false,
       subj: '',
       copyTo: ['The Honorable [Last Name]', 'Ranking Minority Member'],
       body: [
@@ -165,8 +166,9 @@ export const TEMPLATES: Template[] = [
     blurb: 'Acknowledge incoming correspondence you can’t yet answer fully (Ch 12, fig 12-2).',
     build: () => ({
       ...defaultFor('business-letter'),
-      ssic: '[SSIC]',
-      includeSsic: true,
+      // Fig 12-2 shows the date alone — no SSIC/code block by default.
+      includeSsic: false,
+      includeCode: false,
       subj: '',
       body: [
         para('b1', 'This is to acknowledge your recent letter concerning [subject]. Your letter has been referred to [lead office], and I am responding on behalf of [name].'),

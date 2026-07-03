@@ -958,8 +958,7 @@ export function LetterPreview({ state }: { state: LetterState }) {
               state.endorsements.map((e, i) => (
                 <LetterDoc key={e.id} state={endorsementState(state, e, i)} showDesignation={false} />
               ))}
-            {state.type !== 'endorsement' &&
-              state.encls.map((e, i) =>
+            {state.encls.map((e, i) =>
                 e.inDocument && e.file ? (
                   <EnclosurePage
                     key={e.id}

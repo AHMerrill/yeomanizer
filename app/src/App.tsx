@@ -7,7 +7,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type SetStateAction,
 } from 'react';
-import { defaultFor } from './defaultState';
+import { defaultFor, syncViaEndorsements } from './defaultState';
 import type { LetterState, CorrespondenceType } from './types';
 import { Editor } from './components/Editor';
 import { Checklist } from './components/Checklist';
@@ -163,7 +163,9 @@ export default function App() {
   // so it's undoable (⌘/Ctrl+Z). A different-type example fills that type's own slot — it never
   // destroys the draft you're looking at.
   const loadTemplate = (build: () => LetterState) => {
-    const st = build();
+    // Run the via→endorsement sync so a template that seeds a Via (e.g. the request letter)
+    // arrives with its endorsement page already attached, like typing the Via would.
+    const st = syncViaEndorsements(build());
     const key = 'builder:' + st.type;
     setHistories((h) => {
       const cur = h[key] ?? { past: [], future: [] };
