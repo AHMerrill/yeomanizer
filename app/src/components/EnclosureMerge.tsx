@@ -34,9 +34,20 @@ export function EnclosureMerge() {
       const parts = await Promise.all(
         files.map(async (f) => new Uint8Array(await f.arrayBuffer())),
       );
-      const { bytes, pageCount, skipped } = await mergePdfs(parts);
+      const { bytes, pageCount, skipped, encrypted } = await mergePdfs(parts);
+      // Name the files that didn't make it, and say WHY — a secured PDF is a real PDF we can't
+      // read (pdf-lib can't decrypt), not a "non-PDF file", and the fix is a re-save the user
+      // can actually do. Official government forms are routinely secured this way.
+      const names = (idx: number[]) => idx.map((i) => files[i]?.name).filter(Boolean).join(', ');
+      const securedNote = encrypted.length
+        ? ` ${names(encrypted)} ${encrypted.length > 1 ? 'are' : 'is'} password-protected or secured, which this tool can't read — open ${encrypted.length > 1 ? 'them' : 'it'} in a PDF viewer and re-save (or print) as a new PDF, then add that.`
+        : '';
+      const unreadable = skipped.filter((i) => !encrypted.includes(i));
+      const unreadableNote = unreadable.length
+        ? ` Skipped ${names(unreadable)} — not a readable PDF.`
+        : '';
       if (!pageCount) {
-        setStatus('None of those were readable PDFs — nothing to download.');
+        setStatus(`Nothing to download.${securedNote}${unreadableNote}`);
         return;
       }
       const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' }));
@@ -45,8 +56,7 @@ export function EnclosureMerge() {
       a.download = 'packet.pdf';
       a.click();
       URL.revokeObjectURL(url);
-      const skip = skipped.length ? ` (skipped ${skipped.length} non-PDF file(s))` : '';
-      setStatus(`Combined ${pageCount} page(s) into packet.pdf${skip}.`);
+      setStatus(`Combined ${pageCount} page(s) into packet.pdf.${securedNote}${unreadableNote}`);
     } catch {
       setStatus('Could not combine those files.');
     } finally {
