@@ -32,14 +32,14 @@ describe('EnclosureMerge UI', () => {
     expect(screen.queryByText(/Build combined PDF/)).toBeNull();
   });
 
-  it('names a secured PDF and explains the re-save workaround, not "non-PDF"', async () => {
+  it('says a locked PDF came in as images, and still downloads the packet', async () => {
     URL.createObjectURL = vi.fn(() => 'blob:x');
     URL.revokeObjectURL = vi.fn();
     mergeMock.mockResolvedValue({
       bytes: new Uint8Array([37, 80, 68, 70]),
-      pageCount: 2,
-      skipped: [1],
-      encrypted: [1],
+      pageCount: 4,
+      skipped: [],
+      rasterized: [1],
     });
 
     render(<EnclosureMerge />);
@@ -47,11 +47,11 @@ describe('EnclosureMerge UI', () => {
     await clickBuild();
 
     await waitFor(() => {
-      const msg = screen.getByText(/Combined 2 page\(s\)/).textContent ?? '';
+      const msg = screen.getByText(/Combined 4 page\(s\)/).textContent ?? '';
       expect(msg).toContain('NAVPERS_1626-7.pdf');
-      expect(msg).toContain('password-protected or secured');
-      expect(msg).toContain('re-save');
-      expect(msg).not.toContain('non-PDF');
+      expect(msg).toContain('locked');
+      expect(msg).toContain('images');
+      expect(msg).not.toContain('Skipped'); // it went IN — it was not dropped
     });
   });
 
@@ -60,7 +60,7 @@ describe('EnclosureMerge UI', () => {
       bytes: new Uint8Array(),
       pageCount: 0,
       skipped: [0],
-      encrypted: [],
+      rasterized: [],
     });
 
     render(<EnclosureMerge />);
@@ -71,7 +71,7 @@ describe('EnclosureMerge UI', () => {
       const msg = screen.getByText(/Nothing to download/).textContent ?? '';
       expect(msg).toContain('notes.pdf');
       expect(msg).toContain('not a readable PDF');
-      expect(msg).not.toContain('secured');
+      expect(msg).not.toContain('locked');
     });
   });
 });

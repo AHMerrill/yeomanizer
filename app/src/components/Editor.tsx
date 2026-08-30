@@ -18,6 +18,7 @@ import * as tree from '../format/tree';
 import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { ENDORSE_ORD } from '../format/identification';
 import { COMMON_SSIC, type SsicOption } from '../data/ssic';
+import { EnclosureMerge } from './EnclosureMerge';
 import { CUI_CATEGORIES } from '../data/cui';
 import { NAVY_RANKS } from '../data/ranks';
 
@@ -503,6 +504,10 @@ function EnclosureCards({
       >
         + Add enclosure
       </button>
+      {/* Staple an ALREADY-SAVED letter PDF to enclosure files. Distinct from the per-enclosure
+          cards above, which build the package as you draft: this is for when the letter is already
+          exported (or came from somewhere else) and you just need one combined packet. */}
+      <EnclosureMerge />
     </div>
   );
 }

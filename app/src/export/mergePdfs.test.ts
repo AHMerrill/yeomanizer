@@ -37,7 +37,7 @@ describe('mergePdfs — combine PDFs client-side', () => {
     const r = await mergePdfs([await makePdf(2), await makePdf(1)]);
     expect(r.pageCount).toBe(3);
     expect(r.skipped).toEqual([]);
-    expect(r.encrypted).toEqual([]);
+    expect(r.rasterized).toEqual([]);
   });
 
   it('returns a valid PDF (%PDF- header)', async () => {
@@ -50,7 +50,7 @@ describe('mergePdfs — combine PDFs client-side', () => {
     const bad = new TextEncoder().encode('this is not a pdf');
     const r = await mergePdfs([good, bad, good]);
     expect(r.skipped).toEqual([1]);
-    expect(r.encrypted).toEqual([]); // unparseable ≠ encrypted
+    expect(r.rasterized).toEqual([]); // unparseable ≠ locked
     expect(r.pageCount).toBe(2);
   });
 
@@ -65,27 +65,47 @@ describe('mergePdfs — combine PDFs client-side', () => {
   });
 
   // pdf-lib cannot decrypt (it has no RC4/AES code); `ignoreEncryption` only suppresses the throw.
-  // Copying pages out of an encrypted source produced a packet that opened fine with SILENTLY BLANK
-  // pages and skipped === [] — the user was told "Combined N page(s)" and got garbage.
-  describe('encrypted / secured sources', () => {
+  // Copying pages out of a locked source produced a packet that opened fine with SILENTLY BLANK
+  // pages and skipped === [] — the user was told "Combined N page(s)" and got garbage. Now those
+  // pages are rendered with pdf.js and embedded as images, so the real document still comes through.
+  describe('locked / encrypted sources', () => {
+    // A 1x1 PNG, the smallest thing pdf-lib will embed — stands in for a rendered page.
+    const PNG_1PX = Uint8Array.from(
+      atob(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      ),
+      (c) => c.charCodeAt(0),
+    );
+    const fakeRender = async () => [
+      { bytes: PNG_1PX, width: 612 * 3, height: 792 * 3 },
+      { bytes: PNG_1PX, width: 612 * 3, height: 792 * 3 },
+    ];
+
     it('the fixture really is detected as encrypted by pdf-lib', async () => {
       const doc = await PDFDocument.load(await makeEncryptedPdf(), { ignoreEncryption: true });
       expect(doc.isEncrypted).toBe(true);
     });
 
-    it('refuses an encrypted source instead of merging blank pages', async () => {
-      const r = await mergePdfs([await makePdf(2), await makeEncryptedPdf()]);
-      expect(r.pageCount).toBe(2); // only the readable input contributed
-      expect(r.skipped).toEqual([1]);
-      expect(r.encrypted).toEqual([1]);
+    it('brings a locked source in as page images instead of blank pages', async () => {
+      const r = await mergePdfs([await makePdf(2), await makeEncryptedPdf()], fakeRender);
+      expect(r.pageCount).toBe(4); // 2 vector + 2 rendered
+      expect(r.skipped).toEqual([]);
+      expect(r.rasterized).toEqual([1]);
     });
 
-    it('reports an encrypted-only merge as empty rather than producing a blank packet', async () => {
-      const r = await mergePdfs([await makeEncryptedPdf()]);
-      expect(r.pageCount).toBe(0);
-      expect(r.bytes.length).toBe(0);
-      expect(r.skipped).toEqual([0]);
-      expect(r.encrypted).toEqual([0]);
+    it('renders the locked pages at their true page size, not the pixel size', async () => {
+      const r = await mergePdfs([await makeEncryptedPdf()], fakeRender);
+      const doc = await PDFDocument.load(r.bytes, { updateMetadata: false });
+      const { width, height } = doc.getPage(0).getSize();
+      expect(Math.round(width)).toBe(612);
+      expect(Math.round(height)).toBe(792);
+    });
+
+    it('falls back to skipping when a locked source cannot be rendered', async () => {
+      const r = await mergePdfs([await makePdf(1), await makeEncryptedPdf()], async () => []);
+      expect(r.pageCount).toBe(1);
+      expect(r.skipped).toEqual([1]);
+      expect(r.rasterized).toEqual([]);
     });
   });
 });

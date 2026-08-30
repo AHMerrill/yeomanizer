@@ -21,6 +21,8 @@ import { anyCui } from '../format/tree';
 import { documentFilename } from '../format/filename';
 import { loadSealBytes } from './docx';
 import { stripPdfMetadata } from './pdfMeta';
+import { addRasterPage, isLockedPdf, renderLockedPdf } from './lockedPdf';
+import type { RasterPage } from './rasterizePdf';
 
 const PT = 72;
 const PAGE_W = 8.5 * PT;
@@ -50,6 +52,10 @@ export async function buildSignablePdf(
   // test harness can't fetch a Vite asset, so it passes the PNG read from disk — letting automated
   // checks actually verify seal embedding (otherwise the seal silently never embeds in tests).
   sealBytes?: Uint8Array | ArrayBuffer,
+  // Page images for in-document enclosures whose PDF is LOCKED (encrypted), keyed by enclosure id.
+  // pdf-lib cannot read those files at all, so `exportSignablePdf` pre-renders them with pdf.js and
+  // we embed the images instead of copying vector pages. Absent/empty = nothing was locked.
+  lockedEnclPages: Record<string, RasterPage[]> = {},
 ): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb, PDFName, PDFString } = await import('pdf-lib');
   const doc = await PDFDocument.create();
@@ -921,13 +927,30 @@ export async function buildSignablePdf(
       pg.drawText(mark, { x: pw - M_SIDE - font.widthOfTextAtSize(mark, SIZE), y: M_BOT, size: SIZE, font });
     };
     if (e.file.type === 'application/pdf') {
-      const src = await PDFDocument.load(dataUrlToBytes(e.file.dataUrl), { ignoreEncryption: true });
-      const copied = await doc.copyPages(src, src.getPageIndices());
-      copied.forEach((pg) => {
-        doc.addPage(pg);
-        pageBannerOverride.set(doc.getPageCount() - 1, enclBanner);
-        stamp(pg);
-      });
+      // A LOCKED (encrypted) enclosure — every official government form is one — can't be read by
+      // pdf-lib; copying its pages yields blank ones. The caller pre-renders those with pdf.js and
+      // hands the page images in here, so the enclosure still appears. See export/lockedPdf.ts.
+      const locked = lockedEnclPages[e.id];
+      if (locked?.length) {
+        for (const rp of locked) {
+          const pg = await addRasterPage(doc, rp);
+          pageBannerOverride.set(doc.getPageCount() - 1, enclBanner);
+          stamp(pg);
+        }
+      } else {
+        const src = await PDFDocument.load(dataUrlToBytes(e.file.dataUrl), { ignoreEncryption: true });
+        // NEVER copy pages out of a locked document. pdf-lib can't decrypt, so every copied page
+        // comes out blank — and a blank page that looks like a real enclosure is far worse than a
+        // missing one, because nothing about the export says anything went wrong. Reaching here
+        // means the pre-render didn't run or failed (see exportSignablePdf); omit the pages.
+        if (src.isEncrypted) continue;
+        const copied = await doc.copyPages(src, src.getPageIndices());
+        copied.forEach((pg) => {
+          doc.addPage(pg);
+          pageBannerOverride.set(doc.getPageCount() - 1, enclBanner);
+          stamp(pg);
+        });
+      }
     } else {
       const img = await embedImageFile(doc, e.file);
       const pg = doc.addPage([PAGE_W, PAGE_H]);
@@ -975,7 +998,33 @@ export async function buildSignablePdf(
 }
 
 export async function exportSignablePdf(state: LetterState, today: Date = new Date()): Promise<void> {
-  download(await buildSignablePdf(state, today), documentFilename(state, 'pdf'));
+  download(
+    await buildSignablePdf(state, today, undefined, await renderLockedEnclosures(state)),
+    documentFilename(state, 'pdf'),
+  );
+}
+
+// Pre-render any LOCKED (encrypted) in-document PDF enclosure to page images. pdf-lib can't read
+// those at all — without this they export as blank pages — but pdf.js can, so we fall back to
+// images for exactly those files and nothing else. pdf.js lazy-loads only if one turns up, so the
+// common case pays nothing. A render failure leaves the enclosure out of the map, which falls back
+// to the vector path (and its existing behavior) rather than breaking the whole export.
+export async function renderLockedEnclosures(
+  state: LetterState,
+): Promise<Record<string, RasterPage[]>> {
+  const out: Record<string, RasterPage[]> = {};
+  for (const e of state.encls) {
+    if (!e.inDocument || !e.file || e.file.type !== 'application/pdf') continue;
+    const bytes = dataUrlToBytes(e.file.dataUrl);
+    if (!(await isLockedPdf(bytes))) continue;
+    try {
+      const pages = await renderLockedPdf(bytes);
+      if (pages.length) out[e.id] = pages;
+    } catch {
+      /* leave it unset → the vector path runs, same as before */
+    }
+  }
+  return out;
 }
 
 // Construct an AcroForm digital-signature field (/FT /Sig) + a borderless widget annotation, so

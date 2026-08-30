@@ -34,20 +34,19 @@ export function EnclosureMerge() {
       const parts = await Promise.all(
         files.map(async (f) => new Uint8Array(await f.arrayBuffer())),
       );
-      const { bytes, pageCount, skipped, encrypted } = await mergePdfs(parts);
-      // Name the files that didn't make it, and say WHY — a secured PDF is a real PDF we can't
-      // read (pdf-lib can't decrypt), not a "non-PDF file", and the fix is a re-save the user
-      // can actually do. Official government forms are routinely secured this way.
+      const { bytes, pageCount, skipped, rasterized } = await mergePdfs(parts);
+      // Name the files that needed special handling. A locked PDF (every official government form
+      // is one) still goes in — as page images, since it can't be read as text — and a file that
+      // isn't a readable PDF at all is a different thing, so say which is which.
       const names = (idx: number[]) => idx.map((i) => files[i]?.name).filter(Boolean).join(', ');
-      const securedNote = encrypted.length
-        ? ` ${names(encrypted)} ${encrypted.length > 1 ? 'are' : 'is'} password-protected or secured, which this tool can't read — open ${encrypted.length > 1 ? 'them' : 'it'} in a PDF viewer and re-save (or print) as a new PDF, then add that.`
+      const lockedNote = rasterized.length
+        ? ` ${names(rasterized)} ${rasterized.length > 1 ? 'were' : 'was'} locked, so ${rasterized.length > 1 ? 'their' : 'its'} pages came in as images — they print normally, but the text isn't selectable.`
         : '';
-      const unreadable = skipped.filter((i) => !encrypted.includes(i));
-      const unreadableNote = unreadable.length
-        ? ` Skipped ${names(unreadable)} — not a readable PDF.`
+      const skippedNote = skipped.length
+        ? ` Skipped ${names(skipped)} — not a readable PDF.`
         : '';
       if (!pageCount) {
-        setStatus(`Nothing to download.${securedNote}${unreadableNote}`);
+        setStatus(`Nothing to download.${skippedNote}`);
         return;
       }
       const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' }));
@@ -56,7 +55,7 @@ export function EnclosureMerge() {
       a.download = 'packet.pdf';
       a.click();
       URL.revokeObjectURL(url);
-      setStatus(`Combined ${pageCount} page(s) into packet.pdf.${securedNote}${unreadableNote}`);
+      setStatus(`Combined ${pageCount} page(s) into packet.pdf.${lockedNote}${skippedNote}`);
     } catch {
       setStatus('Could not combine those files.');
     } finally {
