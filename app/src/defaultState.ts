@@ -129,6 +129,16 @@ export const defaultState: LetterState = {
   coordPage: {
     entries: [],
   },
+  njp: {
+    values: {},
+    checks: {},
+    detailsOfOffenses: '',
+    recordOfPreviousOffenses: '',
+    coComments: '',
+    restrictedLimits: '',
+    inLieuOf: '',
+    pleas: [],
+  },
 };
 
 // Per-type starting draft. Most types share `defaultState`; some need faithful defaults that match
@@ -137,6 +147,26 @@ export const defaultState: LetterState = {
 // local practice uses a file number can switch them on; "not required" ≠ removed).
 export function defaultFor(type: CorrespondenceType): LetterState {
   const base: LetterState = { ...defaultState, type };
+  if (type === 'njp-1626-7') {
+    // A drawn form on its own sheet: no letterhead, no naval-letter heading, no body paragraphs.
+    // It starts BLANK — a blank form is the correct starting point, and pre-filling any part of a
+    // disciplinary record would put words in the command's mouth.
+    return {
+      ...base,
+      letterhead: { ...base.letterhead, mode: 'off' },
+      includeSsic: false,
+      includeCode: false,
+      dateMode: 'none',
+      from: '',
+      to: '',
+      via: [],
+      subj: '',
+      refs: [],
+      encls: [],
+      body: [],
+      njp: { ...base.njp, values: {}, checks: {}, pleas: [{ id: uid(), article: '', charge: '', specification: '', plea: '', finding: '' }] },
+    };
+  }
   if (type === 'mfr') {
     return {
       ...base,

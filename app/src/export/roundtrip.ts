@@ -8,6 +8,14 @@
 import { defaultState } from '../defaultState';
 import { documentFilename } from '../format/filename';
 import type { LetterState, Paragraph, EnclosureEntry, ListEntry } from '../types';
+import { FORM_1626_PAGES } from '../data/form1626';
+
+// The 1626/7's field ids come from the generated form geometry — an import is validated against
+// them, so a hand-edited file can't introduce keys the renderers never expect.
+const KNOWN_SLOT_IDS = FORM_1626_PAGES.flatMap((p) => p.slots.map((s) => s.id));
+const KNOWN_CHECK_IDS = FORM_1626_PAGES.flatMap((p) =>
+  p.checks.map((c) => c.id).filter((id): id is string => !!id),
+);
 
 const VERSION = 1;
 interface Project {
@@ -193,9 +201,53 @@ export function parseProject(text: string): LetterState | null {
           remarks: typeof e.remarks === 'string' ? e.remarks.slice(0, 120) : '',
         })),
     };
+    // NAVPERS 1626/7: the value/check maps are keyed by ids GENERATED from the form geometry, so
+    // only known ids are let back in — an unknown key can never reach a renderer, and the map can
+    // never grow past the number of slots the sheet actually has.
+    const rawNjp = s.njp as unknown as Record<string, unknown> | undefined;
+    const values: Record<string, string> = {};
+    const checks: Record<string, boolean> = {};
+    if (rawNjp && typeof rawNjp === 'object') {
+      const rv = rawNjp.values;
+      if (rv && typeof rv === 'object') {
+        for (const id of KNOWN_SLOT_IDS) {
+          const v = (rv as Record<string, unknown>)[id];
+          if (typeof v === 'string') values[id] = v.slice(0, 300);
+        }
+      }
+      const rc = rawNjp.checks;
+      if (rc && typeof rc === 'object') {
+        for (const id of KNOWN_CHECK_IDS) {
+          if ((rc as Record<string, unknown>)[id] === true) checks[id] = true;
+        }
+      }
+    }
+    const njpStr = (k: string, cap: number) =>
+      rawNjp && typeof rawNjp[k] === 'string' ? (rawNjp[k] as string).slice(0, cap) : '';
+    const njp = {
+      values,
+      checks,
+      detailsOfOffenses: njpStr('detailsOfOffenses', 4000),
+      recordOfPreviousOffenses: njpStr('recordOfPreviousOffenses', 4000),
+      coComments: njpStr('coComments', 4000),
+      restrictedLimits: njpStr('restrictedLimits', 200),
+      inLieuOf: njpStr('inLieuOf', 200),
+      pleas: (rawNjp && Array.isArray(rawNjp.pleas) ? (rawNjp.pleas as unknown[]) : [])
+        .slice(0, 40)
+        .filter((e): e is Record<string, unknown> => !!e && typeof e === 'object')
+        .map((e, i) => ({
+          id: typeof e.id === 'string' ? e.id : `p${i}`,
+          article: typeof e.article === 'string' ? e.article.slice(0, 40) : '',
+          charge: typeof e.charge === 'string' ? e.charge.slice(0, 40) : '',
+          specification: typeof e.specification === 'string' ? e.specification.slice(0, 60) : '',
+          plea: typeof e.plea === 'string' ? e.plea.slice(0, 60) : '',
+          finding: typeof e.finding === 'string' ? e.finding.slice(0, 60) : '',
+        })),
+    };
     return sanitizeEnclosures({
       ...defaultState,
       ...s,
+      njp,
       body,
       business,
       letterhead,

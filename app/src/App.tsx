@@ -37,6 +37,7 @@ const TYPE_SET: Record<CorrespondenceType, true> = {
   'joint-letter': true,
   'exec-memo': true,
   'coordination-page': true,
+  'njp-1626-7': true,
   nato: true,
 };
 const ALL_TYPES = Object.keys(TYPE_SET) as CorrespondenceType[];

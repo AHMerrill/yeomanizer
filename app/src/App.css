@@ -2062,3 +2062,42 @@
     overflow: visible !important;
   }
 }
+
+/* ---- NAVPERS 1626/7 editor ------------------------------------------------------------------ */
+.njp-section { margin-top: 14px; }
+.njp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px 12px;
+}
+.njp-field { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+.njp-field > span { font-size: 12px; color: #9aa1b0; }
+.njp-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 4px 12px;
+  margin-top: 4px;
+}
+.njp-check { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+/* WebKit honors width:100% on a checkbox (CHECKLIST bug #7) — keep the generic input rule off them. */
+.njp-check input[type='checkbox'] { width: auto; flex: none; }
+.njp-plea {
+  display: grid;
+  grid-template-columns: 22px repeat(5, 1fr) 28px;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+.njp-warn {
+  border: 1px solid #6a5a2a;
+  background: #221d10;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+.njp-warn strong { font-size: 13px; }
+.njp-warn ul { margin: 6px 0 0; padding-left: 18px; }
+.njp-warn li { font-size: 13px; line-height: 1.45; margin-bottom: 4px; }
+@media (max-width: 880px) {
+  .njp-plea { grid-template-columns: 22px 1fr 1fr 28px; }
+}

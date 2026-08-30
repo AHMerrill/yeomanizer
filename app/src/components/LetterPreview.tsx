@@ -19,6 +19,7 @@ import {
   remainingVias,
   type IdentLines,
 } from '../format/identification';
+import { Form1626 } from './Form1626';
 import { NatoForm } from './NatoForm';
 import './preview.css';
 
@@ -964,7 +965,9 @@ export function LetterPreview({ state }: { state: LetterState }) {
   return (
     <div className="preview-fit" ref={fitRef}>
       <div className="preview-pages" ref={pagesRef}>
-        {state.type === 'nato' ? (
+        {state.type === 'njp-1626-7' ? (
+          <Form1626 state={state} />
+        ) : state.type === 'nato' ? (
           <NatoForm state={state} />
         ) : (
           <>

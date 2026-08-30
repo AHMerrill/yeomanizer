@@ -35,7 +35,7 @@ export function proofread(s: LetterState): Check[] {
 
   // Subject — every type except the NATO form, the business letter (which may use a salutation),
   // and the coordination page (a table; it has no Subj line at all).
-  if (t !== 'nato' && t !== 'business-letter' && t !== 'coordination-page') {
+  if (t !== 'nato' && t !== 'business-letter' && t !== 'coordination-page' && t !== 'njp-1626-7') {
     const subj = s.subj.trim();
     add('subj', 'Subject line filled in', subj.length > 0, 'Add a Subj: line naming the topic.');
     if (subj) {
@@ -62,7 +62,7 @@ export function proofread(s: LetterState): Check[] {
 
   // Body (¶19.b(6): paragraphs sequentially numbered/lettered — never a single subdivision).
   // The coordination page is a table — no body, signature, or date to check.
-  if (t !== 'nato' && t !== 'coordination-page') {
+  if (t !== 'nato' && t !== 'coordination-page' && t !== 'njp-1626-7') {
     add('body', 'Body has content', anyText(s.body), 'Write at least one paragraph.');
     add('subdiv', 'No lone subparagraph', !hasLoneChild(s.body),
       'If you subdivide a paragraph, use at least two subparagraphs — never a single (a) or (1).');
@@ -91,14 +91,14 @@ export function proofread(s: LetterState): Check[] {
   }
 
   // A typed (manual) date should look like the naval DD MMM YY form.
-  if (t !== 'nato' && s.dateMode === 'manual' && s.dateManual.trim()) {
+  if (t !== 'nato' && t !== 'njp-1626-7' && s.dateMode === 'manual' && s.dateManual.trim()) {
     add('date-fmt', 'Date is in DD MMM YY form',
       /^\s*\d{1,2}\s+[A-Za-z]{3,}\s+\d{2,4}\s*$/.test(s.dateManual.trim()),
       'Naval dates use day, abbreviated month, year — e.g., 7 Sep 26.');
   }
 
   // References / enclosures cited in the body must actually exist in the lists.
-  if (t !== 'nato') {
+  if (t !== 'nato' && t !== 'njp-1626-7') {
     const body = bodyText(s.body);
     const refMax = maxCited(body, /\bref(?:erence)?s?\s*\(\s*([a-z])\s*\)/gi, (m) => m.toLowerCase().charCodeAt(0) - 96);
     if (refMax > 0) {
@@ -142,7 +142,7 @@ export function proofread(s: LetterState): Check[] {
   }
 
   // Enclosures listed must each have a title (¶19.b(7): enclosure markings correct).
-  if (t !== 'nato' && s.encls.length) {
+  if (t !== 'nato' && t !== 'njp-1626-7' && s.encls.length) {
     add('encl-titles', 'Every listed enclosure has a title', s.encls.every((e) => e.text.trim().length > 0),
       'Give each enclosure a title, or remove the empty one.');
   }
