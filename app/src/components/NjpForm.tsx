@@ -8,8 +8,57 @@
 import type { LetterState, Njp, NjpPlea } from '../types';
 import { FORM_1626_PAGES } from '../data/form1626';
 import { njpLimitWarnings } from '../format/njpLimits';
+import { searchArticles, UCMJ_ARTICLES } from '../data/ucmj';
+import { useState } from 'react';
 
 const uid = () => Math.random().toString(36).slice(2, 9);
+
+// Article picker for the pleas table. Typing "86", "awol", or "absence" finds Article 86; picking
+// fills the number. The list is the statute's own headings (data/ucmj.ts) — it looks an article up,
+// it does not suggest what to charge.
+function ArticlePicker({ value, onPick, label }: { value: string; onPick: (a: string) => void; label: string }) {
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(false);
+  const matches = searchArticles(q || value, 10);
+  const known = UCMJ_ARTICLES.find((a) => a.a === value.trim());
+  return (
+    <div className="art-pick">
+      <input
+        type="text"
+        placeholder="Article #"
+        aria-label={label}
+        value={value}
+        title={known ? `Art. ${known.a} — ${known.t}` : undefined}
+        onChange={(e) => {
+          onPick(e.target.value);
+          setQ(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+      />
+      {open && matches.length > 0 && (
+        <ul className="art-results">
+          {matches.map((a) => (
+            <li key={a.a}>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onPick(a.a);
+                  setQ('');
+                  setOpen(false);
+                }}
+              >
+                <strong>Art. {a.a}</strong> <span>{a.t}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 // Human labels for the generated slot ids, read off the form's own printed labels.
 const SLOT_LABELS: Record<string, string> = {
@@ -207,15 +256,25 @@ export function NjpForm({ state, onChange }: { state: LetterState; onChange: (s:
           />
         </label>
         <div className="sub-label">Entered pleas and findings</div>
-        <p className="hint">The sheet prints five rows; add more and they continue on an added page.</p>
+        <p className="hint">
+          Type a number or a keyword in the article box — &ldquo;86&rdquo;, &ldquo;awol&rdquo;, and
+          &ldquo;absence&rdquo; all find Article 86. The list is the punitive articles as they appear in
+          the U.S. Code; it looks an article up, it doesn&rsquo;t suggest what to charge. The sheet
+          prints five rows.
+        </p>
         {njp.pleas.map((row, i) => (
           <div className="njp-plea" key={row.id}>
             <span className="entry-idx">{i + 1}</span>
-            {(['article', 'charge', 'specification', 'plea', 'finding'] as const).map((k) => (
+            <ArticlePicker
+              value={row.article}
+              label={`Row ${i + 1} article`}
+              onPick={(a) => setPlea(row.id, { article: a })}
+            />
+            {(['charge', 'specification', 'plea', 'finding'] as const).map((k) => (
               <input
                 key={k}
                 type="text"
-                placeholder={k === 'article' ? 'Article #' : k[0].toUpperCase() + k.slice(1)}
+                placeholder={k[0].toUpperCase() + k.slice(1)}
                 aria-label={`Row ${i + 1} ${k}`}
                 value={row[k]}
                 onChange={(e) => setPlea(row.id, { [k]: e.target.value })}
