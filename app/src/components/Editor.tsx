@@ -18,6 +18,8 @@ import * as tree from '../format/tree';
 import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { ENDORSE_ORD } from '../format/identification';
 import { COMMON_SSIC, type SsicOption } from '../data/ssic';
+import { EnclosureMerge } from './EnclosureMerge';
+import { NjpForm } from './NjpForm';
 import { CUI_CATEGORIES } from '../data/cui';
 import { NAVY_RANKS } from '../data/ranks';
 
@@ -503,6 +505,10 @@ function EnclosureCards({
       >
         + Add enclosure
       </button>
+      {/* Staple an ALREADY-SAVED letter PDF to enclosure files. Distinct from the per-enclosure
+          cards above, which build the package as you draft: this is for when the letter is already
+          exported (or came from somewhere else) and you just need one combined packet. */}
+      <EnclosureMerge />
     </div>
   );
 }
@@ -654,6 +660,7 @@ export function Editor({
           <option value="joint-letter">Joint Letter / Memorandum (co-signed by 2+ commands)</option>
           <option value="exec-memo">Executive memo — Action / Info (Ch 12, HqDON/OSD staff)</option>
           <option value="coordination-page">Coordination page (Ch 12 — concurrence table)</option>
+          <option value="njp-1626-7">Report and Disposition of Offense(s) (NAVPERS 1626/7)</option>
         </select>
       </Card>
 
@@ -800,7 +807,7 @@ export function Editor({
         </Card>
       )}
 
-      {state.type !== 'coordination-page' && (
+      {state.type !== 'coordination-page' && state.type !== 'njp-1626-7' && (
       <Card title="Letterhead" hint="No abbreviations or punctuation in the address (2-12).">
         <div className="pills">
           <Pill on={state.letterhead.mode === 'on'} onClick={() => patchLH({ mode: 'on' })}>
@@ -914,6 +921,7 @@ export function Editor({
       </Card>
       )}
 
+      {state.type === 'njp-1626-7' && <NjpForm state={state} onChange={(s) => setState(() => s)} />}
       {state.type === 'nato' && (
         <Card
           title="NATO Travel Order"
@@ -1028,7 +1036,7 @@ export function Editor({
         </Card>
       )}
 
-      {state.type !== 'nato' && state.type !== 'coordination-page' && (
+      {state.type !== 'nato' && state.type !== 'coordination-page' && state.type !== 'njp-1626-7' && (
         <>
       {state.type !== 'joint-letter' && (
       <Card

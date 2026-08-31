@@ -21,6 +21,9 @@ import { anyCui } from '../format/tree';
 import { documentFilename } from '../format/filename';
 import { loadSealBytes } from './docx';
 import { stripPdfMetadata } from './pdfMeta';
+import { addRasterPage, isLockedPdf, renderLockedPdf } from './lockedPdf';
+import { FORM_1626_PAGES, FORM_1626_SIGS, FORM_PAGE_W, FORM_PAGE_H } from '../data/form1626';
+import type { RasterPage } from './rasterizePdf';
 
 const PT = 72;
 const PAGE_W = 8.5 * PT;
@@ -50,6 +53,10 @@ export async function buildSignablePdf(
   // test harness can't fetch a Vite asset, so it passes the PNG read from disk — letting automated
   // checks actually verify seal embedding (otherwise the seal silently never embeds in tests).
   sealBytes?: Uint8Array | ArrayBuffer,
+  // Page images for in-document enclosures whose PDF is LOCKED (encrypted), keyed by enclosure id.
+  // pdf-lib cannot read those files at all, so `exportSignablePdf` pre-renders them with pdf.js and
+  // we embed the images instead of copying vector pages. Absent/empty = nothing was locked.
+  lockedEnclPages: Record<string, RasterPage[]> = {},
 ): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb, PDFName, PDFString } = await import('pdf-lib');
   const doc = await PDFDocument.create();
@@ -136,6 +143,108 @@ export async function buildSignablePdf(
   };
 
   const lh = state.letterhead;
+
+  // NAVPERS 1626/7 (Rev. 06-2025): a drawn FORM, not a letter. The sheet lives in data/form1626.ts
+  // and is walked by BOTH this renderer and the preview, so the two cannot drift. Standalone —
+  // returns early, which per CHECKLIST means it must still run applyCui() + stripPdfMetadata()
+  // before it returns, or CUI silently does nothing and the PDF ships identifying metadata.
+  if (state.type === 'njp-1626-7') {
+    const helv = await doc.embedFont(StandardFonts.Helvetica);
+    const helvB = await doc.embedFont(StandardFonts.HelveticaBold);
+    const helvI = await doc.embedFont(StandardFonts.HelveticaOblique);
+    const njp = state.njp;
+    const flip = (yTop: number) => FORM_PAGE_H - yTop;
+
+    FORM_1626_PAGES.forEach((fp, pi) => {
+      const pg = pi === 0 ? doc.getPage(0) : doc.addPage([FORM_PAGE_W, FORM_PAGE_H]);
+      if (pi === 0) pg.setSize(FORM_PAGE_W, FORM_PAGE_H);
+      for (const r of fp.rules) {
+        pg.drawRectangle({ x: r.x, y: flip(r.y + r.h), width: r.w, height: r.h, color: black });
+      }
+      for (const c of fp.checks) {
+        pg.drawRectangle({
+          x: c.x, y: flip(c.y + c.h), width: c.w, height: c.h,
+          borderColor: black, borderWidth: 0.6,
+        });
+        if (c.id && njp.checks[c.id]) {
+          // An X, not a glyph — it reads at any size and never depends on a font's dingbats.
+          const i = 1.9;
+          pg.drawLine({ start: { x: c.x + i, y: flip(c.y + i) }, end: { x: c.x + c.w - i, y: flip(c.y + c.h - i) }, thickness: 1.1, color: black });
+          pg.drawLine({ start: { x: c.x + i, y: flip(c.y + c.h - i) }, end: { x: c.x + c.w - i, y: flip(c.y + i) }, thickness: 1.1, color: black });
+        }
+      }
+      for (const g of fp.glyphs) {
+        pg.drawText(g.t, {
+          x: g.x, y: flip(g.y + g.s * 0.8), size: g.s,
+          font: g.b ? helvB : g.i ? helvI : helv, color: black,
+        });
+      }
+      // Typed values, clipped to their slot so a long entry can never run into the next cell.
+      for (const slot of fp.slots) {
+        const v = (njp.values[slot.id] ?? '').trim();
+        if (!v) continue;
+        let t = v;
+        while (t && helv.widthOfTextAtSize(t, slot.s) > slot.w) t = t.slice(0, -1);
+        pg.drawText(t, { x: slot.x, y: flip(slot.y + slot.s * 0.8), size: slot.s, font: helv, color: black });
+      }
+    });
+
+    // Free-text blocks (measured areas, wrapped) and the pleas table.
+    const wrapAt = (text: string, size: number, maxW: number) => {
+      const out: string[] = [];
+      for (const para of text.split(/\n/)) {
+        let line = '';
+        for (const word of para.split(/\s+/)) {
+          const trial = line ? line + ' ' + word : word;
+          if (line && helv.widthOfTextAtSize(trial, size) > maxW) { out.push(line); line = word; }
+          else line = trial;
+        }
+        out.push(line);
+      }
+      return out;
+    };
+    const area = (pi: number, text: string, x: number, y: number, w: number, h: number, size = 9) => {
+      if (!text.trim()) return;
+      const pg = doc.getPage(pi);
+      wrapAt(text, size, w).forEach((ln, i) => {
+        const ly = y + i * size * 1.25;
+        if (ly + size > y + h) return;
+        pg.drawText(ln, { x, y: flip(ly + size * 0.8), size, font: helv, color: black });
+      });
+    };
+    area(0, njp.detailsOfOffenses, 38.5, 168, 535, 138);
+    area(0, njp.recordOfPreviousOffenses, 38.5, 630, 535, 118);
+    area(1, njp.coComments, 38.5, 500, 535, 78);
+    // Pleas table — five printed rows; anything beyond them is the form's own "Continue Offenses".
+    const PLEA_COLS = [73.5, 151.7, 233.4, 326.7, 501.1];
+    const PLEA_W = [40, 25, 33, 56, 72];
+    const PLEA_Y = [229.9, 247.8, 265.8, 283.7, 301.7];
+    njp.pleas.slice(0, PLEA_Y.length).forEach((row, i) => {
+      const vals = [row.article, row.charge, row.specification, row.plea, row.finding];
+      vals.forEach((v, c) => {
+        const t = (v ?? '').trim();
+        if (!t) return;
+        let clipped = t;
+        while (clipped && helv.widthOfTextAtSize(clipped, 7.9) > PLEA_W[c]) clipped = clipped.slice(0, -1);
+        doc.getPage(1).drawText(clipped, { x: PLEA_COLS[c], y: flip(PLEA_Y[i] + 6.3), size: 7.9, font: helv, color: black });
+      });
+    });
+
+    // A real CAC-signable /Sig field over every signature cell — the same borderless widget the
+    // letters get, so the form is signable in Adobe with no "Prepare a Form" step.
+    for (const sig of FORM_1626_SIGS) {
+      const pg = doc.getPage(sig.p);
+      sigRefs.push(
+        addSignatureField(doc, pg, [sig.x, flip(sig.y + sig.h), sig.x + sig.w, flip(sig.y)], sig.label, PDFName, PDFString),
+      );
+    }
+    if (sigRefs.length) {
+      doc.catalog.set(PDFName.of('AcroForm'), doc.context.register(doc.context.obj({ Fields: sigRefs, SigFlags: 3 })));
+    }
+    applyCui();
+    stripPdfMetadata(doc);
+    return await doc.save();
+  }
 
   // Coordination page (Ch 12, fig 12-13): a standalone plain-bond concurrence TABLE, not a letter.
   // Render the title + table and return early — no seal / letterhead / ident / signature.
@@ -921,13 +1030,30 @@ export async function buildSignablePdf(
       pg.drawText(mark, { x: pw - M_SIDE - font.widthOfTextAtSize(mark, SIZE), y: M_BOT, size: SIZE, font });
     };
     if (e.file.type === 'application/pdf') {
-      const src = await PDFDocument.load(dataUrlToBytes(e.file.dataUrl), { ignoreEncryption: true });
-      const copied = await doc.copyPages(src, src.getPageIndices());
-      copied.forEach((pg) => {
-        doc.addPage(pg);
-        pageBannerOverride.set(doc.getPageCount() - 1, enclBanner);
-        stamp(pg);
-      });
+      // A LOCKED (encrypted) enclosure — every official government form is one — can't be read by
+      // pdf-lib; copying its pages yields blank ones. The caller pre-renders those with pdf.js and
+      // hands the page images in here, so the enclosure still appears. See export/lockedPdf.ts.
+      const locked = lockedEnclPages[e.id];
+      if (locked?.length) {
+        for (const rp of locked) {
+          const pg = await addRasterPage(doc, rp);
+          pageBannerOverride.set(doc.getPageCount() - 1, enclBanner);
+          stamp(pg);
+        }
+      } else {
+        const src = await PDFDocument.load(dataUrlToBytes(e.file.dataUrl), { ignoreEncryption: true });
+        // NEVER copy pages out of a locked document. pdf-lib can't decrypt, so every copied page
+        // comes out blank — and a blank page that looks like a real enclosure is far worse than a
+        // missing one, because nothing about the export says anything went wrong. Reaching here
+        // means the pre-render didn't run or failed (see exportSignablePdf); omit the pages.
+        if (src.isEncrypted) continue;
+        const copied = await doc.copyPages(src, src.getPageIndices());
+        copied.forEach((pg) => {
+          doc.addPage(pg);
+          pageBannerOverride.set(doc.getPageCount() - 1, enclBanner);
+          stamp(pg);
+        });
+      }
     } else {
       const img = await embedImageFile(doc, e.file);
       const pg = doc.addPage([PAGE_W, PAGE_H]);
@@ -975,7 +1101,33 @@ export async function buildSignablePdf(
 }
 
 export async function exportSignablePdf(state: LetterState, today: Date = new Date()): Promise<void> {
-  download(await buildSignablePdf(state, today), documentFilename(state, 'pdf'));
+  download(
+    await buildSignablePdf(state, today, undefined, await renderLockedEnclosures(state)),
+    documentFilename(state, 'pdf'),
+  );
+}
+
+// Pre-render any LOCKED (encrypted) in-document PDF enclosure to page images. pdf-lib can't read
+// those at all — without this they export as blank pages — but pdf.js can, so we fall back to
+// images for exactly those files and nothing else. pdf.js lazy-loads only if one turns up, so the
+// common case pays nothing. A render failure leaves the enclosure out of the map, which falls back
+// to the vector path (and its existing behavior) rather than breaking the whole export.
+export async function renderLockedEnclosures(
+  state: LetterState,
+): Promise<Record<string, RasterPage[]>> {
+  const out: Record<string, RasterPage[]> = {};
+  for (const e of state.encls) {
+    if (!e.inDocument || !e.file || e.file.type !== 'application/pdf') continue;
+    const bytes = dataUrlToBytes(e.file.dataUrl);
+    if (!(await isLockedPdf(bytes))) continue;
+    try {
+      const pages = await renderLockedPdf(bytes);
+      if (pages.length) out[e.id] = pages;
+    } catch {
+      /* leave it unset → the vector path runs, same as before */
+    }
+  }
+  return out;
 }
 
 // Construct an AcroForm digital-signature field (/FT /Sig) + a borderless widget annotation, so

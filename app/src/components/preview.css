@@ -621,3 +621,73 @@
     margin: 0;
   }
 }
+
+/* ---- NAVPERS 1626/7 (data/form1626.ts) --------------------------------------------------------
+   Everything is absolutely positioned in POINTS from the same table the PDF renderer uses, so the
+   preview and the export agree by construction. Helvetica/Arial to match the printed form. */
+.form-sheet {
+  position: relative;
+  font-family: Helvetica, Arial, sans-serif;
+  color: #000;
+  background: #fff;
+  padding: 0;
+  overflow: hidden;
+}
+.form-sheet .form-rule { position: absolute; background: #000; }
+.form-sheet .form-glyph {
+  position: absolute;
+  white-space: pre;
+  line-height: 1;
+}
+.form-sheet .form-check {
+  position: absolute;
+  border: 0.6pt solid #000;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7pt;
+  line-height: 1;
+}
+.form-sheet .form-value {
+  position: absolute;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.form-sheet .form-area {
+  position: absolute;
+  font-size: 9pt;
+  line-height: 1.25;
+  white-space: pre-wrap;
+  overflow: hidden;
+}
+/* A signature area: invisible on export, a faint guide on screen. */
+.form-sheet .form-sig {
+  position: absolute;
+  box-sizing: border-box;
+  border-bottom: 0.5pt dashed #9aa1b0;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+.form-sheet .form-sig span {
+  font-size: 5pt;
+  color: #6f757f;
+  padding-left: 2pt;
+  line-height: 1.1;
+}
+.form-sheet .form-cui {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-weight: 700;
+  font-size: 12pt;
+}
+.form-sheet .form-cui-top { top: 4pt; }
+.form-sheet .form-cui-bot { bottom: 4pt; }
+@media print {
+  .form-sheet .form-sig { border-bottom: none; }
+  .form-sheet .form-sig span { display: none; }
+}

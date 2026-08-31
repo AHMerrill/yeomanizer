@@ -11,6 +11,7 @@ export type CorrespondenceType =
   | 'joint-letter'
   | 'exec-memo'
   | 'coordination-page'
+  | 'njp-1626-7'
   | 'nato';
 
 // Business letter (Ch 11) — used to correspond with agencies/businesses/individuals outside DoD.
@@ -96,6 +97,35 @@ export interface CoordEntry {
 }
 export interface CoordPage {
   entries: CoordEntry[];
+}
+
+// NAVPERS 1626/7, "Report and Disposition of Offense(s)" — the Navy's NJP charge sheet (JAGINST
+// 5800.7). A drawn FORM, not a naval letter: the sheet itself is `data/form1626.ts` and this holds
+// only what the user types into it.
+//
+// The tool records exactly what the user enters and makes NO determination — it does not suggest a
+// disposition, recommend a punishment, or evaluate guilt. The only checks it performs are the
+// eligibility limits PRINTED ON THE FORM ITSELF ("enlisted only", "E-6 and below only", "Embarked
+// E-3 and below only", "officers only"), transcribed verbatim; see format/njpLimits.ts.
+export interface NjpPlea {
+  id: string;
+  article: string; // UCMJ article number, as entered
+  charge: string;
+  specification: string;
+  plea: string; // the accused's plea, as entered
+  finding: string; // the CO's finding, as entered
+}
+export interface Njp {
+  // Typed values, keyed by FormSlot.id in data/form1626.ts. A map (rather than 30 named fields)
+  // because the slots are generated from the form; import sanitizes keys against the known ids.
+  values: Record<string, string>;
+  // Checkbox states, keyed by FormCheck.id.
+  checks: Record<string, boolean>;
+  // The free-text blocks, which are areas rather than single-line slots.
+  detailsOfOffenses: string;
+  recordOfPreviousOffenses: string;
+  coComments: string;
+  pleas: NjpPlea[];
 }
 
 // NATO travel order (a bilingual form, not a naval letter). DoD/FCG template.
@@ -278,4 +308,7 @@ export interface LetterState {
 
   // Coordination page parts (Ch 12, used when type === 'coordination-page')
   coordPage: CoordPage;
+
+  // NAVPERS 1626/7 report and disposition of offenses (used when type === 'njp-1626-7')
+  njp: Njp;
 }

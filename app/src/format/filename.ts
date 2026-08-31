@@ -11,6 +11,7 @@ const TYPE_SLUG: Record<LetterState['type'], string> = {
   'joint-letter': 'joint-letter',
   'exec-memo': 'action-memo',
   'coordination-page': 'coordination-page',
+  'njp-1626-7': 'report-and-disposition-of-offenses',
   nato: 'travel-order',
 };
 

@@ -97,6 +97,26 @@ file number or a fuller signature must be able to add them.)
     (`room()` line-flow) + Word split a paragraph mid-paragraph across a page break. Exports are authoritative;
     the preview is the approximation. True parity = a risky preview line-level rewrite → Zan's call, not unilateral.
 
+17. **LOCKED (encrypted) PDFs silently exported as BLANK pages.** Every official government form —
+    every NAVPERS form on MyNavy HR — ships encrypted (`/Filter /Standard`, `/V 4 /R 4`, AES-128,
+    empty user password). **pdf-lib has NO decryption code at all**; `ignoreEncryption: true` only
+    suppresses `EncryptedPDFError` (`cjs/api/PDFDocument.js:57`) — it does not decrypt. So
+    `copyPages` "succeeded" and copied ciphertext content streams: the export opened fine, the
+    enclosure pages rendered **completely blank** (0 dark pixels), and NOTHING was reported — the
+    merge tool even said "Combined 4 page(s)". A blank page that looks like a real enclosure is
+    worse than a missing one. → **Check `doc.isEncrypted` after every `PDFDocument.load`.** pdf.js
+    (already bundled for the .docx path) *can* decrypt, so locked PDFs are rendered to page images
+    (`export/lockedPdf.ts`) — the ONE place the app gives up vector, and only where vector is
+    impossible. If that render fails or times out, **omit the enclosure — never fall back to the
+    vector copy**, which is how the blank pages come back.
+    - Corollary: **`getPages().indexOf(pg)` DOES NOT WORK** for per-page bookkeeping. pdf-lib
+      invalidates its page cache on `addPage` and rebuilds fresh `PDFPage` wrappers, so `indexOf`
+      returns −1 and anything keyed off it (the per-enclosure CUI banner) silently lands on nothing.
+      Record the index right after adding: `doc.getPageCount() - 1`.
+    - Corollary: **pdf-lib writes drawn text as HEX strings** (`<4445...> Tj`) inside Flate-compressed
+      content streams, so grepping raw export bytes for text always fails. Inflate the streams and
+      decode the hex before asserting (see `signablePdf.test.ts`).
+
 **Process lessons (Zan's repeated frustrations):**
 - **Emulation is NOT a real test.** `@media print` injected as screen styles ≠ a real print; Chromium ≠ all
   engines. Drive REAL Chrome (puppeteer-core), REAL WebKit + Firefox (Playwright).
