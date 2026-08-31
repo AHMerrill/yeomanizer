@@ -458,8 +458,10 @@ export default function App() {
         <div className="export-help">
           {editingState.type !== 'nato' && (
             <span>
-              <strong>.docx</strong> — editable Word version of the final letter; edit in Word or
-              share the document.
+              <strong>.docx</strong> —{' '}
+              {editingState.type === 'njp-1626-7'
+                ? 'the form as page images, for dropping into a Word package. The PDF is the authoritative copy — it carries the signature fields.'
+                : 'editable Word version of the final letter; edit in Word or share the document.'}
             </span>
           )}
           <span>

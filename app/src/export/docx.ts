@@ -257,7 +257,65 @@ export function buildDocxDocument(
   today: Date = new Date(),
   sealBytes?: ArrayBuffer | Uint8Array,
   enclImages: Record<string, RasterPage[]> = {},
+  // Rendered pages of a drawn FORM (the 1626/7). Word cannot hold that geometry as text — it is a
+  // dense boxed grid, not a flowing document — so the form goes in as one full-page image per
+  // sheet, exactly the way an in-document PDF enclosure already does. Faithful by construction:
+  // the images ARE the PDF, so .docx == PDF == preview with no third layout to keep in sync.
+  formPages: RasterPage[] = [],
 ): Document {
+  // NAVPERS 1626/7. Full-bleed page images on a zero-margin US Letter section, so what Word prints
+  // is the form. CUI marking still applies (the header/footer are set below), and silenceDocx()
+  // strips the metadata as it does for every other type.
+  if (state.type === 'njp-1626-7') {
+    const cui = state.cui;
+    const banner = (cui.banner || 'CUI').toUpperCase();
+    const bannerPara = () =>
+      new Paragraph({ alignment: AlignmentType.CENTER, children: [R(banner, { bold: true })], spacing: { after: 0 } });
+    return new Document({
+      creator: '',
+      title: '',
+      description: '',
+      sections: [
+        {
+          properties: {
+            page: {
+              size: { width: 12240, height: 15840 }, // US Letter in twips
+              margin: { top: 0, right: 0, bottom: 0, left: 0, header: 0, footer: 0 },
+            },
+          },
+          ...(cui.enabled
+            ? {
+                headers: { default: new Header({ children: [bannerPara()] }) },
+                footers: { default: new Footer({ children: [bannerPara()] }) },
+              }
+            : {}),
+          children: formPages.length
+            ? formPages.map(
+                (pg, i) =>
+                  new Paragraph({
+                    spacing: { after: 0 },
+                    children: [
+                      new ImageRun({
+                        type: 'png',
+                        data: pg.bytes,
+                        // 612x792 pt at 96 dpi = 816x1056 px; docx sizes images in px.
+                        transformation: { width: 816, height: 1056 },
+                      }),
+                    ],
+                    ...(i < formPages.length - 1 ? { pageBreakBefore: false } : {}),
+                  }),
+              )
+            : [
+                new Paragraph({
+                  children: [
+                    R('The form could not be rendered for Word. Use the PDF export — it is the authoritative copy and carries the signature fields.'),
+                  ],
+                }),
+              ],
+        },
+      ],
+    });
+  }
   // Coordination page (Ch 12, fig 12-13): a standalone plain-bond concurrence table, not a letter.
   if (state.type === 'coordination-page') {
     const NB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' } as const;
@@ -1125,6 +1183,20 @@ export async function silenceDocx(blob: Blob): Promise<Blob> {
 // Build the .docx and trigger a browser download.
 export async function exportDocx(state: LetterState, today: Date = new Date()): Promise<void> {
   const sealBytes = await loadSealBytes(state);
+  // A drawn form goes into Word as page images: render the real PDF, then rasterize it, so the
+  // .docx shows exactly what the PDF does rather than a second, drifting Word approximation.
+  let formPages: RasterPage[] = [];
+  if (state.type === 'njp-1626-7') {
+    try {
+      const [{ buildSignablePdf }, { rasterizePdf }] = await Promise.all([
+        import('./signablePdf'),
+        import('./rasterizePdf'),
+      ]);
+      formPages = await rasterizePdf(await buildSignablePdf(state, today), 2);
+    } catch {
+      /* leave empty → buildDocxDocument writes a short note pointing at the PDF */
+    }
+  }
   // Rasterize any in-document PDF enclosures to page images (in-memory) so Word shows the actual
   // pages, not just a reference. pdf.js lazy-loads only when there's a PDF enclosure to render.
   const enclImages: Record<string, RasterPage[]> = {};
@@ -1138,7 +1210,7 @@ export async function exportDocx(state: LetterState, today: Date = new Date()): 
       }
     }
   }
-  const blob = await silenceDocx(await Packer.toBlob(buildDocxDocument(state, today, sealBytes, enclImages)));
+  const blob = await silenceDocx(await Packer.toBlob(buildDocxDocument(state, today, sealBytes, enclImages, formPages)));
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

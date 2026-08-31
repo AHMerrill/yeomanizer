@@ -230,8 +230,6 @@ export function parseProject(text: string): LetterState | null {
       detailsOfOffenses: njpStr('detailsOfOffenses', 4000),
       recordOfPreviousOffenses: njpStr('recordOfPreviousOffenses', 4000),
       coComments: njpStr('coComments', 4000),
-      restrictedLimits: njpStr('restrictedLimits', 200),
-      inLieuOf: njpStr('inLieuOf', 200),
       pleas: (rawNjp && Array.isArray(rawNjp.pleas) ? (rawNjp.pleas as unknown[]) : [])
         .slice(0, 40)
         .filter((e): e is Record<string, unknown> => !!e && typeof e === 'object')

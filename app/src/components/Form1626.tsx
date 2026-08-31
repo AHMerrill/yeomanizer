@@ -122,16 +122,6 @@ export function Form1626({ state }: { state: LetterState }) {
                 ) : null,
               ),
             )}
-          {pi === 0 && njp.restrictedLimits.trim() && (
-            <div className="form-value" style={{ left: px(290), top: px(417.6), width: px(240), fontSize: px(7.9) }}>
-              {njp.restrictedLimits.trim()}
-            </div>
-          )}
-          {pi === 0 && njp.inLieuOf.trim() && (
-            <div className="form-value" style={{ left: px(500), top: px(417.6), width: px(34), fontSize: px(7.9) }}>
-              {njp.inLieuOf.trim()}
-            </div>
-          )}
           {/* Signature areas. The PDF puts a real CAC-signable field over each; here they are shown
               as a subtle guide so the writer can see where the form expects a signature. */}
           {FORM_1626_SIGS.filter((s) => s.p === pi).map((s) => (

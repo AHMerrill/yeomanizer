@@ -125,8 +125,6 @@ export interface Njp {
   detailsOfOffenses: string;
   recordOfPreviousOffenses: string;
   coComments: string;
-  restrictedLimits: string; // "You are restricted to the limits of ___"
-  inLieuOf: string; // "___ in lieu of arrest"
   pleas: NjpPlea[];
 }
 

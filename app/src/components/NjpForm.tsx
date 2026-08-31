@@ -128,7 +128,27 @@ const SLOT_LABELS: Record<string, string> = {
   decision: 'Date Appeal Forwarded for Decision',
   appeal: 'Final Result of Appeal',
   filedAsOf: 'No Appeal Filed as of',
-  proceedingRecordedInTheUnitPun: 'Proceeding Recorded in the Unit Punishment Book',
+  // The restraint line and the CO's punishment blanks — each sits on the underline the form prints.
+  restrictedLimitsLine: 'Restricted to the limits of',
+  xoActionDate: 'Date of XO action',
+  pRestrictionPlace: 'Restriction to (place)',
+  pRestrictionDays: 'Restriction — days',
+  pRestrictionSuspendPlace: 'Restriction w/ suspension from duty (place)',
+  pRestrictionSuspendDays: 'Restriction w/ suspension — days',
+  pCorrectionalCustodyDays: 'Correctional custody — day(s)',
+  pConfinementDays: 'Confinement — days',
+  pExtraDutiesDays: 'Extra duties — days',
+  pReductionPaygrade: 'Reduction to pay grade of',
+  pForfeitureAmount: 'Forfeiture — $ per month',
+  pForfeitureMonths: 'Forfeiture — month(s)',
+  pSuspendedAWhat: 'Punishment suspended (first)',
+  pSuspendedADays: 'Suspended (first) — days',
+  pSuspendedBWhat: 'Punishment suspended (second)',
+  pSuspendedBDays: 'Suspended (second) — days',
+  appealAckDate1: 'Appeal rights acknowledged — date',
+  appealAckDate2: 'Appeal rights acknowledged — date (2)',
+  entriesMadeDate: 'Service record entries made — date',
+  upbRecordedDate: 'Recorded in the UPB — date',
 };
 
 const CHECK_LABELS: Record<string, string> = {
@@ -168,14 +188,14 @@ const SECTIONS: { title: string; hint?: string; slots?: string[]; checks?: strin
     title: 'Accused & report',
     slots: ['dateOfReport', 'nameOfAccused', 'dodIdNumber', 'rateGrade', 'branch', 'divDept', 'placeOfOffense'],
   },
-  { title: 'Restraint', hint: 'Choose one.', checks: RADIO_GROUPS[0], cite: 'initiation' },
+  { title: 'Restraint', hint: 'Choose one, then name the limits if restricted.', checks: RADIO_GROUPS[0], slots: ['restrictedLimitsLine'], cite: 'initiation' },
   {
     title: 'Information concerning the accused',
     slots: ['currentEnlistmentDate', 'currentEnlistmentExpiration', 'totalActiveService', 'education',
             'afqt', 'age', 'maritalStatus', 'numberOfDependents', 'currentPaygrade', 'currentPayAmount',
             'currentPay12Month', 'reducedPaygrade', 'reducedPayAmount', 'reducedPay12Month'],
   },
-  { title: 'Action of the Executive Officer (XOI)', hint: 'The form records the XO disposition as two boxes — dismissed, or referred to mast.', checks: RADIO_GROUPS[1], cite: 'initiation' },
+  { title: 'Action of the Executive Officer (XOI)', hint: 'The form records the XO disposition as two boxes — dismissed, or referred to mast.', checks: RADIO_GROUPS[1], slots: ['xoActionDate'], cite: 'initiation' },
   { title: 'Right to demand trial by court-martial', hint: 'Not applicable to persons attached to or embarked in a vessel.', checks: RADIO_GROUPS[2], cite: 'authority' },
   {
     title: 'Action of the Commanding Officer',
@@ -184,10 +204,14 @@ const SECTIONS: { title: string; hint?: string; slots?: string[]; checks?: strin
              'pAdmonitionOral', 'pAdmonitionWriting', 'pReprimandOral', 'pReprimandWriting',
              'pCorrectionalCustody', 'pConfinement', 'pExtraDuties', 'pReduction', 'pForfeiture',
              'pProcessCourtMartial', 'pSuspendedA', 'pSuspendedB'],
-    slots: ['dateOfMast', 'dateAccusedInformedOfAboveActi'],
+    slots: ['pRestrictionPlace', 'pRestrictionDays', 'pRestrictionSuspendPlace',
+            'pRestrictionSuspendDays', 'pCorrectionalCustodyDays', 'pConfinementDays',
+            'pExtraDutiesDays', 'pReductionPaygrade', 'pForfeitureAmount', 'pForfeitureMonths',
+            'pSuspendedAWhat', 'pSuspendedADays', 'pSuspendedBWhat', 'pSuspendedBDays',
+            'dateOfMast', 'dateAccusedInformedOfAboveActi', 'appealAckDate1', 'appealAckDate2'],
     cite: 'punishment',
   },
-  { title: 'Final administrative action', slots: ['accused', 'decision', 'appeal', 'filedAsOf', 'proceedingRecordedInTheUnitPun'], cite: 'appeal' },
+  { title: 'Final administrative action', slots: ['accused', 'decision', 'appeal', 'filedAsOf', 'entriesMadeDate', 'upbRecordedDate'], cite: 'appeal' },
 ];
 
 const ALL_SLOT_IDS = new Set(FORM_1626_PAGES.flatMap((p) => p.slots.map((s) => s.id)));
@@ -339,26 +363,6 @@ export function NjpForm({ state, onChange }: { state: LetterState; onChange: (s:
       <section className="card">
         <div className="card-head">
           <h2>Restraint &amp; comments</h2>
-        </div>
-        <div className="njp-grid">
-          <label className="njp-field">
-            <span>Restricted to the limits of</span>
-            <input
-              type="text"
-              aria-label="Restricted to the limits of"
-              value={njp.restrictedLimits}
-              onChange={(e) => patch({ restrictedLimits: e.target.value })}
-            />
-          </label>
-          <label className="njp-field">
-            <span>In lieu of</span>
-            <input
-              type="text"
-              aria-label="In lieu of"
-              value={njp.inLieuOf}
-              onChange={(e) => patch({ inLieuOf: e.target.value })}
-            />
-          </label>
         </div>
         <label className="njp-field">
           <span>Commanding Officer&rsquo;s comments</span>

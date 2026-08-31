@@ -135,8 +135,6 @@ export const defaultState: LetterState = {
     detailsOfOffenses: '',
     recordOfPreviousOffenses: '',
     coComments: '',
-    restrictedLimits: '',
-    inLieuOf: '',
     pleas: [],
   },
 };

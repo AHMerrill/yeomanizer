@@ -215,12 +215,6 @@ export async function buildSignablePdf(
     area(0, njp.detailsOfOffenses, 38.5, 168, 535, 138);
     area(0, njp.recordOfPreviousOffenses, 38.5, 630, 535, 118);
     area(1, njp.coComments, 38.5, 500, 535, 78);
-    if (njp.restrictedLimits.trim()) {
-      doc.getPage(0).drawText(njp.restrictedLimits.trim(), { x: 290, y: flip(417.6 + 6.3), size: 7.9, font: helv, color: black });
-    }
-    if (njp.inLieuOf.trim()) {
-      doc.getPage(0).drawText(njp.inLieuOf.trim(), { x: 500, y: flip(417.6 + 6.3), size: 7.9, font: helv, color: black });
-    }
     // Pleas table — five printed rows; anything beyond them is the form's own "Continue Offenses".
     const PLEA_COLS = [73.5, 151.7, 233.4, 326.7, 501.1];
     const PLEA_W = [40, 25, 33, 56, 72];
