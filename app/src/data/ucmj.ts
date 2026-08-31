@@ -130,11 +130,20 @@ export function searchArticles(q: string, limit = 12): UcmjArticle[] {
     else if (num.startsWith(s)) rank = 1;
     else if (title.startsWith(s)) rank = 2;
     else if (title.includes(s)) rank = 3;
-    else if (SYNONYMS[s]?.includes(a.a)) rank = 2;
+    // Match synonyms by PREFIX, not exact key: someone typing "awol" passes through "aw", "awo"
+    // first, and a list that blinks out mid-word reads as "no such article".
+    else if (synonymHit(s, a.a)) rank = 2;
     if (rank >= 0) scored.push({ a, rank });
   }
   scored.sort((x, y) => x.rank - y.rank || x.a.a.localeCompare(y.a.a, undefined, { numeric: true }));
   return scored.slice(0, limit).map((x) => x.a);
+}
+
+function synonymHit(q: string, article: string): boolean {
+  for (const key in SYNONYMS) {
+    if (key.startsWith(q) && SYNONYMS[key].includes(article)) return true;
+  }
+  return false;
 }
 
 // The handful of terms people actually type that don't appear in the statute's own headings.

@@ -24,6 +24,15 @@ describe('UCMJ punitive articles', () => {
     expect(searchArticles('')).toEqual([]);
   });
 
+  it('matches a synonym as it is typed, not only when complete', () => {
+    // "awo" has no hit in any statute heading; without prefix matching the list blinks empty
+    // mid-word and reads as "no such article".
+    for (const partial of ['aw', 'awo', 'awol']) {
+      expect(searchArticles(partial).some((a) => a.a === '86'), partial).toBe(true);
+    }
+    expect(searchArticles('du').some((a) => a.a === '113')).toBe(true); // dui
+  });
+
   it('ranks an exact number above a keyword hit and caps the list', () => {
     expect(searchArticles('92')[0].a).toBe('92');
     expect(searchArticles('a', 5).length).toBeLessThanOrEqual(5);
