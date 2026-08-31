@@ -9,9 +9,48 @@ import type { LetterState, Njp, NjpPlea } from '../types';
 import { FORM_1626_PAGES } from '../data/form1626';
 import { njpLimitWarnings } from '../format/njpLimits';
 import { searchArticles, UCMJ_ARTICLES } from '../data/ucmj';
+import { NJP_SOURCES, citationsFor, type Citation } from '../data/njpCitations';
 import { useState } from 'react';
 
 const uid = () => Math.random().toString(36).slice(2, 9);
+
+// "Where the rules live" — citations only. It names the authority and stops; it states no rule and
+// checks nothing. See data/njpCitations.ts for why it deliberately goes no further.
+function Citations({ kind }: { kind: Citation['k'] }) {
+  const [open, setOpen] = useState(false);
+  const list = citationsFor(kind);
+  if (!list.length) return null;
+  return (
+    <div className="njp-cite">
+      <button type="button" className="njp-cite-toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
+        {open ? '▾' : '▸'} Where the rules live
+      </button>
+      {open && (
+        <div className="njp-cite-body">
+          <p className="hint">
+            Section numbers and titles only, copied from the sources below. This tool doesn&rsquo;t
+            state the rule or check anything against it — read the authority.
+          </p>
+          <ul>
+            {list.map((c) => (
+              <li key={c.n}>
+                <strong>JAGMAN {c.n}</strong> — {c.t}
+                {c.subs && c.subs.length > 0 && (
+                  <span className="njp-cite-subs">
+                    {c.subs.map((x) => ` ${x.l}. ${x.t}`).join(' · ')}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="njp-cite-src">
+            {NJP_SOURCES.ucmj.cite} · {NJP_SOURCES.mcm.cite} · {NJP_SOURCES.jagman.cite}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Article picker for the pleas table. Typing "86", "awol", or "absence" finds Article 86; picking
 // fills the number. The list is the statute's own headings (data/ucmj.ts) — it looks an article up,
@@ -124,20 +163,20 @@ const RADIO_GROUPS: string[][] = [
   ['demandTrial', 'doNotDemandTrial'],
 ];
 
-const SECTIONS: { title: string; hint?: string; slots?: string[]; checks?: string[] }[] = [
+const SECTIONS: { title: string; hint?: string; slots?: string[]; checks?: string[]; cite?: Citation['k'] }[] = [
   {
     title: 'Accused & report',
     slots: ['dateOfReport', 'nameOfAccused', 'dodIdNumber', 'rateGrade', 'branch', 'divDept', 'placeOfOffense'],
   },
-  { title: 'Restraint', hint: 'Choose one.', checks: RADIO_GROUPS[0] },
+  { title: 'Restraint', hint: 'Choose one.', checks: RADIO_GROUPS[0], cite: 'initiation' },
   {
     title: 'Information concerning the accused',
     slots: ['currentEnlistmentDate', 'currentEnlistmentExpiration', 'totalActiveService', 'education',
             'afqt', 'age', 'maritalStatus', 'numberOfDependents', 'currentPaygrade', 'currentPayAmount',
             'currentPay12Month', 'reducedPaygrade', 'reducedPayAmount', 'reducedPay12Month'],
   },
-  { title: 'Action of the Executive Officer (XOI)', hint: 'The form records the XO disposition as two boxes — dismissed, or referred to mast.', checks: RADIO_GROUPS[1] },
-  { title: 'Right to demand trial by court-martial', hint: 'Not applicable to persons attached to or embarked in a vessel.', checks: RADIO_GROUPS[2] },
+  { title: 'Action of the Executive Officer (XOI)', hint: 'The form records the XO disposition as two boxes — dismissed, or referred to mast.', checks: RADIO_GROUPS[1], cite: 'initiation' },
+  { title: 'Right to demand trial by court-martial', hint: 'Not applicable to persons attached to or embarked in a vessel.', checks: RADIO_GROUPS[2], cite: 'authority' },
   {
     title: 'Action of the Commanding Officer',
     hint: 'Record what the command decided. This tool does not suggest or evaluate a disposition.',
@@ -146,8 +185,9 @@ const SECTIONS: { title: string; hint?: string; slots?: string[]; checks?: strin
              'pCorrectionalCustody', 'pConfinement', 'pExtraDuties', 'pReduction', 'pForfeiture',
              'pProcessCourtMartial', 'pSuspendedA', 'pSuspendedB'],
     slots: ['dateOfMast', 'dateAccusedInformedOfAboveActi'],
+    cite: 'punishment',
   },
-  { title: 'Final administrative action', slots: ['accused', 'decision', 'appeal', 'filedAsOf', 'proceedingRecordedInTheUnitPun'] },
+  { title: 'Final administrative action', slots: ['accused', 'decision', 'appeal', 'filedAsOf', 'proceedingRecordedInTheUnitPun'], cite: 'appeal' },
 ];
 
 const ALL_SLOT_IDS = new Set(FORM_1626_PAGES.flatMap((p) => p.slots.map((s) => s.id)));
@@ -229,6 +269,7 @@ export function NjpForm({ state, onChange }: { state: LetterState; onChange: (s:
                 ))}
               </div>
             )}
+            {sec.cite && <Citations kind={sec.cite} />}
           </div>
         ))}
       </section>

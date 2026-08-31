@@ -2137,3 +2137,23 @@
 .art-results button:hover { background: #1d2230; }
 .art-results strong { color: #9ec1ff; margin-right: 6px; }
 .art-results span { color: #9aa1b0; }
+
+/* "Where the rules live" — citations under an NJP section */
+.njp-cite { margin-top: 8px; }
+.njp-cite-toggle {
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  color: #6aa0ff;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.njp-cite-body {
+  border-left: 2px solid #2b3040;
+  padding-left: 10px;
+  margin-top: 4px;
+}
+.njp-cite-body ul { margin: 4px 0 0; padding-left: 16px; }
+.njp-cite-body li { font-size: 12.5px; line-height: 1.5; margin-bottom: 4px; color: #d7dbe4; }
+.njp-cite-subs { display: block; color: #9aa1b0; font-size: 11.5px; }
+.njp-cite-src { color: #9aa1b0; font-size: 11.5px; margin-top: 6px; }
