@@ -135,6 +135,11 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+// An endorsement prints its own letterhead when switched on — or, in a file saved before the
+// switch existed, when it simply has letterhead lines.
+const endoLetterheadOn = (e: EndorsementEntry) =>
+  e.letterheadMode ? e.letterheadMode === 'on' : !!(e.letterhead ?? '').trim();
+
 function Pill({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button type="button" className={on ? 'pill on' : 'pill'} onClick={onClick}>
@@ -1744,14 +1749,36 @@ export function Editor({
                   onChange={(ev) => updateEndorsement(e.id, { serial: ev.target.value })}
                 />
               </Field>
-              <Field label="Endorser letterhead (optional — fig 9-2, one line each)">
-                <textarea
-                  value={e.letterhead ?? ''}
-                  rows={2}
-                  placeholder={'DEPARTMENT OF THE NAVY\nCOMMANDER NAVAL SURFACE FORCE\nSAN DIEGO CA 92155-5490'}
-                  onChange={(ev) => updateEndorsement(e.id, { letterhead: ev.target.value })}
-                />
-              </Field>
+              {/* Fig 9-2 shows a new-page endorsement on the endorser's own letterhead. Same
+                  switch as the letter's Letterhead card; plain paper keeps the lines for later. */}
+              <div className="sub-label">Letterhead</div>
+              <div className="pills">
+                <Pill
+                  on={endoLetterheadOn(e)}
+                  onClick={() =>
+                    updateEndorsement(e.id, {
+                      letterheadMode: 'on',
+                      // Start a blank letterhead with the fixed first line (2-12).
+                      ...((e.letterhead ?? '').trim() ? {} : { letterhead: 'DEPARTMENT OF THE NAVY\n' }),
+                    })
+                  }
+                >
+                  Print letterhead
+                </Pill>
+                <Pill on={!endoLetterheadOn(e)} onClick={() => updateEndorsement(e.id, { letterheadMode: 'off' })}>
+                  Plain paper
+                </Pill>
+              </div>
+              {endoLetterheadOn(e) && (
+                <Field label="Endorser letterhead (fig 9-2, one line each)">
+                  <textarea
+                    value={e.letterhead ?? ''}
+                    rows={4}
+                    placeholder={'DEPARTMENT OF THE NAVY\nCOMMANDER NAVAL SURFACE FORCE\nSAN DIEGO CA 92155-5490'}
+                    onChange={(ev) => updateEndorsement(e.id, { letterhead: ev.target.value })}
+                  />
+                </Field>
+              )}
               <div className="sub-label">Endorsement text</div>
               <ParaEditor
                 root={e.body}

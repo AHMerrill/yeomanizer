@@ -204,6 +204,34 @@ describe('buildDocxDocument — document.xml content', () => {
     expect(xml).toContain('A. B. SEADOG'); // endorsement signature
   });
 
+  it('puts the seal on each endorsement page that has its own letterhead (fig 9-2)', async () => {
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC',
+      'base64',
+    );
+    const lh = 'DEPARTMENT OF THE NAVY\nNAVY RESERVE CENTER ATLANTA\n1210 NAVAL FORCES COURT BUILDING 440\nATLANTA GA 30069-5000';
+    const e = (id: string, letterhead: string) => ({
+      id,
+      endorser: 'Commanding Officer, Navy Reserve Center Atlanta',
+      serial: '',
+      letterhead,
+      body: [],
+      sigName: 'A. B. SEADOG',
+      sigTitle: '',
+    });
+    const state: LetterState = {
+      ...defaultState,
+      endorsements: [e('e1', lh), e('e2', ''), e('e3', lh), { ...e('e4', lh), letterheadMode: 'off' }],
+    };
+    const zip = await JSZip.loadAsync(await Packer.toBuffer(buildDocxDocument(state, new Date(2006, 8, 7), png)));
+    const xml = (await zip.file('word/document.xml')?.async('string')) ?? '';
+    // basic letter + the two endorsements with letterhead; the blank one and the one switched to
+    // plain paper get none
+    expect(xml.match(/<wp:anchor/g)).toHaveLength(3);
+    expect(xml).toContain('1210 NAVAL FORCES COURT BUILDING 440');
+    expect(xml).toContain('ATLANTA GA 30069-5000');
+  });
+
   it('renders an endorsement signed "By direction"', async () => {
     const xml = await docxText({
       from: 'CO, USS Test',

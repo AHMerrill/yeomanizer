@@ -1,4 +1,4 @@
-import type { LetterState, ListEntry } from '../types';
+import type { EndorsementEntry, LetterState, ListEntry } from '../types';
 import { abbreviatedDate, civilianDate } from './date';
 import { alphaIndex } from './alpha';
 
@@ -51,6 +51,14 @@ export function basicLetterId(basic: LetterState, today?: Date): string {
   }${date ? ` of ${date}` : ''}`
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// Fig 9-2: the letterhead lines a new-page endorsement prints (first = the DoN line, rest =
+// activity/address/city) — none when it's set to plain paper or has no lines. Shared by the
+// preview, PDF, and .docx so the on/off switch can't drift between them.
+export function endorsementLetterheadLines(e: EndorsementEntry): string[] {
+  if (e.letterheadMode === 'off') return [];
+  return (e.letterhead ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
 }
 
 // Ch 9-2.2: an endorsement's "Via:" line carries the Via addressees that remain AFTER this

@@ -19,6 +19,15 @@ describe('project-file round-trip (.yeomanizer.json)', () => {
     expect(back).toEqual(state);
   });
 
+  it('keeps the endorsement letterhead on/off switch (and drops a junk value)', () => {
+    const e = { id: 'e1', endorser: 'CO, NRC Atlanta', serial: '', letterhead: 'DEPARTMENT OF THE NAVY\nNRC ATLANTA', body: [], sigName: '', sigTitle: '' };
+    const withEndo: LetterState = { ...state, endorsements: [{ ...e, letterheadMode: 'off' }] };
+    expect(parseProject(serializeProject(withEndo))?.endorsements[0].letterheadMode).toBe('off');
+    const junk = JSON.parse(serializeProject(withEndo));
+    junk.state.endorsements[0].letterheadMode = 'sideways';
+    expect(parseProject(JSON.stringify(junk))?.endorsements[0].letterheadMode).toBeUndefined();
+  });
+
   it('round-trips an MFR losslessly (type + MFR defaults survive)', () => {
     const mfr: LetterState = {
       ...defaultFor('mfr'),

@@ -240,6 +240,9 @@ export interface EndorsementEntry {
   // the ENDORSER'S letterhead): one line each — "DEPARTMENT OF THE NAVY", activity, address,
   // city/state/zip. Blank = plain continuation sheet (the pre-existing look).
   letterhead?: string;
+  // Print the letterhead above, or plain paper (keeps the lines for switching back). Absent = on
+  // when letterhead lines are set, which is how files saved before this switch behaved.
+  letterheadMode?: 'on' | 'off';
   body: Paragraph[];
   sigName: string;
   sigTitle: string;

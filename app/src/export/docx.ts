@@ -32,6 +32,7 @@ import {
   ENDORSE_ORD,
   basicLetterId,
   remainingVias,
+  endorsementLetterheadLines,
 } from '../format/identification';
 import { anyCui } from '../format/tree';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
@@ -191,7 +192,10 @@ function sealRun(bytes: ArrayBuffer | Uint8Array): ImageRun {
 // Fetch the chosen seal as PNG bytes (rasterizing the SVG seals via canvas) for embedding.
 export async function loadSealBytes(state: LetterState): Promise<ArrayBuffer | undefined> {
   const lh = state.letterhead;
-  if (lh.mode !== 'on') return undefined;
+  // The seal prints on the first page's letterhead and on any endorsement page that carries its
+  // own letterhead (fig 9-2) — so it's needed even when the basic letter is on plain paper.
+  const endorsementLetterhead = state.endorsements.some((e) => endorsementLetterheadLines(e).length > 0);
+  if (lh.mode !== 'on' && !endorsementLetterhead) return undefined;
   const src = SEAL_URL[lh.seal];
   if (!src) return undefined;
   try {
@@ -870,38 +874,45 @@ export function buildDocxDocument(
     copyTo.forEach((c) => children.push(new Paragraph({ children: [R(c)], spacing: { after: 0 } })));
   }
 
-  // Appended endorsements (Ch 9): collected into their OWN section (added below) so the basic letter's
-  // continuation Subj header never bleeds onto an endorsement page. Mirrors the preview + PDF: the
+  // Appended endorsements (Ch 9): each in its OWN section (added below) so the basic letter's
+  // continuation Subj header never bleeds onto an endorsement page, and so an endorsement on its own
+  // letterhead can start at the 0.5in letterhead band like page 1. Mirrors the preview + PDF: the
   // endorsement ident block, "Nth ENDORSEMENT on …" line, From/To/Via/Subj, body, signature.
-  const endoChildren: (Paragraph | Table)[] = [];
+  const endoSections: { children: (Paragraph | Table)[]; letterhead: boolean }[] = [];
   if (!isEndorsement && state.endorsements.length) {
     const endoSigIndent = Math.round(3.25 * IN);
     const onBasic = `ENDORSEMENT on ${basicLetterId(state, today)}`; // same for every endorsement
     state.endorsements.forEach((e, i) => {
       const ord = ENDORSE_ORD[i] ?? String(i + 1);
       // New-page endorsement identification block (9-2.2: repeat the basic letter's SSIC; the endorser
-      // adds its own serial + date). Right-aligned, matching the preview + PDF. The section break starts
-      // the first endorsement on a fresh page; later endorsements break the page themselves.
+      // adds its own serial + date). Right-aligned, matching the preview + PDF. Each endorsement's
+      // section break starts it on a fresh page.
       const eIdent = buildIdent({ ...state, type: 'endorsement', serial: e.serial, originatorCode: '' }, today);
       const eIdLines = [
         eIdent.ssic || ' ',
         e.serial.trim() ? eIdent.codeLine : null,
         eIdent.date || null,
       ].filter((l): l is string => l !== null);
-      // 2nd+ endorsements start their own page (the first rides the endorsement section's break).
-      if (i > 0) endoChildren.push(new Paragraph({ children: [R('')], pageBreakBefore: true, spacing: { after: 0 } }));
       // Fig 9-2: the endorsing activity's letterhead (first line = DoN line, rest = activity/
       // address/city), centered in navy like a first page; blank = plain continuation sheet.
-      const eLh = (e.letterhead ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+      const eLh = endorsementLetterheadLines(e);
+      const endoChildren: (Paragraph | Table)[] = [];
+      endoSections.push({ children: endoChildren, letterhead: eLh.length > 0 });
       if (eLh.length) {
         endoChildren.push(
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            children: [R(eLh[0], { bold: true, size: 22, color: NAVY })],
+            children: [
+              ...(sealBytes ? [sealRun(sealBytes)] : []),
+              R(eLh[0], { bold: true, size: 22, color: NAVY }),
+            ],
             spacing: { after: 0 },
           }),
         );
         eLh.slice(1).forEach((l) => endoChildren.push(center(l.toUpperCase(), 15)));
+        // Same minimum letterhead height as the first page, so a short letterhead keeps the
+        // ident clear of the seal's lower corner.
+        for (let k = eLh.length - 1; k < 3; k++) endoChildren.push(center(' ', 15));
         endoChildren.push(spacer());
       }
       if (eIdLines.length) endoChildren.push(identColumn(eIdLines));
@@ -1121,31 +1132,51 @@ export function buildDocxDocument(
       },
       // Endorsements in their own section so the letter's continuation Subj header doesn't apply to
       // them. No continuation header here; page numbers continue from the letter, centered in the footer.
-      ...(endoChildren.length
-        ? [
-            {
-              properties: {
-                page: {
-                  size: LETTER,
-                  margin: { top: IN, right: IN, bottom: IN, left: IN, header: Math.round(0.25 * IN) },
-                },
-              },
-              // Explicit header (empty when no CUI) — an undefined header would INHERIT the letter
-              // section's Subj continuation header, bleeding it onto the endorsement pages.
-              headers: {
-                default: new Header({
-                  children: cui.enabled ? [bannerPara(letterBanner)] : [spacer(0)],
-                }),
-              },
-              footers: {
-                default: new Footer({
+      ...endoSections.map(({ children: endoChildren, letterhead }) => ({
+        properties: {
+          page: {
+            size: LETTER,
+            // On its own letterhead the endorsement starts in the 0.5in letterhead band like page 1;
+            // its continuation pages are padded back down to the 1in line by the header below.
+            margin: {
+              top: letterhead ? Math.round(0.5 * IN) : IN,
+              right: IN,
+              bottom: IN,
+              left: IN,
+              header: Math.round(0.25 * IN),
+            },
+          },
+          titlePage: letterhead,
+        },
+        // Explicit header (empty when no CUI) — an undefined header would INHERIT the letter
+        // section's Subj continuation header, bleeding it onto the endorsement pages.
+        headers: {
+          default: new Header({
+            children: [
+              ...(cui.enabled ? [bannerPara(letterBanner)] : [spacer(0)]),
+              // banner (or blank) + 3 lines ≈ the 1in line, like the letter's continuation pages
+              ...(letterhead ? headerPad(3) : []),
+            ],
+          }),
+          ...(letterhead
+            ? { first: new Header({ children: cui.enabled ? [bannerPara(letterBanner)] : [spacer(0)] }) }
+            : {}),
+        },
+        // Page numbers continue from the letter, centered in the footer — on every endorsement page.
+        footers: {
+          default: new Footer({
+            children: [pageNumberPara(), ...(cui.enabled ? [bannerPara(letterBanner)] : [])],
+          }),
+          ...(letterhead
+            ? {
+                first: new Footer({
                   children: [pageNumberPara(), ...(cui.enabled ? [bannerPara(letterBanner)] : [])],
                 }),
-              },
-              children: endoChildren,
-            },
-          ]
-        : []),
+              }
+            : {}),
+        },
+        children: endoChildren,
+      })),
       ...enclSections,
     ],
   });

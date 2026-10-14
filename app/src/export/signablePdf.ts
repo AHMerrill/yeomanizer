@@ -14,6 +14,7 @@ import {
   ENDORSE_ORD,
   basicLetterId,
   remainingVias,
+  endorsementLetterheadLines,
 } from '../format/identification';
 import { paragraphMarker, markerText, depthIndentIn } from '../format/paragraphs';
 import { parseInline } from '../format/inline';
@@ -303,21 +304,27 @@ export async function buildSignablePdf(
   }
 
   // ---- Seal (1in, at left 0.62in / top 0.5in), aspect-fit like object-fit: contain ----
-  if (lh.mode === 'on' && lh.seal !== 'none') {
-    const bytes = sealBytes ?? (await loadSealBytes(state));
-    if (bytes) {
-      const img = await doc.embedPng(bytes);
-      const s = PT / Math.max(img.width, img.height);
-      const w = img.width * s;
-      const h = img.height * s;
-      page.drawImage(img, {
-        x: 0.62 * PT + (PT - w) / 2,
-        y: PAGE_H - 0.5 * PT - PT + (PT - h) / 2,
-        width: w,
-        height: h,
-      });
-    }
-  }
+  // Embedded once and drawn on the first page plus every endorsement page with its own letterhead
+  // (fig 9-2), so the seal lands in the same spot on each.
+  const sealBytesNeeded =
+    lh.seal !== 'none' &&
+    (lh.mode === 'on' ||
+      (state.type !== 'endorsement' && state.endorsements.some((e) => endorsementLetterheadLines(e).length > 0)));
+  const sealSrc = sealBytesNeeded ? (sealBytes ?? (await loadSealBytes(state))) : undefined;
+  const sealImg = sealSrc ? await doc.embedPng(sealSrc) : undefined;
+  const drawSeal = () => {
+    if (!sealImg) return;
+    const s = PT / Math.max(sealImg.width, sealImg.height);
+    const w = sealImg.width * s;
+    const h = sealImg.height * s;
+    page.drawImage(sealImg, {
+      x: 0.62 * PT + (PT - w) / 2,
+      y: PAGE_H - 0.5 * PT - PT + (PT - h) / 2,
+      width: w,
+      height: h,
+    });
+  };
+  if (lh.mode === 'on') drawSeal();
 
   // ---- Letterhead (centered, navy). Reserve the .letterhead min-height (0.86in) so the ident +
   // headings start at the right spot regardless of how many letterhead/ident lines there are. ----
@@ -964,8 +971,9 @@ export async function buildSignablePdf(
     // Fig 9-2: a new-page endorsement is prepared on the ENDORSING activity's letterhead — when
     // letterhead lines are set (first = DoN line, rest = activity/address/city), draw them like a
     // first page (top band + navy centered block); blank keeps the plain continuation-sheet look.
-    const eLh = (e.letterhead ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+    const eLh = endorsementLetterheadLines(e);
     if (eLh.length) {
+      drawSeal();
       top = M_TOP;
       putCenter(eLh[0], bold, 11, 1.04, navy);
       eLh.slice(1).forEach((l) => putCenter(l.toUpperCase(), bold, 7.5, 1.04, navy));

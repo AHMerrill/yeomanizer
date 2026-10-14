@@ -61,6 +61,62 @@ describe('signable PDF — letterhead seal embedding', () => {
     );
     expect(off.length).toBeLessThan(offNoSeal.length + 1000);
   });
+
+  // Fig 9-2: a new-page endorsement on the endorser's own letterhead carries the seal in the same
+  // spot as the basic letter's first page. A plain continuation-sheet endorsement does not.
+  const endo = (id: string, letterhead: string) => ({
+    id,
+    endorser: 'Commanding Officer, Navy Reserve Center Atlanta',
+    serial: '',
+    letterhead,
+    body: [],
+    sigName: 'A. B. SEADOG',
+    sigTitle: '',
+  });
+  const LH = 'DEPARTMENT OF THE NAVY\nNAVY RESERVE CENTER ATLANTA\n1210 NAVAL FORCES COURT BUILDING 440\nATLANTA GA 30069-5000';
+  // Which pages draw an image XObject (the seal is the only image on these pages).
+  const pagesWithImage = async (bytes: Uint8Array) => {
+    const doc = await PDFDocument.load(bytes);
+    return doc.getPages().map((pg) => {
+      const xo = pg.node.Resources()?.lookupMaybe(PDFName.of('XObject'), PDFDict);
+      return !!xo && xo.keys().length > 0;
+    });
+  };
+
+  it('draws the seal on every endorsement page that has its own letterhead', async () => {
+    const bytes = await buildSignablePdf(
+      { ...defaultState, endorsements: [endo('e1', LH), endo('e2', ''), endo('e3', LH)] },
+      today,
+      SEAL,
+    );
+    // page 1 = basic letter, then one page per endorsement
+    expect(await pagesWithImage(bytes)).toEqual([true, true, false, true]);
+    const text = pdfText(bytes);
+    expect(text).not.toMatch(/STREET ADDRESS|CITY STATE ZIP/);
+  });
+
+  it('leaves an endorsement switched to plain paper without letterhead or seal', async () => {
+    const bytes = await buildSignablePdf(
+      { ...defaultState, endorsements: [{ ...endo('e1', LH), letterheadMode: 'off' }] },
+      today,
+      SEAL,
+    );
+    expect(await pagesWithImage(bytes)).toEqual([true, false]);
+    expect(pdfText(bytes)).not.toContain('NAVY RESERVE CENTER ATLANTA');
+  });
+
+  it('draws the endorsement seal even when the basic letter is on plain paper', async () => {
+    const bytes = await buildSignablePdf(
+      {
+        ...defaultState,
+        letterhead: { ...defaultState.letterhead, mode: 'off' },
+        endorsements: [endo('e1', LH)],
+      },
+      today,
+      SEAL,
+    );
+    expect(await pagesWithImage(bytes)).toEqual([false, true]);
+  });
 });
 
 // A locked (encrypted) PDF enclosure used to export as BLANK pages: pdf-lib has no decryption

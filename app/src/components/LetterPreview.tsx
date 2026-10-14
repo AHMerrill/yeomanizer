@@ -1,4 +1,4 @@
-import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type {
   LetterState,
   Paragraph,
@@ -17,6 +17,7 @@ import {
   ENDORSE_ORD,
   basicLetterId,
   remainingVias,
+  endorsementLetterheadLines,
   type IdentLines,
 } from '../format/identification';
 import { Form1626 } from './Form1626';
@@ -122,9 +123,15 @@ function ParaFlow({
   );
 }
 
+// Whether the letterhead shows faint "fill this in" hints for blank activity/address/city lines.
+// An endorsement's letterhead is free-form lines typed as a block — there are no separate fields
+// to fill in, so its page turns the hints off and shows exactly the lines given.
+const LetterheadHints = createContext(true);
+
 function Letterhead({ state }: { state: LetterState }) {
   const lh = state.letterhead;
   const sealSrc = SEAL_URL[lh.seal];
+  const hints = useContext(LetterheadHints);
   return (
     <>
       {sealSrc && <img className="seal" src={sealSrc} alt="" />}
@@ -140,14 +147,18 @@ function Letterhead({ state }: { state: LetterState }) {
             </div>
           ))
         ) : (
-          <div className="lh-sub ph">NAME OF ACTIVITY</div>
+          hints && <div className="lh-sub ph">NAME OF ACTIVITY</div>
         )}
-        <div className={lh.addressLine ? 'lh-sub' : 'lh-sub ph'}>
-          {lh.addressLine || 'STREET ADDRESS'}
-        </div>
-        <div className={lh.cityStateZip ? 'lh-sub' : 'lh-sub ph'}>
-          {lh.cityStateZip || 'CITY STATE ZIP+4'}
-        </div>
+        {(lh.addressLine || hints) && (
+          <div className={lh.addressLine ? 'lh-sub' : 'lh-sub ph'}>
+            {lh.addressLine || 'STREET ADDRESS'}
+          </div>
+        )}
+        {(lh.cityStateZip || hints) && (
+          <div className={lh.cityStateZip ? 'lh-sub' : 'lh-sub ph'}>
+            {lh.cityStateZip || 'CITY STATE ZIP+4'}
+          </div>
+        )}
         </>
         )}
       </div>
@@ -844,7 +855,11 @@ function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): L
   // Fig 9-2: a new-page endorsement is prepared on the ENDORSING activity's letterhead. When the
   // endorsement carries letterhead lines (first = the DoN line, rest = activity/address/city), the
   // page renders them; blank = the plain continuation-sheet look.
-  const lhLines = (e.letterhead ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+  const lhLines = endorsementLetterheadLines(e);
+  // Lines after the DoN line map bottom-up: last = city/state/zip, next-to-last = street address,
+  // the rest = the activity name. With fewer than three, they're all activity lines.
+  const sub = lhLines.slice(1);
+  const full = sub.length >= 3;
   return {
     ...basic,
     type: 'endorsement',
@@ -854,9 +869,9 @@ function endorsementState(basic: LetterState, e: EndorsementEntry, i: number): L
           mode: 'on',
           titleOnly: false,
           line1: lhLines[0],
-          activityName: lhLines.slice(1).join('\n'),
-          addressLine: '',
-          cityStateZip: '',
+          activityName: (full ? sub.slice(0, -2) : sub).join('\n'),
+          addressLine: full ? sub[sub.length - 2] : '',
+          cityStateZip: full ? sub[sub.length - 1] : '',
         }
       : { ...basic.letterhead, mode: 'off' },
     endorsementNumber: ENDORSE_ORD[i] ?? `${i + 1}`,
@@ -974,7 +989,9 @@ export function LetterPreview({ state }: { state: LetterState }) {
             <LetterDoc state={state} />
             {(state.type === 'standard-letter' || state.type === 'memo-from-to') &&
               state.endorsements.map((e, i) => (
-                <LetterDoc key={e.id} state={endorsementState(state, e, i)} showDesignation={false} />
+                <LetterheadHints.Provider key={e.id} value={false}>
+                  <LetterDoc state={endorsementState(state, e, i)} showDesignation={false} />
+                </LetterheadHints.Provider>
               ))}
             {state.encls.map((e, i) =>
                 e.inDocument && e.file ? (
