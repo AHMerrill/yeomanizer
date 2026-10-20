@@ -417,41 +417,40 @@ export default function App() {
             Credits
           </button>
         </nav>
-        <div className="grow" />
+        {/* Undo/redo + exports travel as one group: when the row runs out of room (more tabs, a
+            badge, a narrower window) the whole group wraps to its own right-aligned row, instead of
+            the buttons running off the screen. */}
         {editingState && (
-          <div className="undo-redo">
-            <button onClick={undo} disabled={!canUndo} title="Undo (⌘/Ctrl+Z)" aria-label="Undo">
-              ↶
+          <div className="toolbar-actions">
+            <div className="undo-redo">
+              <button onClick={undo} disabled={!canUndo} title="Undo (⌘/Ctrl+Z)" aria-label="Undo">
+                ↶
+              </button>
+              <button onClick={redo} disabled={!canRedo} title="Redo (⌘/Ctrl+Shift+Z)" aria-label="Redo">
+                ↷
+              </button>
+            </div>
+            {editingState.type !== 'nato' && <button onClick={() => void onDocx()}>Export .docx</button>}
+            <button
+              onClick={() => void onProjectFile()}
+              title="A small editable copy you can drop into the Editor tab later to keep working. The .docx/PDF you export stay clean — nothing is hidden inside them."
+            >
+              Export .json
             </button>
-            <button onClick={redo} disabled={!canRedo} title="Redo (⌘/Ctrl+Shift+Z)" aria-label="Redo">
-              ↷
-            </button>
+            {editingState.type === 'nato' ? (
+              <button className="primary" onClick={onPrint} title="Print or save the travel order as a PDF">
+                Print / Save PDF
+              </button>
+            ) : (
+              <button
+                className="primary"
+                onClick={() => void onSignablePdf()}
+                title="Pixel-accurate, searchable PDF of the full document — endorsements, enclosures, and CUI included — with a CAC-signable signature field. Open it to print, save, or CAC-sign (no Prepare-a-Form step)."
+              >
+                Export PDF
+              </button>
+            )}
           </div>
-        )}
-        {editingState && editingState.type !== 'nato' && (
-          <button onClick={() => void onDocx()}>Export .docx</button>
-        )}
-        {editingState && (
-          <button
-            onClick={() => void onProjectFile()}
-            title="A small editable copy you can drop into the Editor tab later to keep working. The .docx/PDF you export stay clean — nothing is hidden inside them."
-          >
-            Export .json
-          </button>
-        )}
-        {editingState && editingState.type === 'nato' && (
-          <button className="primary" onClick={onPrint} title="Print or save the travel order as a PDF">
-            Print / Save PDF
-          </button>
-        )}
-        {editingState && editingState.type !== 'nato' && (
-          <button
-            className="primary"
-            onClick={() => void onSignablePdf()}
-            title="Pixel-accurate, searchable PDF of the full document — endorsements, enclosures, and CUI included — with a CAC-signable signature field. Open it to print, save, or CAC-sign (no Prepare-a-Form step)."
-          >
-            Export PDF
-          </button>
         )}
       </header>
 

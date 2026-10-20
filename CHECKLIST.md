@@ -133,6 +133,16 @@ file number or a fuller signature must be able to add them.)
     up and never shrank. → measure at `height: 0`, then set `min-height`. And a width change (pane drag,
     rotation) rewraps text WITHOUT a React render → re-render on a ResizeObserver, or text gets clipped.
 
+21. **A breakpoint tuned to measured content width goes stale.** The toolbar wrapped only at ≤760px —
+    "just above the toolbar's ~740px single-row content width." Tabs, a badge, and undo/redo later
+    grew that row to ~945px, so every screen from 761–944px (tablets) scrolled sideways, in all three
+    engines. → Let rows WRAP (`flex-wrap`) with related controls grouped as one unit
+    (`.toolbar-actions`), instead of a breakpoint that encodes today's content width.
+22. **Generic global class names leak across components.** The toolbar's spacer `.grow` had a phone
+    rule `.grow { display: none }` — which also matched the NATO order's `.nfill.grow` blank, so its
+    "Via" fill-in vanished from the preview on phones. → Scope layout helpers to their component, and
+    grep the whole `src/` (both CSS files) before reusing or hiding a short class name.
+
 **Process lessons (Zan's repeated frustrations):**
 - **Emulation is NOT a real test.** `@media print` injected as screen styles ≠ a real print; Chromium ≠ all
   engines. Drive REAL Chrome (puppeteer-core), REAL WebKit + Firefox (Playwright).

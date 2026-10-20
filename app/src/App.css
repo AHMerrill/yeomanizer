@@ -8,8 +8,10 @@
 /* ---- Toolbar ---- */
 .toolbar {
   display: flex;
+  flex-wrap: wrap; /* never run off the screen: the button group wraps to its own row instead */
   align-items: center;
   gap: 10px;
+  row-gap: 8px;
   padding: 10px 16px;
   background: #15161a;
   border-bottom: 1px solid #2c2e36;
@@ -42,12 +44,19 @@
 .gh-link:hover {
   color: #e7e7ea;
 }
-.grow {
-  flex: 1;
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap; /* on a phone the buttons wrap among themselves (Export PDF gets its own row) */
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  row-gap: 8px;
+  margin-left: auto; /* right-aligned, on the brand row or on a row of its own */
 }
 .toolbar button {
   font: inherit;
   font-size: 13px;
+  white-space: nowrap; /* a button that doesn't fit wraps to the next row — its label never breaks */
   padding: 7px 14px;
   border-radius: 7px;
   border: 1px solid #3a3d47;
@@ -1324,16 +1333,11 @@
   }
 }
 
-/* Narrow: wrap the toolbar onto rows — brand, the tab pill, then the export buttons (full-width,
-   easy to tap). 760px is just above the toolbar's ~740px single-row content width. */
+/* Narrow: full-width rows — the brand, the tab pill, then the export buttons (stretched, easy to
+   tap). Wider screens wrap on their own (.toolbar flex-wrap) without these stretched rows. */
 @media (max-width: 760px) {
   .toolbar {
-    flex-wrap: wrap;
-    row-gap: 8px;
     padding: 10px 12px;
-  }
-  .grow {
-    display: none;
   }
   .brand {
     flex: 1 1 100%;
@@ -1367,7 +1371,11 @@
     margin-left: 3px;
     font-size: 9px;
   }
-  .toolbar > button {
+  .toolbar-actions {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+  .toolbar-actions > button {
     flex: 1 1 auto;
   }
   /* Stack the 3-up footer so the long privacy line isn't crushed into a narrow column. */
@@ -2016,8 +2024,13 @@
 }
 .para-btns {
   display: flex;
+  /* Fill the rest of the row and wrap, right-aligned: a deeply indented subparagraph on a phone
+     has less room than the buttons need, and they must wrap rather than run off the screen. */
+  flex: 1 1 0;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 3px;
-  margin-left: auto;
 }
 /* per-paragraph CUI portion-marking toggle */
 .para-btns .cui-tog {
