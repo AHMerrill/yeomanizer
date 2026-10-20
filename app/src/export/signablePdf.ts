@@ -7,7 +7,7 @@
 // matches by construction. Renders the FULL document: CUI banners + designation block (with
 // per-enclosure banner overrides), endorsements (each with its own /Sig field), in-document
 // enclosures (images embedded, PDFs copied as real vector pages), and continuation-page numbering.
-import type { LetterState, Paragraph } from '../types';
+import type { LetterState, Paragraph, ParaTable } from '../types';
 import {
   buildIdent,
   refLetter,
@@ -18,6 +18,18 @@ import {
 } from '../format/identification';
 import { paragraphMarker, markerText, depthIndentIn } from '../format/paragraphs';
 import { parseInline } from '../format/inline';
+import {
+  resolveWidths,
+  tableLines,
+  ruleBetween,
+  isHeaderRow,
+  cellLines,
+  textWidthPt,
+  CELL_PAD_X_IN,
+  CELL_PAD_Y_IN,
+  TABLE_LH,
+  BORDER_PT,
+} from '../format/table';
 import { anyCui } from '../format/tree';
 import { documentFilename } from '../format/filename';
 import { loadSealBytes } from './docx';
@@ -64,6 +76,7 @@ export async function buildSignablePdf(
   const font = await doc.embedFont(StandardFonts.TimesRoman);
   const bold = await doc.embedFont(StandardFonts.TimesRomanBold);
   const italicFont = await doc.embedFont(StandardFonts.TimesRomanItalic);
+  const boldItalic = await doc.embedFont(StandardFonts.TimesRomanBoldItalic);
   const black = rgb(0, 0, 0);
   const navy = rgb(...NAVY);
 
@@ -611,6 +624,181 @@ export async function buildSignablePdf(
     };
   }
 
+  // ---- Body tables (format/table.ts) — the SAME resolved column widths as the preview and the
+  // .docx. Text is measured glyph by glyph with the Times metrics (drawText doesn't kern), so a
+  // column fitted to its text holds it exactly. Rows break across pages; the outline closes at the
+  // break and reopens under a repeated header row. Only a row taller than a whole page splits.
+  const drawTable = (t: ParaTable) => {
+    const n = t.cols.length;
+    const widths = resolveWidths(t).map((w) => w * PT);
+    const xs = [LEFT + t.indent * PT];
+    widths.forEach((w) => xs.push(xs[xs.length - 1] + w));
+    const size = t.fontSize;
+    const lineH = size * TABLE_LH;
+    const padX = CELL_PAD_X_IN * PT;
+    const padY = CELL_PAD_Y_IN * PT;
+    const L = tableLines(t);
+    const spaceW = textWidthPt(' ', size);
+    type Seg = { text: string; f: PdfFont; ul: boolean; w: number };
+    type Word = { segs: Seg[]; w: number };
+    type Line = { words: Word[]; w: number };
+
+    // A cell → its drawn lines: each hard line (the user's line breaks) wrapped to the column, with a
+    // word longer than the column broken by characters (as the browser and Word do).
+    const layoutCell = (text: string, r: number, c: number): Line[] => {
+      const hdr = isHeaderRow(t, r) ? t.headerStyle : null;
+      const maxW = widths[c] - 2 * padX;
+      const out: Line[] = [];
+      for (const hard of cellLines(text)) {
+        const words: Word[] = [];
+        let acc: Seg[] = [];
+        const flush = () => {
+          if (acc.length) words.push({ segs: acc, w: acc.reduce((s, g) => s + g.w, 0) });
+          acc = [];
+        };
+        for (const run of parseInline(hard)) {
+          const isBold = !!run.bold || hdr === 'bold';
+          const f = isBold && run.italic ? boldItalic : isBold ? bold : run.italic ? italicFont : font;
+          const face = isBold ? 'bold' : run.italic ? 'italic' : 'regular';
+          const ul = !!run.underline || hdr === 'underline';
+          for (const part of run.text.split(/(\s+)/)) {
+            if (part === '') continue;
+            if (/^\s+$/.test(part)) flush();
+            else acc.push({ text: part, f, ul, w: textWidthPt(part, size, face) });
+          }
+        }
+        flush();
+        const pieces: Word[] = [];
+        for (const wd of words) {
+          if (!t.wrap || wd.w <= maxW) {
+            pieces.push(wd);
+            continue;
+          }
+          let chunk: Seg[] = [];
+          let cw = 0;
+          for (const sg of wd.segs) {
+            const face = sg.f === bold || sg.f === boldItalic ? 'bold' : sg.f === italicFont ? 'italic' : 'regular';
+            for (const ch of sg.text) {
+              const w = textWidthPt(ch, size, face);
+              if (cw > 0 && cw + w > maxW) {
+                pieces.push({ segs: chunk, w: cw });
+                chunk = [];
+                cw = 0;
+              }
+              const last = chunk[chunk.length - 1];
+              if (last && last.f === sg.f && last.ul === sg.ul) {
+                last.text += ch;
+                last.w += w;
+              } else chunk.push({ text: ch, f: sg.f, ul: sg.ul, w });
+              cw += w;
+            }
+          }
+          if (chunk.length) pieces.push({ segs: chunk, w: cw });
+        }
+        let cur: Word[] = [];
+        let x = 0;
+        for (const pc of pieces) {
+          const sp = cur.length ? spaceW : 0;
+          if (t.wrap && cur.length && x + sp + pc.w > maxW) {
+            out.push({ words: cur, w: x });
+            cur = [pc];
+            x = pc.w;
+          } else {
+            cur.push(pc);
+            x += sp + pc.w;
+          }
+        }
+        out.push({ words: cur, w: x });
+      }
+      return out;
+    };
+
+    // Lay out every row; a row taller than a page can ever hold is cut into page-sized slices.
+    type VRow = { r: number; lines: Line[][]; h: number; cont: boolean };
+    const laid = t.rows.map((row, r) => {
+      const lines = row.cells.map((text, c) => layoutCell(text, r, c));
+      const nLines = Math.max(1, ...lines.map((l) => l.length));
+      return { r, lines, nLines, minH: row.height * PT };
+    });
+    const headerH = t.header ? Math.max(laid[0].minH, laid[0].nLines * lineH + 2 * padY) : 0;
+    const maxLines = Math.max(1, Math.floor((PAGE_H - 2 * M_BOT - 1.5 * PT - headerH - 2 * padY) / lineH));
+    const vrows: VRow[] = [];
+    for (const lr of laid) {
+      if (lr.nLines <= maxLines) {
+        vrows.push({ r: lr.r, lines: lr.lines, h: Math.max(lr.minH, lr.nLines * lineH + 2 * padY), cont: false });
+        continue;
+      }
+      for (let from = 0; from < lr.nLines; from += maxLines) {
+        const lines = lr.lines.map((cell) => cell.slice(from, from + maxLines));
+        const k = Math.max(1, ...lines.map((l) => l.length));
+        vrows.push({ r: lr.r, lines, h: k * lineH + 2 * padY, cont: from > 0 });
+      }
+    }
+
+    const rule = (x1: number, y1: number, x2: number, y2: number) =>
+      page.drawLine({
+        start: { x: x1, y: PAGE_H - y1 },
+        end: { x: x2, y: PAGE_H - y2 },
+        thickness: BORDER_PT,
+        color: black,
+      });
+    const drawRow = (v: VRow, first: boolean, prev: VRow | null) => {
+      const rowTop = top;
+      v.lines.forEach((cellLinesLaid, c) => {
+        const align = t.cols[c]?.align ?? 'left';
+        const inner = widths[c] - 2 * padX;
+        cellLinesLaid.forEach((ln, li) => {
+          const baseY = PAGE_H - (rowTop + padY + li * lineH) - baselineDrop(size, TABLE_LH);
+          let x = xs[c] + padX + (align === 'center' ? (inner - ln.w) / 2 : align === 'right' ? inner - ln.w : 0);
+          let prevUl = false;
+          ln.words.forEach((wd, wi) => {
+            if (wi > 0) {
+              // An underlined run underlines the spaces inside it too, as it does on screen.
+              if (prevUl && wd.segs[0]?.ul) rule(x, PAGE_H - baseY + 1.6, x + spaceW, PAGE_H - baseY + 1.6);
+              x += spaceW;
+            }
+            for (const sg of wd.segs) {
+              page.drawText(sg.text, { x, y: baseY, font: sg.f, size, color: black });
+              if (sg.ul) rule(x, PAGE_H - baseY + 1.6, x + sg.w, PAGE_H - baseY + 1.6);
+              x += sg.w;
+            }
+            prevUl = !!wd.segs[wd.segs.length - 1]?.ul;
+          });
+        });
+      });
+      const bottom = rowTop + v.h;
+      if (first ? L.outer : !v.cont && prev !== null && ruleBetween(t, prev.r)) rule(xs[0], rowTop, xs[n], rowTop);
+      if (L.outer) {
+        rule(xs[0], rowTop, xs[0], bottom);
+        rule(xs[n], rowTop, xs[n], bottom);
+      }
+      if (L.vertical) for (let c = 1; c < n; c++) rule(xs[c], rowTop, xs[c], bottom);
+      top = bottom;
+    };
+    const closeOutline = () => {
+      if (L.outer) rule(xs[0], top, xs[n], top);
+    };
+
+    // Keep the header with the first body row: both go on one page.
+    const opening = vrows[0].h + (t.header && vrows.length > 1 ? vrows[1].h : 0);
+    room(opening);
+    let prev: VRow | null = null;
+    vrows.forEach((v, i) => {
+      if (i > 0 && PAGE_H - top - v.h < M_BOT) {
+        closeOutline();
+        newPage();
+        prev = null;
+        if (t.header) {
+          drawRow({ ...vrows[0], cont: false }, true, null); // repeated header row
+          prev = vrows[0];
+        }
+      }
+      drawRow(v, prev === null, prev);
+      prev = v;
+    });
+    closeOutline();
+  };
+
   // ---- Body (numbered paragraphs; first line indented, continuation at the left margin) ----
   gap(PARA_GAP);
   const drawBody = (
@@ -744,6 +932,10 @@ export async function buildSignablePdf(
         top += SIZE * BODY_LH;
       });
       gap(PARA_GAP);
+      if (p.table) {
+        drawTable(p.table);
+        gap(PARA_GAP);
+      }
       if (p.children.length) drawBody(p.children, depth + 1, portionActive, business, execBullet);
     });
   };

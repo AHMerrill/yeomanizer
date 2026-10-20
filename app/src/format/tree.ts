@@ -20,6 +20,13 @@ export function updateTitle(list: Tree, id: string, title: string): Tree {
   );
 }
 
+// Attach, replace, or (undefined) remove a paragraph's table.
+export function setTable(list: Tree, id: string, table: Paragraph['table']): Tree {
+  return list.map((p) =>
+    p.id === id ? { ...p, table } : { ...p, children: setTable(p.children, id, table) },
+  );
+}
+
 // Toggle a paragraph's CUI portion marking.
 export function setCui(list: Tree, id: string, on: boolean): Tree {
   return list.map((p) =>

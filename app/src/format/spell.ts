@@ -1,5 +1,6 @@
 import nspell, { type NSpell } from 'nspell';
 import type { LetterState, Paragraph } from '../types';
+import { tableText } from './table';
 
 // Offline spell-check. The dictionary (en_US Hunspell, SCOWL-derived, MIT AND BSD) is bundled in the
 // app at /spell/ and fetched once from OUR OWN origin; nspell (MIT) runs entirely in the browser. Your
@@ -47,7 +48,7 @@ export interface SpellHit {
 // enclosure titles, names, and codes are skipped — they are mostly proper nouns and citations that
 // would just produce noise.
 const paraText = (p: Paragraph[]): string =>
-  p.map((x) => `${x.title ?? ''} ${x.text} ${paraText(x.children)}`).join(' ');
+  p.map((x) => `${x.title ?? ''} ${x.text} ${tableText(x.table)} ${paraText(x.children)}`).join(' ');
 
 export function draftProse(s: LetterState): string {
   return `${s.subj}  ${paraText(s.body)}`;

@@ -1,4 +1,13 @@
-import { Fragment, createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  Fragment,
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import type {
   LetterState,
   Paragraph,
@@ -6,8 +15,19 @@ import type {
   EnclosureEntry,
   ListEntry,
   SignatureBlock,
+  ParaTable,
 } from '../types';
 import { parseInline } from '../format/inline';
+import {
+  resolveWidths,
+  tableLines,
+  ruleBetween,
+  isHeaderRow,
+  cellLines,
+  dragEdge,
+  fitColumn,
+  setRowHeight,
+} from '../format/table';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 import { anyCui } from '../format/tree';
 import { SEAL_URL } from '../format/seals';
@@ -49,10 +69,11 @@ interface FlatPara {
   text: string;
   cui?: boolean;
   title?: string;
+  table?: ParaTable;
 }
 function flattenForFlow(list: Paragraph[], depth: number, out: FlatPara[]): void {
   list.forEach((p, i) => {
-    out.push({ key: p.id, depth, index: i, text: p.text, cui: p.cui, title: p.title });
+    out.push({ key: p.id, depth, index: i, text: p.text, cui: p.cui, title: p.title, table: p.table });
     flattenForFlow(p.children, depth + 1, out);
   });
 }
@@ -120,6 +141,179 @@ function ParaFlow({
       )}
       <Inline text={fp.text} />
     </p>
+  );
+}
+
+// ---- Body tables ----
+// The preview's drag handles resize a table through this. Null — no handles — wherever the
+// preview isn't editable.
+const TableEdit = createContext<((pid: string, t: ParaTable) => void) | null>(null);
+
+// A table flows as pieces so a long one breaks across pages between rows, like the PDF and Word:
+// the header travels with the first body row (never stranded at the foot of a page); every other
+// row is its own piece.
+function tablePieces(t: ParaTable): number[][] {
+  const first = t.header && t.rows.length > 1 ? [0, 1] : [0];
+  return [first, ...t.rows.slice(first.length).map((_, k) => [first.length + k])];
+}
+
+interface TablePieceInfo {
+  pid: string; // the paragraph the table belongs to
+  t: ParaTable;
+  widths: number[]; // resolveWidths(t), inches
+  rows: number[]; // the row indices in this piece
+  first: boolean; // the table's first piece
+  last: boolean; // the table's last piece — carries the paragraph gap below the table
+}
+
+// Cell text: inline **bold** *italic* __underline__, with the header row's style laid over it.
+function CellText({ text, hdr }: { text: string; hdr: ParaTable['headerStyle'] | null }) {
+  return (
+    <>
+      {parseInline(text).map((r, i) => {
+        let n: ReactNode = r.text;
+        if (r.bold || hdr === 'bold') n = <strong>{n}</strong>;
+        if (r.italic) n = <em>{n}</em>;
+        if (r.underline || hdr === 'underline') n = <u>{n}</u>;
+        return <Fragment key={i}>{n}</Fragment>;
+      })}
+    </>
+  );
+}
+
+// Pointer drag in inches of page. The sheet may be scaled to fit the pane (a CSS transform), so
+// screen pixels are divided back out by that scale.
+function beginDrag(e: ReactPointerEvent, axis: 'x' | 'y', onMove: (dIn: number) => void) {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const page = (e.currentTarget as HTMLElement).closest('.page') as HTMLElement | null;
+  const scale = page && page.offsetWidth ? page.getBoundingClientRect().width / page.offsetWidth : 1;
+  const start = axis === 'x' ? e.clientX : e.clientY;
+  // Report only real changes (to the hundredth of an inch the widths are kept at), so a pointer
+  // that sits still mid-drag doesn't stack up identical undo steps.
+  let last = 0;
+  const move = (ev: PointerEvent) => {
+    const d = Math.round((((axis === 'x' ? ev.clientX : ev.clientY) - start) / scale / 96) * 100) / 100;
+    if (d !== last) {
+      last = d;
+      onMove(d);
+    }
+  };
+  const end = () => {
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', end);
+    window.removeEventListener('pointercancel', end);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', end);
+  window.addEventListener('pointercancel', end);
+  document.body.style.cursor = axis === 'x' ? 'col-resize' : 'row-resize';
+  document.body.style.userSelect = 'none';
+}
+
+// Drag handles on one row: each column's right edge (drag to resize, double-click to fit the column
+// to its text) and the row's bottom edge (drag to set a minimum height, double-click to go back to
+// fitting the text). Screen-only — hidden in print, and the exports never see the preview DOM.
+function TableHandles({ pid, t, widths, r, onEdit }: { pid: string; t: ParaTable; widths: number[]; r: number; onEdit: (pid: string, t: ParaTable) => void }) {
+  let x = 0;
+  return (
+    <>
+      {widths.map((w, j) => {
+        x += w;
+        return (
+          <span
+            key={j}
+            className="tdrag tdrag-col"
+            style={{ left: `${x}in` }}
+            aria-hidden="true"
+            title="Drag to resize the column · double-click to fit it to its text"
+            onPointerDown={(e) => beginDrag(e, 'x', (d) => onEdit(pid, dragEdge(t, widths, j, d)))}
+            onDoubleClick={() => onEdit(pid, fitColumn(t, j))}
+          />
+        );
+      })}
+      <span
+        className="tdrag tdrag-row"
+        aria-hidden="true"
+        title="Drag to set the row height · double-click to fit it to its text"
+        onPointerDown={(e) => {
+          const rowEl = (e.currentTarget as HTMLElement).closest('.trow') as HTMLElement | null;
+          const h0 = (rowEl?.offsetHeight ?? 0) / 96; // offsetHeight is unscaled CSS px
+          const rowId = t.rows[r].id;
+          beginDrag(e, 'y', (d) => onEdit(pid, setRowHeight(t, rowId, Math.max(0.1, h0 + d))));
+        }}
+        onDoubleClick={() => onEdit(pid, setRowHeight(t, t.rows[r].id, 0))}
+      />
+    </>
+  );
+}
+
+// One piece of a table. Rules are drawn by each cell's ::after (absolutely positioned), so they
+// take no layout space and the row heights match the PDF's line math. `pageTop`/`pageBottom` say
+// whether this piece opens/closes the table's run on its page: the outline closes at a page break
+// and reopens on the next page under a repeated header row.
+function TablePiece({
+  pid,
+  t,
+  widths,
+  rows,
+  last,
+  pageTop,
+  pageBottom,
+  repeatHeader,
+  measure,
+}: TablePieceInfo & { pageTop: boolean; pageBottom: boolean; repeatHeader: boolean; measure?: boolean }) {
+  const onEdit = useContext(TableEdit);
+  const lines = tableLines(t);
+  const drawn = repeatHeader ? [0, ...rows] : rows;
+  const cols = widths.map((w) => `${w}in`).join(' ');
+  const total = widths.reduce((s, w) => s + w, 0);
+  return (
+    <div
+      className={t.wrap ? 'ptable' : 'ptable nowrap'}
+      data-sync={`p:${pid}`}
+      style={{
+        marginLeft: `${t.indent}in`,
+        width: `${total}in`,
+        fontSize: `${t.fontSize}pt`,
+        marginBottom: last ? 'var(--para-gap)' : undefined,
+      }}
+    >
+      {drawn.map((r, k) => {
+        const row = t.rows[r];
+        const top = k === 0 && pageTop ? lines.outer : ruleBetween(t, k > 0 ? drawn[k - 1] : r - 1);
+        const bottom = pageBottom && k === drawn.length - 1 && lines.outer;
+        const hdr = isHeaderRow(t, r) ? t.headerStyle : null;
+        return (
+          <div
+            className="trow"
+            key={k === 0 && repeatHeader ? 'rh' : row.id}
+            style={{ gridTemplateColumns: cols, gridTemplateRows: row.height ? `minmax(${row.height}in, auto)` : undefined }}
+          >
+            {row.cells.map((text, c) => {
+              const cls = ['tcell'];
+              if (top) cls.push('bt');
+              if (bottom) cls.push('bb');
+              if (c === 0 ? lines.outer : lines.vertical) cls.push('bl');
+              if (c === row.cells.length - 1 && lines.outer) cls.push('br');
+              return (
+                <div key={c} className={cls.join(' ')} style={{ textAlign: t.cols[c]?.align ?? 'left' }}>
+                  {cellLines(text).map((ln, i) => (
+                    <div className="tline" key={i}>
+                      {ln.trim() ? <CellText text={ln} hdr={hdr} /> : ' '}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+            {onEdit && !measure && <TableHandles pid={pid} t={t} widths={widths} r={r} onEdit={onEdit} />}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -845,6 +1039,23 @@ function CuiBanner({ pos, text }: { pos: 'top' | 'bottom'; text: string }) {
 interface FlowItem {
   key: string;
   node: ReactNode;
+  table?: TablePieceInfo; // a table piece — drawn per page (its rules depend on where breaks fall)
+}
+
+// Draw a flow item. A table piece needs to know whether it opens or closes the table's run on its
+// page; everything else is drawn as built.
+function renderItem(it: FlowItem, pageTop: boolean, pageBottom: boolean, measure = false): ReactNode {
+  const p = it.table;
+  if (!p) return it.node;
+  return (
+    <TablePiece
+      {...p}
+      pageTop={p.first || pageTop}
+      pageBottom={p.last || pageBottom}
+      repeatHeader={pageTop && !p.first && p.t.header}
+      measure={measure}
+    />
+  );
 }
 
 // Build a virtual letter-state for an appended endorsement, rendered by the same LetterDoc.
@@ -927,7 +1138,14 @@ function EnclosurePage({
   );
 }
 
-export function LetterPreview({ state }: { state: LetterState }) {
+export function LetterPreview({
+  state,
+  onTableChange,
+}: {
+  state: LetterState;
+  // Set when the preview is editable: its table drag handles write back through this.
+  onTableChange?: (pid: string, t: ParaTable) => void;
+}) {
   const fitRef = useRef<HTMLDivElement>(null);
   const pagesRef = useRef<HTMLDivElement>(null);
 
@@ -978,36 +1196,38 @@ export function LetterPreview({ state }: { state: LetterState }) {
   });
 
   return (
-    <div className="preview-fit" ref={fitRef}>
-      <div className="preview-pages" ref={pagesRef}>
-        {state.type === 'njp-1626-7' ? (
-          <Form1626 state={state} />
-        ) : state.type === 'nato' ? (
-          <NatoForm state={state} />
-        ) : (
-          <>
-            <LetterDoc state={state} />
-            {(state.type === 'standard-letter' || state.type === 'memo-from-to') &&
-              state.endorsements.map((e, i) => (
-                <LetterheadHints.Provider key={e.id} value={false}>
-                  <LetterDoc state={endorsementState(state, e, i)} showDesignation={false} />
-                </LetterheadHints.Provider>
-              ))}
-            {state.encls.map((e, i) =>
-                e.inDocument && e.file ? (
-                  <EnclosurePage
-                    key={e.id}
-                    encl={e}
-                    index={i + 1}
-                    cuiOn={state.cui.enabled}
-                    banner={e.cuiBanner?.trim() || state.cui.banner || 'CUI'}
-                  />
-                ) : null,
-              )}
-          </>
-        )}
+    <TableEdit.Provider value={onTableChange ?? null}>
+      <div className="preview-fit" ref={fitRef}>
+        <div className="preview-pages" ref={pagesRef}>
+          {state.type === 'njp-1626-7' ? (
+            <Form1626 state={state} />
+          ) : state.type === 'nato' ? (
+            <NatoForm state={state} />
+          ) : (
+            <>
+              <LetterDoc state={state} />
+              {(state.type === 'standard-letter' || state.type === 'memo-from-to') &&
+                state.endorsements.map((e, i) => (
+                  <LetterheadHints.Provider key={e.id} value={false}>
+                    <LetterDoc state={endorsementState(state, e, i)} showDesignation={false} />
+                  </LetterheadHints.Provider>
+                ))}
+              {state.encls.map((e, i) =>
+                  e.inDocument && e.file ? (
+                    <EnclosurePage
+                      key={e.id}
+                      encl={e}
+                      index={i + 1}
+                      cuiOn={state.cui.enabled}
+                      banner={e.cuiBanner?.trim() || state.cui.banner || 'CUI'}
+                    />
+                  ) : null,
+                )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </TableEdit.Provider>
   );
 }
 
@@ -1037,18 +1257,33 @@ function LetterDoc({ state, showDesignation = true }: { state: LetterState; show
     // copy-to from a type switch must not flow beneath it (the exports drop them).
     ...(isCoord
       ? []
-      : flat.map((fp) => ({
-          key: `p_${fp.key}`,
-          node: (
-            <ParaFlow
-              fp={fp}
-              portionActive={portionActive}
-              business={isBusiness || isExecMemoFor}
-              exec={isExec && !isExecMemoFor}
-              memoFor={isExecMemoFor}
-            />
-          ),
-        }))),
+      : flat.flatMap((fp): FlowItem[] => {
+          const para: FlowItem = {
+            key: `p_${fp.key}`,
+            node: (
+              <ParaFlow
+                fp={fp}
+                portionActive={portionActive}
+                business={isBusiness || isExecMemoFor}
+                exec={isExec && !isExecMemoFor}
+                memoFor={isExecMemoFor}
+              />
+            ),
+          };
+          if (!fp.table) return [para];
+          // A paragraph's table follows its text (and comes before its subparagraphs).
+          const t = fp.table;
+          const widths = resolveWidths(t);
+          const pieces = tablePieces(t);
+          return [
+            para,
+            ...pieces.map((rows, k) => ({
+              key: `t_${fp.key}_${t.rows[rows[0]].id}`,
+              node: null,
+              table: { pid: fp.key, t, widths, rows, first: k === 0, last: k === pieces.length - 1 },
+            })),
+          ];
+        })),
     ...(isCoord
       ? []
       : [
@@ -1088,6 +1323,15 @@ function LetterDoc({ state, showDesignation = true }: { state: LetterState; show
     const adv = (Array.from(m.querySelectorAll('[data-m="item"]')) as HTMLElement[]).map(
       (el) => el.offsetHeight,
     );
+    // A table continued onto a new page repeats its header row there — that page starts that much
+    // fuller. Each header table's header row is measured on its own (data-m="rh").
+    const rh = new Map<string, number>();
+    (Array.from(m.querySelectorAll('[data-m="rh"]')) as HTMLElement[]).forEach((el) =>
+      rh.set(el.dataset.pid ?? '', el.offsetHeight),
+    );
+    const repeatH = items.map((it) =>
+      it.table && !it.table.first && it.table.t.header ? (rh.get(it.table.pid) ?? 0) : 0,
+    );
 
     const cap1 = BODY_BOTTOM - PAGE1_TOP - headH - BODY_GAP;
     const capN = BODY_BOTTOM - PAGEN_TOP - contH - BODY_GAP;
@@ -1102,6 +1346,7 @@ function LetterDoc({ state, showDesignation = true }: { state: LetterState; show
         acc = 0;
         cap = capN;
       }
+      if (cur.length === 0) acc += repeatH[i] ?? 0;
       cur.push(i);
       acc += adv[i];
     }
@@ -1128,9 +1373,16 @@ function LetterDoc({ state, showDesignation = true }: { state: LetterState; show
         </div>
         {items.map((it) => (
           <div data-m="item" key={it.key}>
-            {it.node}
+            {renderItem(it, false, false, true)}
           </div>
         ))}
+        {items.map((it) =>
+          it.table?.first && it.table.t.header ? (
+            <div data-m="rh" data-pid={it.table.pid} key={`rh_${it.key}`}>
+              <TablePiece {...it.table} rows={[]} last={false} pageTop pageBottom={false} repeatHeader measure />
+            </div>
+          ) : null,
+        )}
       </div>
 
       {/* Real, paginated sheets. */}
@@ -1145,11 +1397,11 @@ function LetterDoc({ state, showDesignation = true }: { state: LetterState; show
             <ContinuationHead subj={state.subj} />
           )}
           <div className="body">
-            {idxs.map((i) => {
+            {idxs.map((i, k) => {
               // pages can briefly hold stale indices after content shrinks (before the
               // measurer re-runs); guard so a missing item never crashes the render.
               const it = items[i];
-              return it ? <Fragment key={it.key}>{it.node}</Fragment> : null;
+              return it ? <Fragment key={it.key}>{renderItem(it, k === 0, k === idxs.length - 1)}</Fragment> : null;
             })}
           </div>
           {p === 0 && cui.enabled && showDesignation && <Designation cui={cui} />}

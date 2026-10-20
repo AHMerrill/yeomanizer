@@ -16,6 +16,7 @@ import { TEMPLATES } from './data/templates';
 import { proofread } from './format/proofread';
 import { detectPii } from './format/pii';
 import { LetterPreview } from './components/LetterPreview';
+import { setTableInState } from './format/table';
 import { About } from './components/About';
 import { ImportDropZone } from './components/ImportDropZone';
 import { Faq } from './components/Faq';
@@ -535,7 +536,10 @@ export default function App() {
           />
           <div className="paper-backdrop">
             <PreviewErrorBoundary>
-              <LetterPreview state={editingState} />
+              <LetterPreview
+                state={editingState}
+                onTableChange={(pid, t) => setEditingStateTracked((s) => setTableInState(s, pid, t))}
+              />
             </PreviewErrorBoundary>
           </div>
         </main>

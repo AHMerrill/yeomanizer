@@ -117,6 +117,22 @@ file number or a fuller signature must be able to add them.)
       content streams, so grepping raw export bytes for text always fails. Inflate the streams and
       decode the hex before asserting (see `signablePdf.test.ts`).
 
+18. **pdf-lib MEASURES with kerning but DRAWS without it.** `font.widthOfTextAtSize()` adds the AFM
+    kerning pairs; `page.drawText()` emits a plain `Tj` with no kerning. So the drawn text is wider than
+    the measured width ("NAME:" 38.24 measured vs 38.66 drawn at 12 pt). Anything that must HOLD text —
+    a table column fitted to its contents — measures glyph by glyph (`format/table.ts` `textWidthPt`,
+    numbers from `format/timesMetrics.ts`). Caught by a unit test comparing against pdf-lib, not by eye.
+19. **Word counts a border's thickness INSIDE the row height; the preview and the PDF draw rules over
+    the rows.** A 0.5 pt rule per row made Word's table rows 20.0 pt against 19.44 pt — over a page
+    that's a whole row, so Word broke pages earlier. Also: Word's "single" spacing for 12 pt Times is
+    13.8 pt, not the 13.68 pt the preview/PDF use. → `docx.ts bodyTable` subtracts the rule from the
+    cell margins and pins the cell line height EXACTLY. **Verify row pitch with `pdftotext -bbox-layout`
+    on the LibreOffice-converted .docx vs the PDF**, not by eyeballing two screenshots.
+20. **An auto-growing textarea measured in place can only GROW.** A CSS-grid cell is stretched to its
+    row's tallest neighbour and `scrollHeight` never reports less than the box — so every cell ratcheted
+    up and never shrank. → measure at `height: 0`, then set `min-height`. And a width change (pane drag,
+    rotation) rewraps text WITHOUT a React render → re-render on a ResizeObserver, or text gets clipped.
+
 **Process lessons (Zan's repeated frustrations):**
 - **Emulation is NOT a real test.** `@media print` injected as screen styles ≠ a real print; Chromium ≠ all
   engines. Drive REAL Chrome (puppeteer-core), REAL WebKit + Firefox (Playwright).

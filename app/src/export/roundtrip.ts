@@ -9,6 +9,7 @@ import { defaultState } from '../defaultState';
 import { documentFilename } from '../format/filename';
 import type { LetterState, Paragraph, EnclosureEntry, ListEntry } from '../types';
 import { FORM_1626_PAGES } from '../data/form1626';
+import { sanitizeTable } from '../format/table';
 
 // The 1626/7's field ids come from the generated form geometry — an import is validated against
 // them, so a hand-edited file can't introduce keys the renderers never expect.
@@ -80,8 +81,11 @@ const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 // node cap → throw, which parseProject's catch turns into a clean null (reject the file).
 const MAX_BODY_NODES = 2000; // a real letter has tens of paragraphs — far below this
 const MAX_BODY_DEPTH = 12; // the manual's paragraph scheme tops out at 8 levels
+// Table cells across one body. The editor caps a table at 10 × 200; this leaves room for several
+// such tables while stopping a file that would bury the renderers in cells.
+const MAX_BODY_CELLS = 20_000;
 
-function sanitizeBody(nodes: unknown, depth: number, counter: { n: number }): Paragraph[] {
+function sanitizeBody(nodes: unknown, depth: number, counter: { n: number; cells: number }): Paragraph[] {
   if (!Array.isArray(nodes) || depth > MAX_BODY_DEPTH) return [];
   const out: Paragraph[] = [];
   for (const raw of nodes) {
@@ -93,6 +97,7 @@ function sanitizeBody(nodes: unknown, depth: number, counter: { n: number }): Pa
       text: typeof p.text === 'string' ? p.text.slice(0, 50_000) : '',
       title: typeof p.title === 'string' ? p.title.slice(0, 2_000) : undefined,
       cui: p.cui === true ? true : undefined,
+      table: sanitizeTable(p.table, counter, MAX_BODY_CELLS),
       children: sanitizeBody(p.children, depth + 1, counter),
     });
   }
@@ -107,7 +112,7 @@ export function parseProject(text: string): LetterState | null {
     const s = obj?.state;
     if (!s || typeof s !== 'object' || typeof s.type !== 'string' || !Array.isArray(s.body)) return null;
     // Replace the body with a bounded, well-typed copy before it can reach any renderer.
-    const body = sanitizeBody(s.body, 0, { n: 0 });
+    const body = sanitizeBody(s.body, 0, { n: 0, cells: 0 });
     // Merge over defaults so a file from an older/partial schema still fills every field.
     // (Future versions migrate off obj.v here.) Deep-fill the business sub-object too, so a partial
     // or pre-business-letter file still carries every field a renderer reads.
@@ -275,7 +280,7 @@ export function parseProject(text: string): LetterState | null {
             e.letterheadMode === 'on' || e.letterheadMode === 'off'
               ? (e.letterheadMode as 'on' | 'off')
               : undefined,
-          body: sanitizeBody(e.body, 0, { n: 0 }),
+          body: sanitizeBody(e.body, 0, { n: 0, cells: 0 }),
           sigName: typeof e.sigName === 'string' ? e.sigName.slice(0, 120) : '',
           sigTitle: typeof e.sigTitle === 'string' ? e.sigTitle.slice(0, 200) : '',
           authority:

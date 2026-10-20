@@ -20,9 +20,12 @@ import {
   HorizontalPositionRelativeFrom,
   VerticalPositionRelativeFrom,
   TextWrappingType,
+  HeightRule,
+  VerticalAlign,
+  LineRuleType,
   type ISectionOptions,
 } from 'docx';
-import type { LetterState, Paragraph as P } from '../types';
+import type { LetterState, Paragraph as P, ParaTable } from '../types';
 import type { RasterPage } from './rasterizePdf';
 import { documentFilename } from '../format/filename';
 import { SEAL_URL } from '../format/seals';
@@ -37,6 +40,16 @@ import {
 import { anyCui } from '../format/tree';
 import { paragraphMarker, depthIndentIn } from '../format/paragraphs';
 import { parseInline } from '../format/inline';
+import {
+  resolveWidths,
+  tableLines,
+  isHeaderRow,
+  cellLines,
+  CELL_PAD_X_IN,
+  CELL_PAD_Y_IN,
+  TABLE_LH,
+  BORDER_PT,
+} from '../format/table';
 
 const IN = 1440; // twips per inch
 const FONT = 'Times New Roman';
@@ -206,6 +219,86 @@ export async function loadSealBytes(state: LetterState): Promise<ArrayBuffer | u
   }
 }
 
+// A body table (format/table.ts): the SAME resolved widths as the preview and the PDF, as a
+// fixed-layout Word table indented from the margin. The header row repeats atop each page the table
+// spills onto and is kept with the next row; rows never split across a page (cantSplit), matching
+// the preview. A row's minimum height is Word's "at least". An empty paragraph follows, giving the
+// same blank line after the table that every paragraph gets — and keeping two tables from fusing.
+function bodyTable(t: ParaTable): (Paragraph | Table)[] {
+  const tw = resolveWidths(t).map((w) => Math.round(w * IN));
+  const L = tableLines(t);
+  const LINE = { style: BorderStyle.SINGLE, size: Math.round(BORDER_PT * 8), color: '000000' } as const;
+  const sz = t.fontSize * 2;
+  const padX = Math.round(CELL_PAD_X_IN * IN);
+  const padY = Math.round(CELL_PAD_Y_IN * IN);
+  // Word counts a horizontal rule's thickness inside the row height; the preview and the PDF draw
+  // rules over the rows. Take each rule out of the cell's vertical margins so rows pitch the same.
+  const ruleTw = Math.round(BORDER_PT * 20);
+  const rows = t.rows.map((row, r) => {
+    const hdr = isHeaderRow(t, r) ? t.headerStyle : null;
+    const half = L.between ? Math.round(ruleTw / 2) : 0;
+    const marginTop = padY - half;
+    const marginBottom = padY - half - (hdr && L.headerRule && !L.between ? ruleTw : 0);
+    return new TableRow({
+      tableHeader: !!hdr,
+      cantSplit: true,
+      ...(row.height > 0 ? { height: { value: Math.round(row.height * IN), rule: HeightRule.ATLEAST } } : {}),
+      children: row.cells.map(
+        (text, c) =>
+          new TableCell({
+            width: { size: tw[c], type: WidthType.DXA },
+            margins: { top: marginTop, bottom: marginBottom, left: padX, right: padX },
+            verticalAlign: VerticalAlign.TOP,
+            // The rule under the header row in the outline styles (the grid's own inside rules cover it there).
+            ...(hdr && L.headerRule && !L.between ? { borders: { bottom: LINE } } : {}),
+            children: cellLines(text).map(
+              (ln) =>
+                new Paragraph({
+                  alignment:
+                    t.cols[c]?.align === 'center'
+                      ? AlignmentType.CENTER
+                      : t.cols[c]?.align === 'right'
+                        ? AlignmentType.RIGHT
+                        : AlignmentType.LEFT,
+                  // Exactly the preview's/PDF's line height (Word's "single" runs 13.8pt for 12pt Times,
+                  // which would make every row a hair taller and move the page breaks).
+                  spacing: { before: 0, after: 0, line: Math.round(t.fontSize * TABLE_LH * 20), lineRule: LineRuleType.EXACT },
+                  keepNext: !!hdr, // a header row stays with the first body row
+                  run: { font: FONT, size: sz }, // an empty line keeps the cell's text height
+                  children: parseInline(ln).map((run) =>
+                    R(run.text, {
+                      size: sz,
+                      bold: run.bold || hdr === 'bold' || undefined,
+                      italics: run.italic,
+                      underline: run.underline || hdr === 'underline',
+                    }),
+                  ),
+                }),
+            ),
+          }),
+      ),
+    });
+  });
+  return [
+    new Table({
+      width: { size: tw.reduce((a, b) => a + b, 0), type: WidthType.DXA },
+      columnWidths: tw,
+      layout: TableLayoutType.FIXED,
+      indent: { size: Math.round(t.indent * IN), type: WidthType.DXA },
+      borders: {
+        top: L.outer ? LINE : NB,
+        bottom: L.outer ? LINE : NB,
+        left: L.outer ? LINE : NB,
+        right: L.outer ? LINE : NB,
+        insideHorizontal: L.between ? LINE : NB,
+        insideVertical: L.vertical ? LINE : NB,
+      },
+      rows,
+    }),
+    new Paragraph({ children: [R('')], spacing: { before: 0, after: 0, line: BLANK, lineRule: LineRuleType.EXACT } }),
+  ];
+}
+
 function flattenBody(
   list: P[],
   depth: number,
@@ -251,6 +344,7 @@ function flattenBody(
         spacing: { after: BLANK },
       }),
     );
+    if (p.table) out.push(...bodyTable(p.table));
     if (p.children.length) flattenBody(p.children, depth + 1, out, portionActive, business, execBullet);
   });
 }

@@ -1,4 +1,5 @@
 import type { LetterState, Paragraph } from '../types';
+import { tableText } from './table';
 
 // Heuristic, LOCAL-ONLY scan for common PII/PHI patterns, surfaced as an advisory reminder in the
 // Proofread tab. It runs entirely in the browser on the in-memory draft — nothing is logged, stored,
@@ -19,7 +20,8 @@ const PATTERNS: { kind: string; re: RegExp }[] = [
   { kind: 'date of birth', re: /\b(?:DOB|date of birth)\b/gi },
 ];
 
-const text = (p: Paragraph[]): string => p.map((x) => `${x.title ?? ''} ${x.text} ${text(x.children)}`).join(' ');
+const text = (p: Paragraph[]): string =>
+  p.map((x) => `${x.title ?? ''} ${x.text} ${tableText(x.table)} ${text(x.children)}`).join(' ');
 
 // Gather the user-entered text by area, so a hit can be located ("in the body", "in the signature"…).
 function areas(s: LetterState): { where: string; text: string }[] {

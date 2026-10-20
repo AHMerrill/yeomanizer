@@ -23,7 +23,7 @@ Each is under a permissive license; the full license text ships inside the publi
 | Library | Purpose | License |
 |---|---|---|
 | [React](https://react.dev) / React-DOM | UI | MIT |
-| [pdf-lib](https://github.com/Hopding/pdf-lib) | searchable/vector PDF generation | MIT |
+| [pdf-lib](https://github.com/Hopding/pdf-lib) | searchable/vector PDF generation; its bundled Adobe Core-14 Times metrics also size table columns (`format/timesMetrics.ts`) | MIT |
 | [docx](https://github.com/dolanmiu/docx) | Word `.docx` generation | MIT |
 | [pdf.js](https://github.com/mozilla/pdf.js) (`pdfjs-dist`) | rasterizing PDF enclosure pages for the `.docx` | Apache-2.0 |
 | [JSZip](https://github.com/Stuk/jszip) | re-packing the `.docx` to strip metadata | MIT |

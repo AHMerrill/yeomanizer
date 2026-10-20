@@ -333,6 +333,76 @@
   text-decoration: underline;
 }
 
+/* Body tables (format/table.ts). Each row is its own grid with the resolved column widths, so a
+   table can break between rows across pages. Padding mirrors CELL_PAD_X_IN / CELL_PAD_Y_IN. */
+.ptable {
+  line-height: 1.14;
+}
+.trow {
+  display: grid;
+  position: relative; /* anchors the drag handles */
+}
+.tcell {
+  position: relative;
+  min-width: 0;
+  padding: 0.04in 0.08in;
+  overflow-wrap: break-word; /* a word longer than its column breaks, as in the PDF and Word */
+}
+.ptable.nowrap .tcell {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+/* Rules are overlays (no layout space), so row heights match the PDF's line math exactly. */
+.tcell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 0 solid #000;
+  pointer-events: none;
+}
+.tcell.bt::after {
+  border-top-width: 0.5pt;
+}
+.tcell.bb::after {
+  border-bottom-width: 0.5pt;
+}
+.tcell.bl::after {
+  border-left-width: 0.5pt;
+}
+.tcell.br::after {
+  border-right-width: 0.5pt;
+}
+/* Drag handles: invisible until the row is hovered; never printed. */
+.tdrag {
+  position: absolute;
+  z-index: 2;
+  touch-action: none;
+}
+.tdrag-col {
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  margin-left: -3.5px;
+  cursor: col-resize;
+}
+.tdrag-row {
+  left: 0;
+  right: 0;
+  bottom: -3.5px;
+  height: 7px;
+  cursor: row-resize;
+}
+.trow:hover .tdrag-col,
+.trow:hover .tdrag-row,
+.tdrag:active {
+  background: rgba(47, 109, 240, 0.28);
+}
+@media print {
+  .tdrag {
+    display: none !important;
+  }
+}
+
 /* Signature — left edge at the horizontal center of the page */
 .signature {
   margin-top: calc(var(--para-gap) * 2.6);

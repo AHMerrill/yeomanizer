@@ -1,4 +1,5 @@
-import type { LetterState, Paragraph } from '../types';
+import type { LetterState, Paragraph, ParaTable } from '../types';
+import { tableText, overflowIn } from './table';
 
 // Pre-flight proofreading checks — grounded in SECNAV M-5216.5, Ch 2, ¶19 ("Proofreading"). All
 // advisory: warnings, never blocks; the tool flags and formats, it certifies nothing. The format
@@ -14,11 +15,11 @@ export interface Check {
 }
 
 const anyText = (list: Paragraph[]): boolean =>
-  list.some((p) => p.text.trim().length > 0 || anyText(p.children));
+  list.some((p) => p.text.trim().length > 0 || tableText(p.table).trim().length > 0 || anyText(p.children));
 const hasLoneChild = (list: Paragraph[]): boolean =>
   list.some((p) => p.children.length === 1 || hasLoneChild(p.children));
 const bodyText = (list: Paragraph[]): string =>
-  list.map((p) => `${p.title ?? ''} ${p.text} ${bodyText(p.children)}`).join(' ');
+  list.map((p) => `${p.title ?? ''} ${p.text} ${tableText(p.table)} ${bodyText(p.children)}`).join(' ');
 // Highest index cited in the text for a "reference (x)" / "enclosure (n)" pattern (0 if none cited).
 function maxCited(text: string, re: RegExp, toNum: (m: string) => number): number {
   let max = 0;
@@ -145,6 +146,24 @@ export function proofread(s: LetterState): Check[] {
   if (t !== 'nato' && t !== 'njp-1626-7' && s.encls.length) {
     add('encl-titles', 'Every listed enclosure has a title', s.encls.every((e) => e.text.trim().length > 0),
       'Give each enclosure a title, or remove the empty one.');
+  }
+
+  // Tables must stay inside the 1-inch margins (2-12). One only runs past the right margin when its
+  // wrapping is off and a line is longer than the page allows — and then every output clips it.
+  if (t !== 'nato' && t !== 'coordination-page' && t !== 'njp-1626-7') {
+    const tables: ParaTable[] = [];
+    const walk = (list: Paragraph[]) =>
+      list.forEach((p) => {
+        if (p.table) tables.push(p.table);
+        walk(p.children);
+      });
+    walk(s.body);
+    s.endorsements.forEach((e) => walk(e.body));
+    if (tables.length) {
+      const over = tables.filter((tb) => overflowIn(tb) > 0).length;
+      add('table-margin', 'Tables fit inside the margins', over === 0,
+        `${over === 1 ? 'A table runs' : `${over} tables run`} past the right margin with wrapping off — turn wrapping on, or shorten the longest entries.`);
+    }
   }
 
   // Business letter specifics (Ch 11).

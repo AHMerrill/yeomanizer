@@ -33,6 +33,12 @@ Live: **https://yeomanizer.com**
   OPNAVINST 5400.45A.
 - **Inline emphasis** — type `**bold**`, `*italic*`, or `__underline__` for occasional emphasis; it
   renders identically in the preview, the `.docx`, and the PDF.
+- **Tables in any paragraph** — the ⊞ Table button on any paragraph or subparagraph adds a table
+  under its text. Column widths: type them in inches, drag an edge (in the editor or on the page),
+  double-click an edge to fit its text, or fit-to-text / fill-to-margin / even. Wrap on or off, row
+  minimum heights (typed or dragged), grid / outline + columns / outline / no lines, a header row that
+  repeats on each page, per-column alignment, 10–12 pt. Long tables break between rows; one width
+  calculation feeds the preview, PDF, and `.docx`, so they agree.
 - **Reorder & auto-number** — drag a paragraph by its grip (or use ↑/↓) to reorder it; the numbering
   (1, 2…, then a, b…) and indentation update themselves.
 - **Undo / redo** — ⌘/Ctrl+Z and ⌘/Ctrl+Shift+Z (or toolbar buttons); each draft keeps its own

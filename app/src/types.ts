@@ -201,6 +201,36 @@ export interface Paragraph {
   children: Paragraph[];
   cui?: boolean; // per-paragraph CUI portion marking — (CUI) when true, (U) when marking is active
   title?: string; // optional underlined lead-in: "N.  <u>Title</u>.  body…" (per OPNAVINST 5400.45A)
+  table?: ParaTable; // optional table, printed after this paragraph's text and before its subparagraphs
+}
+
+// A table inside a body paragraph. The manual has no table format of its own, so a table belongs
+// to the numbered paragraph whose content it is (e.g. "1. … for the following members:" + roster)
+// and every renderer reads the SAME resolved column widths (format/table.ts → resolveWidths).
+export interface ParaTableCol {
+  id: string;
+  width: number; // inches, border to border — used as-is when fit === 'fixed'
+  align: 'left' | 'center' | 'right';
+}
+export interface ParaTableRow {
+  id: string;
+  cells: string[]; // one per column; inline **bold** *italic* __underline__ and line breaks allowed
+  height: number; // minimum row height in inches; 0 = as tall as its text
+}
+export interface ParaTable {
+  cols: ParaTableCol[];
+  rows: ParaTableRow[];
+  header: boolean; // first row is a header: styled, kept with the next row, repeated on each new page
+  headerStyle: 'underline' | 'bold' | 'plain';
+  // grid = every cell boxed; columns = outline + column lines + a rule under the header;
+  // box = outline + the header rule; none = no lines.
+  borders: 'grid' | 'columns' | 'box' | 'none';
+  // contents = columns as wide as their text; page = stretched to the right margin;
+  // fixed = the typed/dragged widths.
+  fit: 'contents' | 'page' | 'fixed';
+  wrap: boolean; // false = text never wraps; columns widen to fit their longest line
+  indent: number; // inches from the left margin to the table's left edge
+  fontSize: 10 | 11 | 12;
 }
 
 export type SignatureAuthority = 'none' | 'by-direction' | 'acting';

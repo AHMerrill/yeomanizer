@@ -79,6 +79,15 @@ after the heading. Literal space counts (for reference / .txt export only):
 - **Inline emphasis (impl):** bold / underline / italics are permitted for occasional emphasis. The
   editor accepts `**bold**`, `*italic*`, `__underline__` as plain-text markup, parsed identically by
   every renderer (`format/inline.ts`).
+- **Tables (impl):** the manual prescribes no table format for a letter body, so a table is part of
+  the numbered paragraph whose content it is ("1. … for the following members:" + the roster) — it
+  prints after that paragraph's text, before its subparagraphs, with the normal blank line above and
+  below. Defaults follow real correspondence: indented to where the paragraph's subparagraph text
+  would start (0.5 in under ¶1), stretched to the right margin, an outline + column lines with a rule
+  under an underlined header row, 12 pt Times like the body. Cells have 0.08 in side / 0.04 in top
+  and bottom padding and 0.5 pt rules. A table never passes the right margin unless wrapping is off
+  and a line is longer than the page (Proofread warns). Long tables break between rows — the outline
+  closes at the break and the header row repeats on the next page.
 
 ## Signature (7-2.14)
 - Start all lines at the **horizontal center of the page**, on the **4th line below the text**.

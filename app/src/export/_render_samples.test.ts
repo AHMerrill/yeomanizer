@@ -399,6 +399,79 @@ const base: LetterState = {
   const execCui: LetterState = { ...defaultFor('exec-memo'), cui: { ...execMemo.cui, enabled: true } };
   writeFileSync(`${OUT}/exec-cui.pdf`, await buildSignablePdf(execCui, today, SEAL));
 
+  // ---- Body tables (format/table.ts): a roster under paragraph 1 like a unit-approver letter
+  // (outline + column lines + an underlined header, filled to the margin); a long grid table that
+  // must break across pages (outline closes, header repeats); wrap off; a deep-subparagraph table.
+  const { newTable, setCell, insertRow, removeRow } = await import('../format/table');
+  const fill = (t0: ReturnType<typeof newTable>, data: string[][]) => {
+    let t = t0;
+    while (t.rows.length < data.length) t = insertRow(t, t.rows.length);
+    while (t.rows.length > data.length) t = removeRow(t, t.rows[t.rows.length - 1].id);
+    data.forEach((cells, r) => cells.forEach((text, c) => (t = setCell(t, t.rows[r].id, c, text))));
+    return t;
+  };
+  const rosterRows = [
+    ['NAME:', 'TITLE:', 'PHONE:'],
+    ['Doe, Jordan A', 'Commanding Officer', '555-555-0101'],
+    ['Roe, Casey B', 'Senior Enlisted Leader', '555-555-0102'],
+    ['Poe, Riley C', 'Operations Officer', '555-555-0103'],
+    ['Loe, Morgan D', 'NROWS Officer', '555-555-0104'],
+    ['Moe, Avery E', 'Executive Officer', '555-555-0105'],
+    ['Zoe, Quinn F', 'Assistant Future Operations Officer', '555-555-0106'],
+  ];
+  const roster = fill(newTable(0), rosterRows);
+  roster.cols[2] = { ...roster.cols[2], align: 'center' };
+  const tableLetter: LetterState = {
+    ...base,
+    subj: 'NROWS UNIT APPROVER ACCESS',
+    refs: [{ id: 'r1', text: 'RESPERSMAN 1570-010' }],
+    encls: [],
+    via: [],
+    body: [
+      {
+        id: 'tb1',
+        text: 'Per reference (a), I request that privileges in NROWS for UIC 00000 be elevated to NROWS Unit Approver for the following members.',
+        children: [],
+        table: roster,
+      },
+      { id: 'tb2', text: 'Point of contact is the undersigned.', children: [] },
+    ],
+  };
+  writeFileSync(`${OUT}/table.pdf`, await buildSignablePdf(tableLetter, today, SEAL));
+
+  const longRows = [['**Billet**', 'Name', 'Remarks']];
+  for (let i = 1; i <= 46; i++)
+    longRows.push([`B${String(i).padStart(3, '0')}`, `Lastname${i}, First`, i % 7 === 0 ? 'Remarks long enough to wrap onto a second line inside its column to vary the row heights.' : 'Assigned']);
+  const longTable = { ...fill(newTable(0), longRows), borders: 'grid' as const, headerStyle: 'bold' as const, fit: 'contents' as const, indent: 0 };
+  const wideNoWrap = {
+    ...fill(newTable(1), [
+      ['Item', 'Description'],
+      ['1', 'A description written without wrapping so the column widens to hold it'],
+    ]),
+    wrap: false,
+    borders: 'box' as const,
+    fontSize: 10 as const,
+  };
+  const tableStress: LetterState = {
+    ...base,
+    body: [
+      { id: 'ts1', text: 'The following billets are assigned (the table spans pages; its header repeats).', children: [], table: longTable },
+      {
+        id: 'ts2',
+        text: 'A paragraph whose subparagraph carries a table.',
+        children: [
+          {
+            id: 'ts2a',
+            text: 'Wrapping is off in this table; the description column is as wide as its line.',
+            children: [],
+            table: wideNoWrap,
+          },
+        ],
+      },
+    ],
+  };
+  writeFileSync(`${OUT}/table-stress.pdf`, await buildSignablePdf(tableStress, today, SEAL));
+
   // ---- Word (.docx) renders of the same samples — converted to PDF via LibreOffice and read,
   // so the docx layout (seal, ident, headings, endorsements, enclosures, CUI) is verified too ----
   const { Packer } = await import('docx');
@@ -429,4 +502,6 @@ const base: LetterState = {
   await writeDocx('multi-address-dist', multiDist);
   await writeDocx('moa', moa);
   await writeDocx('joint', joint);
+  await writeDocx('table', tableLetter);
+  await writeDocx('table-stress', tableStress);
 });

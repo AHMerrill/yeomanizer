@@ -1,4 +1,5 @@
 import { useState, useLayoutEffect, useRef, useEffect } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { shrinkImage } from '../format/image';
 import type { Dispatch, SetStateAction, ReactNode } from 'react';
 import type {
@@ -12,9 +13,34 @@ import type {
   EnclosureEntry,
   AttachedFile,
   JointParty,
+  ParaTable,
+  ParaTableCol,
 } from '../types';
 import { uid, syncViaEndorsements, blankFor, defaultFor } from '../defaultState';
 import * as tree from '../format/tree';
+import {
+  newTable,
+  resolveWidths,
+  overflowIn,
+  isHeaderRow,
+  setCell,
+  insertRow,
+  removeRow,
+  moveRow,
+  insertCol,
+  removeCol,
+  moveCol,
+  setAlign,
+  setColWidth,
+  dragEdge,
+  fitColumn,
+  distribute,
+  setFit,
+  setRowHeight,
+  setIndent,
+  MAX_ROWS,
+  MAX_COLS,
+} from '../format/table';
 import { paragraphMarker, markerText, MAX_DEPTH } from '../format/paragraphs';
 import { ENDORSE_ORD } from '../format/identification';
 import { COMMON_SSIC, type SsicOption } from '../data/ssic';
@@ -311,6 +337,399 @@ function EntryList({
   );
 }
 
+// A decimal field that updates live as you type but never fights the typing: the text you type is
+// kept as-is while focused ("1." stays "1."), and every value that parses is sent on. It snaps back
+// to the stored value on blur. ↑/↓ step by `step` (Shift: ×5).
+function NumField({
+  value,
+  onCommit,
+  step = 0.05,
+  label,
+  placeholder,
+  emptyValue,
+}: {
+  value: number;
+  onCommit: (n: number) => void;
+  step?: number;
+  label: string;
+  placeholder?: string;
+  emptyValue?: number; // a cleared field commits this (e.g. 0 = auto); otherwise it's ignored
+}) {
+  const shown = emptyValue !== undefined && value === emptyValue ? '' : value.toFixed(2);
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      className="num-field"
+      type="text"
+      inputMode="decimal"
+      aria-label={label}
+      placeholder={placeholder}
+      value={draft ?? shown}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => {
+        const v = e.target.value;
+        setDraft(v);
+        if (v.trim() === '' && emptyValue !== undefined) onCommit(emptyValue);
+        else if (/^\s*\d*\.?\d+\s*$|^\s*\d+\.\s*$/.test(v)) onCommit(parseFloat(v));
+      }}
+      onBlur={() => setDraft(null)}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          const n = Math.round((value + (e.key === 'ArrowUp' ? 1 : -1) * step * (e.shiftKey ? 5 : 1)) * 100) / 100;
+          setDraft(null);
+          onCommit(Math.max(0, n));
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          setDraft(null);
+        }
+      }}
+    />
+  );
+}
+
+// A table cell's text box: grows to fit its text, so the grid row is as tall as its tallest cell.
+function CellInput({
+  value,
+  onChange,
+  label,
+  className,
+  cell,
+  onFocus,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+  className: string;
+  cell: string;
+  onFocus: () => void;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // Measure at height 0: a grid cell is stretched to its row's tallest neighbour, and a textarea's
+    // scrollHeight never reports less than its box — so measuring in place could only ever grow.
+    el.style.height = '0px';
+    el.style.minHeight = '0px';
+    const h = el.scrollHeight;
+    el.style.height = '';
+    el.style.minHeight = `${h + 2}px`;
+  });
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      className={className}
+      data-cell={cell}
+      value={value}
+      aria-label={label}
+      onFocus={onFocus}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
+const colLetter = (i: number) => String.fromCharCode(65 + i);
+
+// The table under a paragraph: its cells, its column widths (type them in the ruler, drag the edges
+// between columns, fit them to the text, or stretch them to the margin), and the row/column tools
+// for whichever cell has focus. Every change is a pure op from format/table.ts.
+function TableEditor({ t, onChange, onRemove }: { t: ParaTable; onChange: (t: ParaTable) => void; onRemove: () => void }) {
+  const [sel, setSel] = useState({ r: 0, c: 0 });
+  // Cells size themselves to their text when they render; when the grid's width changes (the pane
+  // is dragged, the phone rotates) the text rewraps without a render — so re-render on width changes.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [, setGridW] = useState(0);
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    let raf = 0;
+    const ro = new ResizeObserver(([e]) => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setGridW(Math.round(e.contentRect.width)));
+    });
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, []);
+  const r = Math.min(sel.r, t.rows.length - 1);
+  const c = Math.min(sel.c, t.cols.length - 1);
+  const widths = resolveWidths(t);
+  const over = overflowIn(t);
+  const rulerRef = useRef<HTMLDivElement>(null);
+  const row = t.rows[r];
+  const rowName = isHeaderRow(t, r) ? 'Header row' : `Row ${t.header ? r : r + 1}`;
+  // Move the selected row/column, and keep it selected.
+  const shiftRow = (dir: -1 | 1) => {
+    onChange(moveRow(t, row.id, dir));
+    setSel({ r: r + dir, c });
+  };
+  const shiftCol = (dir: -1 | 1) => {
+    onChange(moveCol(t, c, dir));
+    setSel({ r, c: c + dir });
+  };
+
+  // Drag the edge between columns j and j+1 in the ruler. The grid shows columns in proportion to
+  // their real widths, so pixels convert to inches by the ruler's own scale.
+  const dragRulerEdge = (e: ReactPointerEvent, j: number) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const cells = Array.from(rulerRef.current?.querySelectorAll<HTMLElement>('.tbl-ruler') ?? []);
+    const px = cells.reduce((s, el) => s + el.getBoundingClientRect().width, 0);
+    const inches = widths.reduce((s, w) => s + w, 0);
+    if (!px || !inches) return;
+    const t0 = t;
+    const w0 = widths;
+    const x0 = e.clientX;
+    let last = 0; // only real changes — a still pointer mustn't stack identical undo steps
+    const move = (ev: PointerEvent) => {
+      const d = Math.round((((ev.clientX - x0) * inches) / px) * 100) / 100;
+      if (d !== last) {
+        last = d;
+        onChange(dragEdge(t0, w0, j, d));
+      }
+    };
+    const end = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  const fitPill = (fit: ParaTable['fit'], label: string, title: string) => (
+    <button type="button" className={t.fit === fit ? 'pill on' : 'pill'} title={title} onClick={() => onChange(setFit(t, fit))}>
+      {label}
+    </button>
+  );
+  const alignPill = (a: ParaTableCol['align'], label: string) => (
+    <button
+      type="button"
+      className={t.cols[c].align === a ? 'pill on' : 'pill'}
+      aria-label={`Align column ${colLetter(c)} ${a}`}
+      onClick={() => onChange(setAlign(t, c, a))}
+    >
+      {label}
+    </button>
+  );
+  const gridCols = widths.map((w) => `minmax(76px, ${w}fr)`).join(' ');
+
+  return (
+    <div className="tbl-ed">
+      <div className="tbl-bar">
+        <span className="tbl-tag">⊞ Table</span>
+        <span className="tbl-dim">
+          {t.rows.length} × {t.cols.length}
+        </span>
+        <button type="button" disabled={t.rows.length >= MAX_ROWS} onClick={() => onChange(insertRow(t, t.rows.length))}>
+          + Row
+        </button>
+        <button type="button" disabled={t.cols.length >= MAX_COLS} onClick={() => onChange(insertCol(t, t.cols.length))}>
+          + Column
+        </button>
+        <button type="button" className="tbl-rm" onClick={onRemove}>
+          Remove table
+        </button>
+      </div>
+
+      <div className="tbl-bar">
+        <span className="tbl-lbl">Widths</span>
+        {fitPill('contents', 'Fit to text', 'Each column as wide as its longest line (wrapping only if the table would pass the margin)')}
+        {fitPill('page', 'Fill to margin', 'Stretch the columns, in proportion to their text, out to the right margin')}
+        {fitPill('fixed', 'Fixed', 'Keep the widths you type or drag')}
+        <button type="button" title="Give every column the same width (keeps the table's width)" onClick={() => onChange(distribute(t))}>
+          Even
+        </button>
+      </div>
+
+      <div className="tbl-bar">
+        <label className="tbl-chk">
+          <input type="checkbox" checked={t.wrap} onChange={(e) => onChange({ ...t, wrap: e.target.checked })} />
+          Wrap text
+        </label>
+        <label className="tbl-chk">
+          <input type="checkbox" checked={t.header} onChange={(e) => onChange({ ...t, header: e.target.checked })} />
+          Header row
+        </label>
+        <label className="tbl-sel">
+          Lines
+          <select value={t.borders} onChange={(e) => onChange({ ...t, borders: e.target.value as ParaTable['borders'] })}>
+            <option value="columns">Outline + columns</option>
+            <option value="grid">Grid (every cell)</option>
+            <option value="box">Outline only</option>
+            <option value="none">None</option>
+          </select>
+        </label>
+        <label className="tbl-sel">
+          Header
+          <select
+            value={t.headerStyle}
+            disabled={!t.header}
+            onChange={(e) => onChange({ ...t, headerStyle: e.target.value as ParaTable['headerStyle'] })}
+          >
+            <option value="underline">Underlined</option>
+            <option value="bold">Bold</option>
+            <option value="plain">Plain</option>
+          </select>
+        </label>
+        <label className="tbl-sel">
+          Text
+          <select value={t.fontSize} onChange={(e) => onChange({ ...t, fontSize: Number(e.target.value) as ParaTable['fontSize'] })}>
+            <option value={12}>12 pt</option>
+            <option value={11}>11 pt</option>
+            <option value={10}>10 pt</option>
+          </select>
+        </label>
+        <span className="tbl-num">
+          Indent
+          <NumField value={t.indent} label="Table indent from the left margin (inches)" onCommit={(n) => onChange(setIndent(t, n))} />
+          in
+        </span>
+      </div>
+
+      <div className="tbl-scroll">
+        <div className="tbl-ruler-row" ref={rulerRef} style={{ gridTemplateColumns: gridCols }}>
+          {t.cols.map((col, i) => (
+            <div className={i === c ? 'tbl-ruler in-col' : 'tbl-ruler'} key={col.id}>
+              <span className="tbl-col-name">{colLetter(i)}</span>
+              <NumField
+                value={widths[i]}
+                label={`Column ${colLetter(i)} width (inches)`}
+                onCommit={(n) => onChange(setColWidth(t, i, n))}
+              />
+              <span className="tbl-unit">in</span>
+              {i < t.cols.length - 1 && (
+                <span
+                  className="tbl-edge"
+                  aria-hidden="true"
+                  title="Drag to resize · double-click to fit the column to its text"
+                  onPointerDown={(e) => dragRulerEdge(e, i)}
+                  onDoubleClick={() => onChange(fitColumn(t, i))}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="tbl-grid" ref={gridRef} style={{ gridTemplateColumns: gridCols }}>
+          {t.rows.map((rw, ri) =>
+            rw.cells.map((text, ci) => {
+              const cls = ['tbl-cell'];
+              if (isHeaderRow(t, ri)) cls.push(`hdr-${t.headerStyle}`);
+              if (ri === r) cls.push('in-row');
+              if (ci === c) cls.push('in-col');
+              return (
+                <CellInput
+                  key={`${rw.id}:${t.cols[ci].id}`}
+                  cell={`${ri}:${ci}`}
+                  className={cls.join(' ')}
+                  value={text}
+                  label={`${isHeaderRow(t, ri) ? 'Header' : `Row ${t.header ? ri : ri + 1}`}, column ${colLetter(ci)}`}
+                  onFocus={() => setSel({ r: ri, c: ci })}
+                  onChange={(v) => onChange(setCell(t, rw.id, ci, v))}
+                />
+              );
+            }),
+          )}
+        </div>
+      </div>
+
+      <div className="tbl-ctx">
+        <div className="tbl-bar">
+          <span className="tbl-lbl">{rowName}</span>
+          <button type="button" disabled={t.rows.length >= MAX_ROWS} onClick={() => onChange(insertRow(t, r))}>
+            + Above
+          </button>
+          <button
+            type="button"
+            disabled={t.rows.length >= MAX_ROWS}
+            onClick={() => {
+              onChange(insertRow(t, r + 1));
+              setSel({ r: r + 1, c });
+            }}
+          >
+            + Below
+          </button>
+          <button type="button" aria-label="Move row up" disabled={r === 0} onClick={() => shiftRow(-1)}>
+            ↑
+          </button>
+          <button type="button" aria-label="Move row down" disabled={r === t.rows.length - 1} onClick={() => shiftRow(1)}>
+            ↓
+          </button>
+          <button type="button" disabled={t.rows.length <= 1} onClick={() => onChange(removeRow(t, row.id))}>
+            Delete row
+          </button>
+          <span className="tbl-num">
+            Min height
+            <NumField
+              value={row.height}
+              emptyValue={0}
+              placeholder="auto"
+              label={`${rowName} minimum height (inches; blank = fit the text)`}
+              onCommit={(n) => onChange(setRowHeight(t, row.id, n))}
+            />
+            in
+          </span>
+        </div>
+        <div className="tbl-bar">
+          <span className="tbl-lbl">Column {colLetter(c)}</span>
+          <button type="button" disabled={t.cols.length >= MAX_COLS} onClick={() => onChange(insertCol(t, c))}>
+            + Left
+          </button>
+          <button
+            type="button"
+            disabled={t.cols.length >= MAX_COLS}
+            onClick={() => {
+              onChange(insertCol(t, c + 1));
+              setSel({ r, c: c + 1 });
+            }}
+          >
+            + Right
+          </button>
+          <button type="button" aria-label="Move column left" disabled={c === 0} onClick={() => shiftCol(-1)}>
+            ←
+          </button>
+          <button type="button" aria-label="Move column right" disabled={c === t.cols.length - 1} onClick={() => shiftCol(1)}>
+            →
+          </button>
+          <button type="button" disabled={t.cols.length <= 1} onClick={() => onChange(removeCol(t, c))}>
+            Delete column
+          </button>
+          {alignPill('left', 'Left')}
+          {alignPill('center', 'Center')}
+          {alignPill('right', 'Right')}
+          <button type="button" title="Size this column to its longest line" onClick={() => onChange(fitColumn(t, c))}>
+            Fit column
+          </button>
+        </div>
+      </div>
+
+      {over > 0 && (
+        <p className="tbl-warn" role="status">
+          The table runs {over.toFixed(2)} in past the right margin — with wrapping off, each column is as
+          wide as its longest line.{' '}
+          <button type="button" className="link-btn" onClick={() => onChange({ ...t, wrap: true })}>
+            Turn wrapping on
+          </button>
+        </p>
+      )}
+      <p className="tbl-hint">
+        Type widths in inches, drag the edges between columns (here or on the page), or double-click an
+        edge to fit that column to its text. On the page you can also drag a row's bottom edge to set its
+        height. Cells take **bold**, *italic*, __underline__ and line breaks.
+      </p>
+    </div>
+  );
+}
+
 function ParaEditor({
   root,
   list,
@@ -383,6 +802,15 @@ function ParaEditor({
               <button title="Add paragraph after" onClick={() => mut((r) => tree.addSiblingAfter(r, p.id))}>
                 ¶+
               </button>
+              <button
+                className="tbl-add"
+                title={p.table ? 'This paragraph has a table (below its text)' : 'Insert a table in this paragraph'}
+                aria-label="Insert table"
+                disabled={!!p.table}
+                onClick={() => mut((r) => tree.setTable(r, p.id, newTable(depth)))}
+              >
+                ⊞ Table
+              </button>
               <button title="Move up" onClick={() => mut((r) => tree.move(r, p.id, -1))}>↑</button>
               <button title="Move down" onClick={() => mut((r) => tree.move(r, p.id, 1))}>↓</button>
               <button title="Delete" onClick={() => mut((r) => tree.remove(r, p.id))}>✕</button>
@@ -411,6 +839,13 @@ function ParaEditor({
             aria-label={`Paragraph ${markerText(paragraphMarker(depth, i))} text`}
             onChange={(e) => mut((r) => tree.updateText(r, p.id, e.target.value))}
           />
+          {p.table && (
+            <TableEditor
+              t={p.table}
+              onChange={(t) => mut((r) => tree.setTable(r, p.id, t))}
+              onRemove={() => mut((r) => tree.setTable(r, p.id, undefined))}
+            />
+          )}
           {p.children.length > 0 && (
             <ParaEditor
               root={root}
