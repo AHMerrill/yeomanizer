@@ -130,13 +130,13 @@ function ParaFlow({
   return (
     <p className="para" data-sync={`p:${fp.key}`} style={style}>
       {bulletTop && <span className="pmark">•</span>}
-      {bulletTop && <span className="pgap" />}
+      {bulletTop && <span className="pgap">{'\u00a0'}</span>}
       {showMarker && <MarkerSpan depth={fp.depth} index={fp.index} />}
-      {showMarker && <span className="pgap" />}
+      {showMarker && <span className="pgap">{'\u00a0'}</span>}
       {portionActive ? (fp.cui ? '(CUI) ' : '(U) ') : ''}
       {fp.title && (
         <>
-          <u>{fp.title}</u>.<span className="pgap" />
+          <u>{fp.title}</u>.<span className="pgap">{'\u00a0'}</span>
         </>
       )}
       <Inline text={fp.text} />

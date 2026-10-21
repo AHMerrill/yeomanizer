@@ -325,6 +325,8 @@
 .para {
   margin: 0 0 var(--para-gap) 0;
 }
+/* The gap after a paragraph marker or title. It holds a no-break space so text copied out of the
+   preview reads "1. Text", not "1.Text"; the fixed width keeps the printed spacing unchanged. */
 .pgap {
   display: inline-block;
   width: 0.09in;
