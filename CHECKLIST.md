@@ -122,6 +122,11 @@ file number or a fuller signature must be able to add them.)
     the measured width ("NAME:" 38.24 measured vs 38.66 drawn at 12 pt). Anything that must HOLD text —
     a table column fitted to its contents — measures glyph by glyph (`format/table.ts` `textWidthPt`,
     numbers from `format/timesMetrics.ts`). Caught by a unit test comparing against pdf-lib, not by eye.
+    The same flaw was in the BODY text of every PDF: words were placed by their kerned width, so any
+    word with a kern pair ("NAVY", "OPNAV", "COMNAVRESFORCOM") ate the space after it — "COMNAVRESFORCOM(N31)".
+    It's invisible in the extracted text and easy to miss at screen zoom; render at 300 dpi to see it.
+    → Every measurement in `signablePdf.ts` goes through `drawnWidth()` (the sum of glyph advances);
+    never call `widthOfTextAtSize()` directly there.
 19. **Word counts a border's thickness INSIDE the row height; the preview and the PDF draw rules over
     the rows.** A 0.5 pt rule per row made Word's table rows 20.0 pt against 19.44 pt — over a page
     that's a whole row, so Word broke pages earlier. Also: Word's "single" spacing for 12 pt Times is

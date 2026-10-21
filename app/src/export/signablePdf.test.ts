@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
-import { PDFDocument, PDFName, PDFDict, PDFArray } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFDict, PDFArray, StandardFonts } from 'pdf-lib';
 import { buildSignablePdf } from './signablePdf';
 import { defaultState, defaultFor } from '../defaultState';
 
@@ -215,5 +215,45 @@ describe('locked PDF enclosures', () => {
       e1: [{ bytes: PNG_1PX, width: 612 * 3, height: 792 * 3 }],
     });
     expect(pdfText(bytes)).toContain('CUI//SP-PRVCY');
+  });
+});
+
+// pdf-lib's widthOfTextAtSize() applies kerning but drawText() does not kern, so words used to be
+// placed with their kerned (narrower) width while being drawn wider: "COMNAVRESFORCOM" (an "AV"
+// pair) ate the space before "(N31)". Read each word's position back out of the content stream and
+// check the visible gap after the word is a full space.
+describe('signable PDF — word spacing after kerned words', () => {
+  it('leaves a full space after a word with kern pairs', async () => {
+    const bytes = await buildSignablePdf({
+      ...defaultState,
+      body: [{ id: 'k1', text: 'Submit to COMNAVRESFORCOM (N31) via OPNAV 5239/14 today.', children: [] }],
+    });
+    const raw = Buffer.from(bytes).toString('latin1');
+    let ops = '';
+    const re = /(?<!end)stream\r?\n/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(raw)) !== null) {
+      const start = m.index + m[0].length;
+      let e = raw.indexOf('endstream', start);
+      while (e > start && (raw[e - 1] === '\n' || raw[e - 1] === '\r')) e--;
+      try {
+        ops += inflateSync(Buffer.from(raw.slice(start, e), 'latin1')).toString('latin1');
+      } catch { /* not a flate stream */ }
+    }
+    const words = [...ops.matchAll(/1 0 0 1 ([\d.]+) ([\d.]+) Tm\s*<([0-9A-Fa-f]+)> Tj/g)].map((w) => ({
+      x: parseFloat(w[1]),
+      y: parseFloat(w[2]),
+      text: (w[3].match(/../g) ?? []).map((b) => String.fromCharCode(parseInt(b, 16))).join(''),
+    }));
+    const doc = await PDFDocument.create();
+    const times = await doc.embedFont(StandardFonts.TimesRoman);
+    const drawn = (s: string) => [...s].reduce((w, ch) => w + times.widthOfTextAtSize(ch, 12), 0);
+    const space = times.widthOfTextAtSize(' ', 12);
+    for (const [a, b] of [['COMNAVRESFORCOM', '(N31)'], ['OPNAV', '5239/14']]) {
+      const wa = words.find((w) => w.text === a)!;
+      const wb = words.find((w) => w.text === b && Math.abs(w.y - wa.y) < 0.5)!;
+      expect(wa && wb).toBeTruthy();
+      expect(wb.x - (wa.x + drawn(a))).toBeCloseTo(space, 1);
+    }
   });
 });

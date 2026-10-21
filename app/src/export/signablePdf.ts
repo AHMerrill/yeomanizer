@@ -59,6 +59,16 @@ const baselineDrop = (size: number, lh: number) => (size * lh - size * 1.107) / 
 type PdfFont = Awaited<ReturnType<Awaited<ReturnType<typeof import('pdf-lib').PDFDocument.create>>['embedFont']>>;
 type Ctx = Awaited<ReturnType<typeof import('pdf-lib').PDFDocument.create>>;
 
+// pdf-lib's widthOfTextAtSize() applies the font's kerning pairs, but drawText() emits a plain Tj
+// with no kerning, so text is DRAWN at the sum of its glyph advances. Every measurement here places
+// something after, around, or against drawn text, so it must use that drawn width — measured with
+// kerning, a word with a kern pair ("NAVY", "OPNAV", "COMNAVRESFORCOM") runs into the space after it.
+const drawnWidth = (f: PdfFont, text: string, size: number): number => {
+  let w = 0;
+  for (const ch of text) w += f.widthOfTextAtSize(ch, size);
+  return w;
+};
+
 export async function buildSignablePdf(
   state: LetterState,
   today: Date = new Date(),
@@ -90,7 +100,7 @@ export async function buildSignablePdf(
     const pages = doc.getPages();
     pages.forEach((pg, i) => {
       const banner = pageBannerOverride.get(i) || letterBanner;
-      const bw = bold.widthOfTextAtSize(banner, 12);
+      const bw = drawnWidth(bold, banner, 12);
       const { width: pw, height: ph } = pg.getSize();
       pg.drawText(banner, { x: (pw - bw) / 2, y: ph - 0.22 * PT - 10.7, size: 12, font: bold });
       pg.drawText(banner, { x: (pw - bw) / 2, y: 0.22 * PT + 2.6, size: 12, font: bold });
@@ -103,7 +113,7 @@ export async function buildSignablePdf(
       cui.poc ? `POC: ${cui.poc}` : '',
       cui.transmittalNote.trim(),
     ].filter(Boolean);
-    const dW = Math.max(...desig.map((l) => font.widthOfTextAtSize(l, 8)));
+    const dW = Math.max(...desig.map((l) => drawnWidth(font, l, 8)));
     desig.forEach((l, i) =>
       pages[0].drawText(l, { x: RIGHT - dW, y: 0.46 * PT + (desig.length - 1 - i) * 10, size: 8, font }),
     );
@@ -134,7 +144,7 @@ export async function buildSignablePdf(
     let line = '';
     for (const w of text.split(/\s+/)) {
       const trial = line ? line + ' ' + w : w;
-      if (line && f.widthOfTextAtSize(trial, size) > maxW) {
+      if (line && drawnWidth(f, trial, size) > maxW) {
         out.push(line);
         line = w;
       } else line = trial;
@@ -149,7 +159,7 @@ export async function buildSignablePdf(
     top += size * lh;
   };
   const putCenter = (text: string, f: PdfFont, size: number, lh: number, color = black) => {
-    const x = (PAGE_W - f.widthOfTextAtSize(text, size)) / 2;
+    const x = (PAGE_W - drawnWidth(f, text, size)) / 2;
     put(text, x, f, size, lh, color);
   };
   const gap = (h: number) => {
@@ -198,7 +208,7 @@ export async function buildSignablePdf(
         const v = (njp.values[slot.id] ?? '').trim();
         if (!v) continue;
         let t = v;
-        while (t && helv.widthOfTextAtSize(t, slot.s) > slot.w) t = t.slice(0, -1);
+        while (t && drawnWidth(helv, t, slot.s) > slot.w) t = t.slice(0, -1);
         pg.drawText(t, { x: slot.x, y: flip(slot.y + slot.s * 0.8), size: slot.s, font: helv, color: black });
       }
     });
@@ -210,7 +220,7 @@ export async function buildSignablePdf(
         let line = '';
         for (const word of para.split(/\s+/)) {
           const trial = line ? line + ' ' + word : word;
-          if (line && helv.widthOfTextAtSize(trial, size) > maxW) { out.push(line); line = word; }
+          if (line && drawnWidth(helv, trial, size) > maxW) { out.push(line); line = word; }
           else line = trial;
         }
         out.push(line);
@@ -239,7 +249,7 @@ export async function buildSignablePdf(
         const t = (v ?? '').trim();
         if (!t) return;
         let clipped = t;
-        while (clipped && helv.widthOfTextAtSize(clipped, 7.9) > PLEA_W[c]) clipped = clipped.slice(0, -1);
+        while (clipped && drawnWidth(helv, clipped, 7.9) > PLEA_W[c]) clipped = clipped.slice(0, -1);
         doc.getPage(1).drawText(clipped, { x: PLEA_COLS[c], y: flip(PLEA_Y[i] + 6.3), size: 7.9, font: helv, color: black });
       });
     });
@@ -265,7 +275,7 @@ export async function buildSignablePdf(
   if (state.type === 'coordination-page') {
     top = M_TOP + 0.5 * PT;
     const title = 'COORDINATION PAGE';
-    put(title, LEFT + (RIGHT - LEFT - font.widthOfTextAtSize(title, SIZE)) / 2); // regular weight (fig 12-13)
+    put(title, LEFT + (RIGHT - LEFT - drawnWidth(font, title, SIZE)) / 2); // regular weight (fig 12-13)
     gap(PARA_GAP * 2);
     const cols = [LEFT, LEFT + 1.2 * PT, LEFT + 3.3 * PT, LEFT + 4.5 * PT, LEFT + 5.6 * PT];
     const colW = [1.1 * PT, 1.9 * PT, 1.1 * PT, 1.0 * PT, 0.85 * PT];
@@ -278,7 +288,7 @@ export async function buildSignablePdf(
         page.drawText(h, { x: cols[i], y: hy, font, size: SIZE });
         page.drawLine({
           start: { x: cols[i], y: hy - 1.6 },
-          end: { x: cols[i] + font.widthOfTextAtSize(h, SIZE), y: hy - 1.6 },
+          end: { x: cols[i] + drawnWidth(font, h, SIZE), y: hy - 1.6 },
           thickness: 0.6,
           color: black,
         });
@@ -308,7 +318,7 @@ export async function buildSignablePdf(
       cpPages.forEach((pg, i) => {
         if (i === 0) return;
         const num = String(i + 1);
-        pg.drawText(num, { x: (PAGE_W - font.widthOfTextAtSize(num, SIZE)) / 2, y: 0.5 * PT, size: SIZE, font });
+        pg.drawText(num, { x: (PAGE_W - drawnWidth(font, num, SIZE)) / 2, y: 0.5 * PT, size: SIZE, font });
       });
     }
     applyCui();
@@ -374,7 +384,7 @@ export async function buildSignablePdf(
     const colLines = (p: (typeof state.joint.parties)[number]) =>
       [p.shortTitle, p.ssic, p.serial, p.date].map((s) => s.trim()).filter(Boolean);
     const order = [...state.joint.parties].reverse(); // draw left→right: junior … senior
-    const widths = order.map((p) => Math.max(0, ...colLines(p).map((l) => font.widthOfTextAtSize(l, SIZE))));
+    const widths = order.map((p) => Math.max(0, ...colLines(p).map((l) => drawnWidth(font, l, SIZE))));
     const n = order.length;
     const startTop = top;
     let maxTop = top;
@@ -409,7 +419,7 @@ export async function buildSignablePdf(
     colA.forEach((l) => put(l, LEFT));
     moaMaxTop = Math.max(moaMaxTop, top);
     top = moaStartTop;
-    const colBW = colB.length ? Math.max(...colB.map((l) => font.widthOfTextAtSize(l, SIZE))) : 0;
+    const colBW = colB.length ? Math.max(...colB.map((l) => drawnWidth(font, l, SIZE))) : 0;
     colB.forEach((l) => put(l, RIGHT - colBW));
     top = Math.max(moaMaxTop, top);
   } else if (isExec) {
@@ -424,7 +434,7 @@ export async function buildSignablePdf(
       ident.date || null,
     ].filter((l): l is string => l !== null);
     if (idLines.length) {
-      const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
+      const blockW = Math.max(...idLines.map((l) => drawnWidth(font, l, SIZE)));
       // Identification symbols are right-aligned for every letter type. NB: SECNAV M-5216.5 ¶11-2.1
       // *says* the business letter's go "upper left", but the manual's own canonical figures (11-2
       // BUSINESS LETTER – FIRST PAGE and 11-6 SHORT BUSINESS LETTER) show them upper RIGHT, with a
@@ -476,7 +486,7 @@ export async function buildSignablePdf(
     ].filter(Boolean);
     titleLines.forEach((l) => {
       room(SIZE * BODY_LH);
-      const w = font.widthOfTextAtSize(l, SIZE);
+      const w = drawnWidth(font, l, SIZE);
       put(l, LEFT + (RIGHT - LEFT - w) / 2); // centered within the (equal) margins = page center
     });
     gap(PARA_GAP);
@@ -491,7 +501,7 @@ export async function buildSignablePdf(
       // Fig 12-14: right-aligned date space (a principal's memo is dated when signed), then the
       // left-aligned "MEMORANDUM FOR <recipient>" addressing line. No fabricated recipient —
       // exports print only what the user typed (the preview's gray hint is screen-only).
-      if (ident.date) put(ident.date, RIGHT - font.widthOfTextAtSize(ident.date, SIZE));
+      if (ident.date) put(ident.date, RIGHT - drawnWidth(font, ident.date, SIZE));
       gap(PARA_GAP);
       if (state.to.trim()) {
         room(SIZE * BODY_LH);
@@ -503,13 +513,13 @@ export async function buildSignablePdf(
       // date + control symbol beneath it.
       const t = em.kind === 'INFORMATION' ? 'INFO MEMO' : 'ACTION MEMO';
       room(SIZE * BODY_LH);
-      put(t, LEFT + (RIGHT - LEFT - bold.widthOfTextAtSize(t, SIZE)) / 2, bold);
+      put(t, LEFT + (RIGHT - LEFT - drawnWidth(bold, t, SIZE)) / 2, bold);
       gap(PARA_GAP);
       const idLines = [ident.date || null, em.controlLine.trim() || null].filter(
         (l): l is string => l !== null,
       );
       if (idLines.length) {
-        const blockW = Math.max(...idLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
+        const blockW = Math.max(...idLines.map((l) => drawnWidth(font, l, SIZE)));
         idLines.forEach((l) => put(l, RIGHT - blockW));
       }
       gap(PARA_GAP);
@@ -523,7 +533,7 @@ export async function buildSignablePdf(
   // continuation line start just after it. (Was wrongly returning continuations to the left margin.)
   const headRow = (label: string, value: string, marker = '') => {
     const vx = LEFT + LABEL_COL;
-    const textX = marker ? vx + font.widthOfTextAtSize(marker, SIZE) : vx;
+    const textX = marker ? vx + drawnWidth(font, marker, SIZE) : vx;
     const lines = wrap(value, font, SIZE, RIGHT - textX);
     room(SIZE * BODY_LH);
     const baseY = PAGE_H - top - baselineDrop(SIZE, BODY_LH);
@@ -611,7 +621,7 @@ export async function buildSignablePdf(
       ident.date || null,
     ].filter((l): l is string => l !== null);
     if (cont.length) {
-      const blockW = Math.max(...cont.map((l) => font.widthOfTextAtSize(l, SIZE)));
+      const blockW = Math.max(...cont.map((l) => drawnWidth(font, l, SIZE)));
       contHeader = () => {
         cont.forEach((l) => put(l, RIGHT - blockW));
         gap(PARA_GAP);
@@ -826,17 +836,17 @@ export async function buildSignablePdf(
       ) * PT;
       const markerX = LEFT + indent;
       const textX =
-        execBullet && depth === 0 ? LEFT + 0.25 * PT : markerX + (marker ? font.widthOfTextAtSize(marker, SIZE) + PGAP : 0);
+        execBullet && depth === 0 ? LEFT + 0.25 * PT : markerX + (marker ? drawnWidth(font, marker, SIZE) + PGAP : 0);
       // Portion marking when active: "(CUI)" on a marked paragraph, else "(U)" — sits before the title.
       const portion = portionActive ? (p.cui ? '(CUI) ' : '(U) ') : '';
-      const portionW = portion ? font.widthOfTextAtSize(portion, SIZE) : 0;
+      const portionW = portion ? drawnWidth(font, portion, SIZE) : 0;
       // Optional underlined section title, inline after the marker (+ portion): "N.  (CUI) Title.  body…"
       const titleX = textX + portionW;
-      const titleW = p.title ? font.widthOfTextAtSize(p.title + '.  ', SIZE) : 0;
+      const titleW = p.title ? drawnWidth(font, p.title + '.  ', SIZE) : 0;
       const firstX = titleX + titleW; // body begins after the portion mark + title on the first line
       // Split into whitespace-delimited words; each word is one or more inline-markup segments
       // (**bold** *italic* __underline__), so attached punctuation keeps no spurious space.
-      const spaceW = font.widthOfTextAtSize(' ', SIZE);
+      const spaceW = drawnWidth(font, ' ', SIZE);
       type Seg = { text: string; f: PdfFont; ul: boolean; w: number };
       type Word = { segs: Seg[]; w: number };
       const words: Word[] = [];
@@ -852,7 +862,7 @@ export async function buildSignablePdf(
         for (const part of r.text.split(/(\s+)/)) {
           if (part === '') continue;
           if (/^\s+$/.test(part)) flush();
-          else acc.push({ text: part, f, ul: !!r.underline, w: f.widthOfTextAtSize(part, SIZE) });
+          else acc.push({ text: part, f, ul: !!r.underline, w: drawnWidth(f, part, SIZE) });
         }
       }
       flush();
@@ -891,8 +901,8 @@ export async function buildSignablePdf(
             // Levels 5-8 (fig 7-8) underline the marker's digit/letter to mark the second cycle —
             // matching the preview (<u>) and the .docx (R(core, {underline})).
             if (mk?.underline) {
-              const preW = font.widthOfTextAtSize(mk.prefix, SIZE);
-              const coreW = font.widthOfTextAtSize(mk.core, SIZE);
+              const preW = drawnWidth(font, mk.prefix, SIZE);
+              const coreW = drawnWidth(font, mk.core, SIZE);
               page.drawLine({
                 start: { x: markerX + preW, y: baseY - 1.6 },
                 end: { x: markerX + preW + coreW, y: baseY - 1.6 },
@@ -904,7 +914,7 @@ export async function buildSignablePdf(
           if (portion) page.drawText(portion, { x: textX, y: baseY, font, size: SIZE });
           if (p.title) {
             page.drawText(p.title + '.', { x: titleX, y: baseY, font, size: SIZE });
-            const tW = font.widthOfTextAtSize(p.title, SIZE);
+            const tW = drawnWidth(font, p.title, SIZE);
             page.drawLine({
               start: { x: titleX, y: baseY - 1.6 },
               end: { x: titleX + tW, y: baseY - 1.6 },
@@ -987,7 +997,7 @@ export async function buildSignablePdf(
       // Fig 11-3: the first item rides the label line ("Enclosures: 1. …"); later items align
       // under the first item's number.
       const enclLabel = 'Enclosures:  ';
-      const enclItemX = LEFT + font.widthOfTextAtSize(enclLabel, SIZE);
+      const enclItemX = LEFT + drawnWidth(font, enclLabel, SIZE);
       put(`${enclLabel}1.  ${bizEncls[0].text}`, LEFT);
       bizEncls.slice(1).forEach((e, i) => put(`${i + 2}.  ${e.text}`, enclItemX));
     }
@@ -1090,7 +1100,7 @@ export async function buildSignablePdf(
     if (em.kind === 'ACTION' && em.recommendation.trim()) {
       gap(PARA_GAP);
       const recLabel = 'RECOMMENDATION:  ';
-      const recX = LEFT + font.widthOfTextAtSize(recLabel, SIZE);
+      const recX = LEFT + drawnWidth(font, recLabel, SIZE);
       const recLines = wrap(em.recommendation.trim(), font, SIZE, RIGHT - recX);
       room(SIZE * BODY_LH);
       page.drawText(recLabel, { x: LEFT, y: PAGE_H - top - baselineDrop(SIZE, BODY_LH), font, size: SIZE });
@@ -1102,7 +1112,7 @@ export async function buildSignablePdf(
       const fieldTopY = PAGE_H - top - 2;
       put(`Approve  ${'_'.repeat(18)}      Disapprove  ${'_'.repeat(18)}`, LEFT);
       // A CAC field over the "Approve" blank so the principal can sign the approval.
-      const approveX = LEFT + font.widthOfTextAtSize('Approve  ', SIZE);
+      const approveX = LEFT + drawnWidth(font, 'Approve  ', SIZE);
       sigRefs.push(
         addSignatureField(doc, page, [approveX, fieldTopY - 22, approveX + 1.6 * PT, fieldTopY], 'Signature1', PDFName, PDFString),
       );
@@ -1181,7 +1191,7 @@ export async function buildSignablePdf(
       eIdent.date || null,
     ].filter((l): l is string => l !== null);
     if (eIdLines.length) {
-      const blockW = Math.max(...eIdLines.map((l) => font.widthOfTextAtSize(l, SIZE)));
+      const blockW = Math.max(...eIdLines.map((l) => drawnWidth(font, l, SIZE)));
       eIdLines.forEach((l) => put(l, RIGHT - blockW));
       gap(PARA_GAP);
     }
@@ -1227,7 +1237,7 @@ export async function buildSignablePdf(
     const enclBanner = (e.cuiBanner?.trim() || state.cui.banner || 'CUI').toUpperCase();
     const stamp = (pg: ReturnType<Ctx['addPage']>) => {
       const pw = pg.getSize().width;
-      pg.drawText(mark, { x: pw - M_SIDE - font.widthOfTextAtSize(mark, SIZE), y: M_BOT, size: SIZE, font });
+      pg.drawText(mark, { x: pw - M_SIDE - drawnWidth(font, mark, SIZE), y: M_BOT, size: SIZE, font });
     };
     if (e.file.type === 'application/pdf') {
       // A LOCKED (encrypted) enclosure — every official government form is one — can't be read by
@@ -1283,7 +1293,7 @@ export async function buildSignablePdf(
     pages.forEach((pg, i) => {
       if (i === 0 || i >= enclStart) return;
       const num = String(i + 1);
-      pg.drawText(num, { x: (PAGE_W - font.widthOfTextAtSize(num, SIZE)) / 2, y: 0.5 * PT, size: SIZE, font });
+      pg.drawText(num, { x: (PAGE_W - drawnWidth(font, num, SIZE)) / 2, y: 0.5 * PT, size: SIZE, font });
     });
   }
 
